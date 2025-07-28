@@ -1,0 +1,94 @@
+<!-- HERO SECTION -->
+<section class="bg-dark text-white py-5">
+  <div class="container text-center">
+    <h1 class="display-4 fw-bold">Peças <span class="text-warning">Aftermarket</span> de alta performance.</h1>
+    <p class="lead">Transforme o desempenho com as melhores peças do mercado.</p>
+    <a href="#produtos" class="btn btn-warning btn-lg mt-3">Ver Produtos</a>
+  </div>
+</section>
+
+<!-- FEATURES SECTION -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <h2 class="text-center mb-4">Por que escolher a TR AutoParts?</h2>
+    <div class="row text-center">
+      <div class="col-md-3">
+        <i class="bi bi-shield-check display-4 text-warning"></i>
+        <h5 class="mt-2">Qualidade Garantida</h5>
+      </div>
+      <div class="col-md-3">
+        <i class="bi bi-truck display-4 text-warning"></i>
+        <h5 class="mt-2">Entrega Rápida</h5>
+      </div>
+      <div class="col-md-3">
+        <i class="bi bi-headset display-4 text-warning"></i>
+        <h5 class="mt-2">Suporte Técnico</h5>
+      </div>
+      <div class="col-md-3">
+        <i class="bi bi-gear display-4 text-warning"></i>
+        <h5 class="mt-2">Direto do Fabricante</h5>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED PRODUCTS -->
+<section id="produtos" class="py-5">
+  <div class="container">
+    <h2 class="text-center mb-4">Produtos em Destaque</h2>
+    <div class="row row-cols-1 row-cols-md-4 g-4">
+      <% @featured_products.each do |product| %>
+        <div class="col">
+          <div class="card h-100">
+            <%= image_tag "profilepic.jpg", class: "card-img-top", alt: "Imagem do produto" %>
+            <div class="card-body text-center">
+              <h5 class="card-title"><%= product.name %></h5>
+              <p class="card-text">R$ <%= number_to_currency(product.price / 100.0, unit: "", separator: ",", delimiter: ".") %></p>
+              <%= link_to "Comprar", product_path(product), class: "btn btn-warning" %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<!-- CUSTOM ORDER SECTION -->
+<section class="py-5 bg-light text-center">
+  <div class="container">
+    <h4 class="mb-3">Precisa de um item fora do catálogo ou em maior quantidade?</h4>
+    <p>Envie um pedido especial preenchendo um dos nossos formulários personalizados.</p>
+    <a href="#" class="btn btn-warning btn-lg">Fazer Pedido</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-dark text-white py-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        <h5>TR AutoParts</h5>
+        <p>Especialistas em peças automotivas.</p>
+      </div>
+      <div class="col-md-2">
+        <h6>Links Rápidos</h6>
+        <ul class="list-unstyled">
+          <li><a href="#" class="text-white text-decoration-none">Início</a></li>
+          <li><a href="#" class="text-white text-decoration-none">Produtos</a></li>
+        </ul>
+      </div>
+      <div class="col-md-3">
+        <h6>Categorias</h6>
+        <ul class="list-unstyled">
+          <li>Suspensão</li>
+          <li>Freios</li>
+          <li>Motor</li>
+        </ul>
+      </div>
+      <div class="col-md-3">
+        <h6>Contato</h6>
+        <p>(11)99999-9999<br>contato@trautoparts.com.br<br>SP, Brasil</p>
+      </div>
+    </div>
+  </div>
+</footer>

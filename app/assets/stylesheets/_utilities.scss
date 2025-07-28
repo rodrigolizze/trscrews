@@ -1,0 +1,37 @@
+@import "variables";
+
+// Typography colors
+.text-primary-custom   { color: $color-primary !important; }
+.text-secondary-custom { color: $color-secondary !important; }
+.text-gray-custom      { color: $color-ogray !important; }
+.text-light-custom     { color: $color-owhite !important; }
+.text-title-custom     { color: $color-otitle !important; }
+.text-icon-gray        { color: $color-igray !important; }
+
+// Backgrounds
+.bg-primary-custom     { background-color: $color-primary !important; }
+.bg-secondary-custom   { background-color: $color-secondary !important; }
+.bg-light-custom       { background-color: $color-owhite !important; }
+.bg-gray-custom        { background-color: $color-ogray !important; }
+
+// Buttons
+.btn-yellow {
+  background-color: $color-primary;
+  color: #1F2937; // dark text for contrast
+  font-weight: 600;
+  border: none;
+
+  &:hover {
+    background-color: darken($color-primary, 12%);
+    color: white;
+  }
+}
+
+.btn-dark-custom {
+  background-color: $color-secondary;
+  color: white;
+
+  &:hover {
+    background-color: lighten($color-secondary, 5%);
+  }
+}

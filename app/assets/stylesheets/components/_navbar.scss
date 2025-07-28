@@ -1,0 +1,28 @@
+@import "../variables";
+@import "../utilities";
+
+.navbar {
+  background-color: $color-owhite;
+
+  .navbar-brand {
+    color: $color-otitle;
+  }
+
+  .nav-link {
+    color: $color-otitle;
+    font-weight: 500;
+
+    &:hover {
+      color: $color-primary;
+    }
+  }
+
+  .btn {
+    background-color: $color-secondary;
+    color: white;
+
+    &:hover {
+      background-color: darken($color-secondary, 10%);
+    }
+  }
+}

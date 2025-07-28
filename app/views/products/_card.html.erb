@@ -1,0 +1,6 @@
+<div class="product-card">
+  <div class="image-placeholder">IMG</div>
+  <p><%= product.name %></p>
+  <p>R$ <%= number_to_currency(product.price / 100.0, unit: "", separator: ",", delimiter: ".") %></p>
+  <%= link_to "Comprar", product_path(product), class: "btn-comprar" %>
+</div>
