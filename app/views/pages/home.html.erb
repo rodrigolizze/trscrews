@@ -5,7 +5,7 @@
       <!-- Slide 1: Text + 3 white images -->
       <div class="carousel-item active">
         <div class="container">
-          <div class="row align-items-center text-white">
+          <div class="row align-items-center text-light-custom">
             <div class="col-md-6">
               <h1 class="display-5 fw-bold">
                 Peças <span class="text-primary-custom">Aftermarket</span><br>
@@ -14,12 +14,14 @@
               <p class="mt-3">Transforme seu veículo com as melhores peças do mercado.<br>
                 Qualidade, performance e preço justo em um só lugar.
               </p>
-              <%= link_to "Ver Produtos →", products_path, class: "btn btn-yellow" %>
+                <div class="container">
+                  <%= link_to "Ver Produtos →", products_path, class: "btn btn-yellow" %>
+                </div>
             </div>
 
             <div class="col-md-6 d-flex justify-content-center gap-3">
               <% 3.times do |i| %>
-                <%= image_tag "banner#{i + 1}.jpg", class: "rounded shadow", style: "width: 240px; height: 240px; object-fit: cover;" %>
+                <%= image_tag "banner#{i + 1}.jpg", alt: "Produto destaque #{i + 1}", class: "rounded shadow", style: "width: 240px; height: 240px; object-fit: cover;" %>
               <% end %>
             </div>
           </div>
@@ -28,19 +30,23 @@
 
       <!-- Slide 2: Another banner (you can customize later) -->
       <div class="carousel-item">
-        <div class="container text-white text-center py-5">
+        <div class="container text-light-custom text-center py-5">
           <h2 class="fw-bold">🚗 Encontre o kit ideal para seu carro</h2>
           <p class="lead mt-3">Temos milhares de parafusos, kits e acessórios compatíveis com seu modelo.</p>
-          <%= link_to "Ver Catálogo", products_path, class: "btn btn-yellow" %>
+            <div class ="container">
+              <%= link_to "Ver Catálogo", products_path, class: "btn btn-yellow" %>
+            </div>
         </div>
       </div>
 
       <!-- Slide 3: Placeholder for future content -->
       <div class="carousel-item">
-        <div class="container text-white text-center py-5">
+        <div class="container text-light-custom text-center py-5">
           <h2 class="fw-bold">💡 Faça pedidos personalizados</h2>
           <p class="lead mt-3">Não achou o que precisa? Envie seu pedido especial.</p>
-          <a href="#" class="btn btn-yellow">Fazer Pedido</a>  <!-- Change this line to link to after -->
+            <div class="container">
+              <a href="#" class="btn btn-yellow">Fazer Pedido</a>  <!-- Change this line to link to after -->
+            </div>
         </div>
       </div>
     </div>
@@ -63,38 +69,19 @@
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim.
     </p>
 
-    <div class="row row-cols-1 row-cols-md-4 g-4">
-      <div class="col">
-        <div class="bg-light-custom p-4 rounded shadow-sm h-100">
-          <i class="bi bi-check2-square display-5 text-success mb-3"></i>
-          <h5 class="fw-bold">Qualidade Garantida</h5>
-          <p class="mb-0">Produtos testados e aprovados pelo fabricante.</p>
-        </div>
-      </div>
+    <% cards = [
+      { icon: "check2-square", title: "Qualidade Garantida", text: "Produtos testados e aprovados pelo fabricante." },
+      { icon: "check2-square", title: "Entrega Rápida", text: "Entregamos em todo o Brasil com agilidade e segurança." },
+      { icon: "check2-square", title: "Suporte Técnico", text: "Anos de experiência como fabricante." },
+      { icon: "check2-square", title: "Produtos diretamente com o fabricante.", text: "Fornecedores confiáveis e dispostos a dar o melhor." }
+    ] %>
 
-      <div class="col">
-        <div class="bg-light-custom p-4 rounded shadow-sm h-100">
-          <i class="bi bi-check2-square display-5 text-success mb-3"></i>
-          <h5 class="fw-bold">Entrega Rápida</h5>
-          <p class="mb-0">Entregamos em todo o Brasil com agilidade e segurança.</p>
+    <div class="row row-cols-1 row-cols-md-4 g-4 ">
+      <% cards.each_with_index do |card, index| %>
+        <div class="col" data-aos="fade-up" data-aos-delay="<%= index * 100 %>">
+          <%= render "shared/feature_card", icon: card[:icon], title: card[:title], text: card[:text] %>
         </div>
-      </div>
-
-      <div class="col">
-        <div class="bg-light-custom p-4 rounded shadow-sm h-100">
-          <i class="bi bi-check2-square display-5 text-success mb-3"></i>
-          <h5 class="fw-bold">Suporte Técnico</h5>
-          <p class="mb-0">Anos de experiência como fabricante.</p>
-        </div>
-      </div>
-
-      <div class="col">
-        <div class="bg-light-custom p-4 rounded shadow-sm h-100">
-          <i class="bi bi-check2-square display-5 text-success mb-3"></i>
-          <h5 class="fw-bold">Produtos diretamente com o fabricante.</h5>
-          <p class="mb-0">Fornecedores confiáveis e dispostos a dar o melhor.</p>
-        </div>
-      </div>
+      <% end %>
     </div>
   </div>
 </section>
