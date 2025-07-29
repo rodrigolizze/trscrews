@@ -15,7 +15,7 @@
                 Qualidade, performance e preço justo em um só lugar.
               </p>
                 <div class="container">
-                  <%= link_to "Ver Produtos →", products_path, class: "btn btn-yellow" %>
+                  <%= link_to "Ver Produtos →", screws_path, class: "btn btn-yellow" %>
                 </div>
             </div>
 
@@ -34,7 +34,7 @@
           <h2 class="fw-bold">🚗 Encontre o kit ideal para seu carro</h2>
           <p class="lead mt-3">Temos milhares de parafusos, kits e acessórios compatíveis com seu modelo.</p>
             <div class ="container">
-              <%= link_to "Ver Catálogo", products_path, class: "btn btn-yellow" %>
+              <%= link_to "Ver Catálogo", screws_path, class: "btn btn-yellow" %>
             </div>
         </div>
       </div>
@@ -69,7 +69,7 @@
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim.
     </p>
 
-    <% cards = [
+    <% advertisings = [
       { icon: "check2-square", title: "Qualidade Garantida", text: "Produtos testados e aprovados pelo fabricante." },
       { icon: "check2-square", title: "Entrega Rápida", text: "Entregamos em todo o Brasil com agilidade e segurança." },
       { icon: "check2-square", title: "Suporte Técnico", text: "Anos de experiência como fabricante." },
@@ -77,9 +77,68 @@
     ] %>
 
     <div class="row row-cols-1 row-cols-md-4 g-4 ">
-      <% cards.each_with_index do |card, index| %>
+      <% advertisings.each_with_index do |advertising, index| %>
         <div class="col" data-aos="fade-up" data-aos-delay="<%= index * 100 %>">
-          <%= render "shared/feature_card", icon: card[:icon], title: card[:title], text: card[:text] %>
+          <%= render "shared/feature_card", icon: advertising[:icon], title: advertising[:title], text: advertising[:text] %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<section class="py-5 text-center text-title-custom bg-light-custom">
+  <div class="container">
+    <h2 class="fw-bold mb-2">Produtos em Destaque</h2>
+    <p class="text-gray-custom mb-5">
+      Confira nossa seleção especial de produtos mais procurados
+    </p>
+    <div class="row row-cols-1 row-cols-md-4 g-4">
+      <% image_sets = [
+        ["screw1.jpg", "screw2.jpg", "screw3.jpg"],
+        ["screw4.jpg", "screw5.jpg", "screw6.jpg"],
+        ["screw1.jpg", "screw4.jpg", "screw2.jpg"],
+        ["screw3.jpg", "screw6.jpg", "screw5.jpg"],
+        ["screw2.jpg", "screw1.jpg", "screw4.jpg"],
+        ["screw5.jpg", "screw3.jpg", "screw1.jpg"],
+        ["screw6.jpg", "screw2.jpg", "screw4.jpg"],
+        ["screw4.jpg", "screw5.jpg", "screw6.jpg"]
+      ] %>
+      <% image_sets.each_with_index do |images, index| %>
+        <% carousel_id = "productCarousel-#{index}" %>
+
+        <div class="col">
+          <div class="card h-100">
+            <!-- Carousel goes here -->
+            <div id="<%= carousel_id %>" class="carousel slide card-carousel" data-bs-ride="carousel">
+              <div class="carousel-inner">
+                <div class="carousel-item active">
+                  <%= image_tag "screw1.jpg", class: "d-block w-100", style: "height: 200px; object-fit: cover;" %>
+                </div>
+                <div class="carousel-item">
+                  <%= image_tag "screw2.jpg", class: "d-block w-100", style: "height: 200px; object-fit: cover;" %>
+                </div>
+              </div>
+
+              <!-- Carousel arrows -->
+              <button class="carousel-control-prev" type="button" data-bs-target="#<%= carousel_id %>" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#<%= carousel_id %>" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+              </button>
+            </div>
+
+            <!-- Card content -->
+            <div class="card-body text-center">
+              <small class="text-muted">Mini descrição do parafuso</small>
+              <h6 class="fw-bold mt-2">Kit Descrição</h6>
+              <p class="mb-1 text-muted">Modelo do carro</p>
+              <p class="fw-bold">R$ 999,90</p>
+              <a href="#" class="btn btn-yellow w-100">COMPRAR</a>
+            </div>
+          </div>
         </div>
       <% end %>
     </div>

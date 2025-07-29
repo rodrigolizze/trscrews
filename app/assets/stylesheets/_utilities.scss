@@ -41,3 +41,7 @@
 .card-fixed-height {
   height: 200px !important;
 }
+
+.card {
+  overflow: visible !important; // allow arrows to extend outside
+}

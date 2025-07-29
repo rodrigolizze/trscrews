@@ -1,0 +1,8 @@
+@import "variables";
+
+.card-carousel {
+  .carousel-control-prev-icon,
+  .carousel-control-next-icon {
+    filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(180deg);
+  }
+}

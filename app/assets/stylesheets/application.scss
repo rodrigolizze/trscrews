@@ -16,6 +16,7 @@
 @import "variables";
 @import "components/navbar";
 @import "utilities";
+// @import "carousel";
 
 
 body {
@@ -29,6 +30,8 @@ body {
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
   }
 }
+
+
 
 .banner-dark {
   background-color: $color-secondary;

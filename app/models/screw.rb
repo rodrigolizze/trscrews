@@ -1,0 +1,2 @@
+class Screw < ApplicationRecord
+end
