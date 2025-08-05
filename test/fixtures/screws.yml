@@ -1,11 +1,19 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  description: MyText
-  price: 9.99
+  description: MyString
+  thread: MyString
+  thread_length: 9.99
+  resistance_class: MyString
+  surface_treatment: MyString
+  automaker: MyString
+  model: MyString
 
 two:
-  name: MyString
-  description: MyText
-  price: 9.99
+  description: MyString
+  thread: MyString
+  thread_length: 9.99
+  resistance_class: MyString
+  surface_treatment: MyString
+  automaker: MyString
+  model: MyString

@@ -1,0 +1,60 @@
+<footer class="bg-secondary-custom text-light pt-5 pb-4">
+  <div class="container">
+    <div class="row text-center text-md-start">
+
+      <!-- Logo and Description -->
+      <div class="col-md-3 mb-4">
+        <h4 class="fw-bold text-primary-custom">TR AutoParts</h4>
+        <p class="mb-0 small">
+          Especialistas em peças automotivas.<br>
+          Qualidade e confiança no mercado.
+        </p>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="col-md-3 mb-4">
+        <h6 class="fw-bold text-primary-custom">Links Rápidos</h6>
+        <ul class="list-unstyled small">
+          <li><%= link_to "Início", root_path, class: "text-light text-decoration-none" %></li>
+          <li><%= link_to "Produtos", "#", class: "text-light text-decoration-none" %></li>
+          <li><%= link_to "Sobre Nós", "#", class: "text-light text-decoration-none" %></li>
+          <li><%= link_to "Carrinho", "#", class: "text-light text-decoration-none" %></li>
+        </ul>
+      </div>
+
+      <!-- Categories -->
+      <div class="col-md-3 mb-4">
+        <h6 class="fw-bold text-primary-custom">Categorias</h6>
+        <ul class="list-unstyled small">
+          <li><%= link_to "Suspensão", "#", class: "text-light text-decoration-none" %></li>
+          <li><%= link_to "Freios", "#", class: "text-light text-decoration-none" %></li>
+          <li><%= link_to "Motor", "#", class: "text-light text-decoration-none" %></li>
+          <li><%= link_to "Escapamento", "#", class: "text-light text-decoration-none" %></li>
+        </ul>
+      </div>
+
+      <!-- Contact -->
+      <div class="col-md-3 mb-4">
+        <h6 class="fw-bold text-primary-custom">Contato</h6>
+        <ul class="list-unstyled small">
+          <li>📞 (11)99999-9999</li>
+          <li>📧 contato@trautoparts.com.br</li>
+          <li>📍 Rua Do Money, 123<br>São Paulo - SP<br>CEP: 01234-567</li>
+        </ul>
+
+        <!-- Social Media Icons -->
+        <div class="mt-2">
+          <a href="#" class="text-light me-3">🌐</a>
+          <a href="#" class="text-light me-3">📘</a>
+          <a href="#" class="text-light me-3">📷</a>
+          <a href="#" class="text-light">🐦</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Copyright Bar -->
+  <div class="bg-dark text-center text-muted py-2 mt-3 small text-light-custom">
+    &copy; <%= Time.now.year %> TR AutoParts. Todos os direitos reservados.
+  </div>
+</footer>

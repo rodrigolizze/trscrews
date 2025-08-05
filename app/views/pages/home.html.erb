@@ -34,7 +34,7 @@
           <h2 class="fw-bold">🚗 Encontre o kit ideal para seu carro</h2>
           <p class="lead mt-3">Temos milhares de parafusos, kits e acessórios compatíveis com seu modelo.</p>
             <div class ="container">
-              <%= link_to "Ver Catálogo", screws_path, class: "btn btn-yellow" %>
+              <%= link_to "Ver Catálogo →", screws_path, class: "btn btn-yellow" %>
             </div>
         </div>
       </div>
@@ -45,7 +45,7 @@
           <h2 class="fw-bold">💡 Faça pedidos personalizados</h2>
           <p class="lead mt-3">Não achou o que precisa? Envie seu pedido especial.</p>
             <div class="container">
-              <a href="#" class="btn btn-yellow">Fazer Pedido</a>  <!-- Change this line to link to after -->
+              <a href="#" class="btn btn-yellow">Fazer Pedido →</a>  <!-- Change this line to link to after -->
             </div>
         </div>
       </div>
@@ -93,30 +93,18 @@
       Confira nossa seleção especial de produtos mais procurados
     </p>
     <div class="row row-cols-1 row-cols-md-4 g-4">
-      <% image_sets = [
-        ["screw1.jpg", "screw2.jpg", "screw3.jpg"],
-        ["screw4.jpg", "screw5.jpg", "screw6.jpg"],
-        ["screw1.jpg", "screw4.jpg", "screw2.jpg"],
-        ["screw3.jpg", "screw6.jpg", "screw5.jpg"],
-        ["screw2.jpg", "screw1.jpg", "screw4.jpg"],
-        ["screw5.jpg", "screw3.jpg", "screw1.jpg"],
-        ["screw6.jpg", "screw2.jpg", "screw4.jpg"],
-        ["screw4.jpg", "screw5.jpg", "screw6.jpg"]
-      ] %>
-      <% image_sets.each_with_index do |images, index| %>
-        <% carousel_id = "productCarousel-#{index}" %>
-
+      <% @featured_screws.each_with_index do |screw, index| %>
+        <% carousel_id = "productCarousel-#{SecureRandom.hex(4)}" %>
         <div class="col">
           <div class="card h-100">
-            <!-- Carousel goes here -->
-            <div id="<%= carousel_id %>" class="carousel slide card-carousel" data-bs-ride="carousel">
+            <!-- Carousel -->
+            <div id="<%= carousel_id %>" class="carousel slide" data-bs-ride="carousel">
               <div class="carousel-inner">
-                <div class="carousel-item active">
-                  <%= image_tag "screw1.jpg", class: "d-block w-100", style: "height: 200px; object-fit: cover;" %>
-                </div>
-                <div class="carousel-item">
-                  <%= image_tag "screw2.jpg", class: "d-block w-100", style: "height: 200px; object-fit: cover;" %>
-                </div>
+                <% screw.images.each_with_index do |img, index| %>
+                  <div class="carousel-item <%= 'active' if index == 0 %>">
+                    <%= image_tag img, class: "d-block w-100", style: "height: 200px; object-fit: cover;" %>
+                  </div>
+                <% end %>
               </div>
 
               <!-- Carousel arrows -->
@@ -132,9 +120,9 @@
 
             <!-- Card content -->
             <div class="card-body text-center">
-              <small class="text-muted">Mini descrição do parafuso</small>
-              <h6 class="fw-bold mt-2">Kit Descrição</h6>
-              <p class="mb-1 text-muted">Modelo do carro</p>
+              <small class="text-muted"><%= screw.thread %> — <%= screw.surface_treatment %></small>
+              <h6 class="fw-bold mt-2"><%= screw.description %></h6>
+              <p class="mb-1 text-muted"><%= screw.automaker %> - <%= screw.model %></p>
               <p class="fw-bold">R$ 999,90</p>
               <a href="#" class="btn btn-yellow w-100">COMPRAR</a>
             </div>
@@ -142,5 +130,17 @@
         </div>
       <% end %>
     </div>
+  </div>
+</section>
+
+<section class="py-5 text-center bg-gray-custom text-title-custom text-white">
+  <div class="container">
+    <h3 class="fw-bold mb-3">
+      Precisa de um item fora do catálogo ou em maior quantidade?
+    </h3>
+    <p class="mb-4 text-title-custom">
+      Envie um pedido especial preenchendo um de nossos formulários personalizados.
+    </p>
+    <%= link_to "Fazer Pedido →", "#", class: "btn btn-yellow px-4 py-2 fw-bold shadow-sm" %>
   </div>
 </section>
