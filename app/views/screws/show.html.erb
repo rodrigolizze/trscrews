@@ -1,2 +1,51 @@
-<h1>Screws#show</h1>
-<p>Find me in app/views/screws/show.html.erb</p>
+<div class="container product-details">
+  <!-- Product Details Layout: Two columns for image carousel and info -->
+  <div class="row">
+    <!-- Left Column: Image Carousel -->
+    <div class="col-md-6">
+      <!-- Image Carousel (Bootstrap 5 example) -->
+      <div id="screwImagesCarousel" class="carousel slide" data-bs-ride="carousel">
+      <div class="carousel-inner">
+        <% @screw.images.each_with_index do |img, index| %>
+          <div class="carousel-item <%= 'active' if index == 0 %>">
+            <%= image_tag img, class: "d-block w-100", alt: @screw.model %>
+          </div>
+        <% end %>
+      </div>
+        <!-- Carousel controls (previous/next) -->
+        <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Anterior</span> <!-- "Previous" in Portuguese -->
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Próximo</span> <!-- "Next" in Portuguese -->
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Column: Product Info -->
+    <div class="col-md-6">
+      <!-- Product Title and Description -->
+      <h1 class="product-title"><%= @screw.model %></h1>
+      <p class="product-description"><%= @screw.description %></p>
+
+      <!-- Product Specifications -->
+      <h3>Especificações</h3>
+      <ul class="product-specs">
+        <%# Example specification items. Replace with actual attributes or content: %>
+        <li><strong>Material:</strong> <%= @screw.surface_treatment %></li>
+        <li><strong>Tamanho:</strong> <%= @screw.thread %> mm</li>
+        <li><strong>Linha:</strong> <%= @screw.automaker %> kg</li>
+        <!-- Add more <li> for other specs as needed -->
+      </ul>
+
+      <!-- Price and Add-to-Cart Button -->
+      <div class="purchase-section">
+        <p class="price"><strong>Preço: </strong>R$ <%= @screw.price %></p>
+        <%= link_to 'Comprar', "#" , class: "btn btn-warning add-to-cart" %>
+        <%# The link currently points to "#" (no action) since cart functionality isn't implemented yet. %>
+      </div>
+    </div>
+  </div>
+</div>

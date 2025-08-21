@@ -1,6 +1,4 @@
 Rails.application.routes.draw do
-  get 'screws/index'
-  get 'screws/show'
   root to: "pages#home"
 
   resources :screws, only: [:index, :show]

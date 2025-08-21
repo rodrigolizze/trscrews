@@ -1,14 +1,14 @@
 puts "🌱 Seeding screws..."
 
 screws = Screw.create!([
-  { description: "Parafuso de Roda linha Fiat M12-1,25x22", thread: "M12-1,25", thread_length: 22.0, resistance_class: "10.9", surface_treatment: "Geomet", automaker: "Fiat", model: "Fastback" },
-  { description: "Parafuso para roda Volkswagen M14-1,5x25", thread: "M14-1,5", thread_length: 25.0, resistance_class: "10.9", surface_treatment: "Zincado", automaker: "Volkswagen", model: "Golf" },
-  { description: "Parafuso para roda Chevrolet M12-1,5x28", thread: "M12-1,5", thread_length: 28.0, resistance_class: "8.8", surface_treatment: "Geomet", automaker: "Chevrolet", model: "Onix" },
-  { description: "Parafuso de roda Ford M12-1,5x30", thread: "M12-1,5", thread_length: 30.0, resistance_class: "10.9", surface_treatment: "Zincado", automaker: "Ford", model: "Focus" },
-  { description: "Parafuso de roda Renault M14-1,5x27", thread: "M14-1,5", thread_length: 27.0, resistance_class: "8.8", surface_treatment: "Oxidado", automaker: "Renault", model: "Duster" },
-  { description: "Parafuso para roda Honda M12-1,5x22", thread: "M12-1,5", thread_length: 22.0, resistance_class: "10.9", surface_treatment: "Geomet", automaker: "Honda", model: "Civic" },
-  { description: "Parafuso roda Peugeot M12-1,25x26", thread: "M12-1,25", thread_length: 26.0, resistance_class: "8.8", surface_treatment: "Zincado", automaker: "Peugeot", model: "208" },
-  { description: "Parafuso para roda Toyota M14-1,5x28", thread: "M14-1,5", thread_length: 28.0, resistance_class: "10.9", surface_treatment: "Geomet", automaker: "Toyota", model: "Corolla" }
+  { description: "Parafuso de Roda linha Fiat M12-1,25x22", thread: "M12-1,25", thread_length: 22.0, resistance_class: "10.9", surface_treatment: "Geomet", automaker: "Fiat", model: "Fastback", price: 19.90 },
+  { description: "Parafuso para roda Volkswagen M14-1,5x25", thread: "M14-1,5", thread_length: 25.0, resistance_class: "10.9", surface_treatment: "Zincado", automaker: "Volkswagen", model: "Golf", price: 24.50 },
+  { description: "Parafuso para roda Chevrolet M12-1,5x28", thread: "M12-1,5", thread_length: 28.0, resistance_class: "8.8", surface_treatment: "Geomet", automaker: "Chevrolet", model: "Onix", price: 21.00 },
+  { description: "Parafuso de roda Ford M12-1,5x30", thread: "M12-1,5", thread_length: 30.0, resistance_class: "10.9", surface_treatment: "Zincado", automaker: "Ford", model: "Focus", price: 22.75 },
+  { description: "Parafuso de roda Renault M14-1,5x27", thread: "M14-1,5", thread_length: 27.0, resistance_class: "8.8", surface_treatment: "Oxidado", automaker: "Renault", model: "Duster", price: 18.40 },
+  { description: "Parafuso para roda Honda M12-1,5x22", thread: "M12-1,5", thread_length: 22.0, resistance_class: "10.9", surface_treatment: "Geomet", automaker: "Honda", model: "Civic", price: 20.90 },
+  { description: "Parafuso roda Peugeot M12-1,25x26", thread: "M12-1,25", thread_length: 26.0, resistance_class: "8.8", surface_treatment: "Zincado", automaker: "Peugeot", model: "208", price: 19.50 },
+  { description: "Parafuso para roda Toyota M14-1,5x28", thread: "M14-1,5", thread_length: 28.0, resistance_class: "10.9", surface_treatment: "Geomet", automaker: "Toyota", model: "Corolla", price: 23.30 }
 ])
 
 puts "✅ Screws created successfully!"
