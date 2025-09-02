@@ -1,2 +1,76 @@
-<h1>Screws#index</h1>
-<p>Find me in app/views/screws/index.html.erb</p>
+<!-- app/views/screws/index.html.erb -->
+<div class="container py-4">
+  <h1 class="h3 mb-3">Catálogo</h1>
+
+  <%# -- Filter + Search + Sort form (GET) -- %>
+  <%= form_with url: screws_path, method: :get, local: true, class: "row g-2 mb-4" do %>
+    <div class="col-12 col-md-4">
+      <label class="form-label small">Buscar (descrição)</label>
+      <%= text_field_tag :q, params[:q], class: "form-control", placeholder: "Ex.: parafuso M6, cabeçote hex..." %>
+    </div>
+
+    <div class="col-6 col-md-2">
+      <label class="form-label small">Montadora</label>
+      <%= select_tag :automaker,
+          options_for_select([["Todas", ""]] + @automakers.map { |a| [a, a] }, params[:automaker]),
+          class: "form-select" %>
+    </div>
+
+    <div class="col-6 col-md-2">
+      <label class="form-label small">Modelo</label>
+      <%= select_tag :model,
+          options_for_select([["Todos", ""]] + @models.map { |m| [m, m] }, params[:model]),
+          class: "form-select" %>
+    </div>
+
+    <div class="col-6 col-md-2">
+      <label class="form-label small">Rosca (thread)</label>
+      <%= select_tag :thread,
+          options_for_select([["Todas", ""]] + @threads.map { |t| [t, t] }, params[:thread]),
+          class: "form-select" %>
+    </div>
+
+    <div class="col-6 col-md-2">
+      <label class="form-label small">Tratamento</label>
+      <%= select_tag :surface_treatment,
+          options_for_select([["Todos", ""]] + @surfaces.map { |s| [s, s] }, params[:surface_treatment]),
+          class: "form-select" %>
+    </div>
+
+    <div class="col-6 col-md-2">
+      <label class="form-label small">Ordenar</label>
+      <%= select_tag :sort,
+          options_for_select(
+            [["Mais recentes", ""], ["Preço: menor → maior", "price_asc"], ["Preço: maior → menor", "price_desc"]],
+            params[:sort]
+          ),
+          class: "form-select" %>
+    </div>
+
+    <div class="col-12 d-flex gap-2">
+      <%= submit_tag "Aplicar", class: "btn btn-yellow" %>
+      <%= link_to "Limpar", screws_path, class: "btn btn-outline-secondary" %>
+    </div>
+  <% end %>
+
+  <%# -- Grid of product cards -- %>
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
+    <% @screws.each do |screw| %>
+      <div class="col">
+        <%= render "card", screw: screw %>
+      </div>
+    <% end %>
+  </div>
+
+  <%# -- Empty state -- %>
+  <% if @screws.empty? %>
+    <div class="text-center text-muted mt-4">
+      Nenhum item encontrado com esses critérios.
+    </div>
+  <% end %>
+
+  <%# -- Pagination (Bootstrap) -- %>
+  <div class="d-flex justify-content-center mt-4">
+    <%== pagy_bootstrap_nav(@pagy) if @pagy && @pagy.pages > 1 %>
+  </div>
+</div>

@@ -1,8 +1,9 @@
-<!-- app/views/carts/show.html.erb -->
 <div class="container py-4">
   <h1 class="h3 mb-3">Seu carrinho</h1>
 
-  <%# Show items if present, otherwise an empty-state %>
+  <%# -- Minimal “it renders” test; remove after you see it working -- %>
+  <p class="text-muted">rendering carts/show</p>
+
   <% if @lines.present? %>
     <div class="table-responsive">
       <table class="table align-middle">
@@ -23,9 +24,7 @@
                 <div class="d-flex gap-3">
                   <div style="width:72px;height:72px" class="border rounded d-flex align-items-center justify-content-center bg-white">
                     <% if screw.images.attached? %>
-                      <%= image_tag screw.images.first.variant(resize_to_limit: [120,120]),
-                                    class: "img-fluid p-1",
-                                    style: "object-fit:contain" %>
+                      <%= image_tag screw.images.first.variant(resize_to_limit: [120,120]), class: "img-fluid p-1", style: "object-fit:contain" %>
                     <% else %>
                       <span class="text-muted small">Sem imagem</span>
                     <% end %>
@@ -78,16 +77,10 @@
 
     <div class="d-flex gap-2">
       <%= link_to "Continuar comprando", screws_path, class: "btn btn-outline-secondary" %>
-      <%= button_to "Esvaziar",
-                    clear_cart_path,
-                    method: :delete,
-                    form: { data: { turbo_confirm: "Esvaziar carrinho?" } },
-                    class: "btn btn-outline-danger" %>
+      <%= button_to "Esvaziar", clear_cart_path, method: :delete, form: { data: { turbo_confirm: "Esvaziar carrinho?" } }, class: "btn btn-outline-danger" %>
       <%= link_to "Finalizar compra (stub)", "#", class: "btn btn-yellow ms-auto" %>
     </div>
-
   <% else %>
-    <%# Empty state (no 'return' here) %>
     <div class="alert alert-info">Seu carrinho está vazio.</div>
     <%= link_to "Voltar ao catálogo", screws_path, class: "btn btn-yellow" %>
   <% end %>

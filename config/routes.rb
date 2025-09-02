@@ -3,6 +3,14 @@ Rails.application.routes.draw do
 
   resources :screws, only: [:index, :show]
 
+  # // A single cart (not per-id), stored in the session
+  resource :cart, only: [:show] do
+    post   "add/:screw_id",    to: "carts#add",    as: :add
+    patch  "set/:screw_id",    to: "carts#set",    as: :set
+    delete "remove/:screw_id", to: "carts#remove", as: :remove
+    delete "clear",            to: "carts#clear",  as: :clear
+  end
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

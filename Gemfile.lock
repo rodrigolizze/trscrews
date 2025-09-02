@@ -180,6 +180,7 @@ GEM
       racc (~> 1.4)
     nokogiri (1.18.9-x86_64-linux-musl)
       racc (~> 1.4)
+    pagy (9.4.0)
     pg (1.6.0)
     pg (1.6.0-aarch64-linux)
     pg (1.6.0-arm64-darwin)
@@ -314,6 +315,7 @@ DEPENDENCIES
   image_processing (~> 1.2)
   importmap-rails
   jbuilder
+  pagy
   pg (~> 1.1)
   puma (>= 5.0)
   rails (~> 7.1.5, >= 7.1.5.1)
