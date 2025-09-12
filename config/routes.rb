@@ -15,6 +15,12 @@ Rails.application.routes.draw do
   resources :orders, only: [:new, :create, :show]
   get "/checkout", to: "orders#new", as: :checkout # // pretty alias
 
+  # // Admin (basic auth; no user system yet)
+  namespace :admin do
+    root to: "orders#index"
+    resources :orders, only: [:index, :show, :update]
+  end
+
   # // Dev-only email viewer (mount at top-level, NOT inside the cart block)
   if Rails.env.development?
     mount LetterOpenerWeb::Engine, at: "/letter_opener"

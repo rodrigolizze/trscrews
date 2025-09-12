@@ -1,0 +1,47 @@
+<!-- app/views/admin/orders/index.html.erb -->
+<div class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">Pedidos</h1>
+    <div class="d-flex gap-2">
+      <%= link_to "Todos", admin_orders_path, class: "btn btn-sm btn-outline-secondary #{'active' if @status.blank?}" %>
+      <%= link_to "Placed",    admin_orders_path(status: :placed),    class: "btn btn-sm btn-outline-secondary #{'active' if @status=='placed'}" %>
+      <%= link_to "Cancelled", admin_orders_path(status: :cancelled), class: "btn btn-sm btn-outline-secondary #{'active' if @status=='cancelled'}" %>
+      <%= link_to "Shipped",   admin_orders_path(status: :shipped),   class: "btn btn-sm btn-outline-secondary #{'active' if @status=='shipped'}" %>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Cliente</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th class="text-end">Total</th>
+          <th>Data</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @orders.each do |o| %>
+          <tr>
+            <td><strong><%= o.order_number || "##{o.id}" %></strong></td>
+            <td><%= o.customer_name %></td>
+            <td><%= o.customer_email %></td>
+            <td>
+              <span class="badge <%= { 'placed'=>'bg-success', 'cancelled'=>'bg-danger', 'shipped'=>'bg-primary' }[o.status] || 'bg-secondary' %>">
+                <%= o.status %>
+              </span>
+            </td>
+            <td class="text-end"><%= format_price(o.total) %></td>
+            <td><%= o.placed_at&.strftime("%d/%m/%Y %H:%M") || o.created_at.strftime("%d/%m/%Y %H:%M") %></td>
+            <td class="text-end">
+              <%= link_to "Abrir", admin_order_path(o), class: "btn btn-sm btn-outline-dark" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

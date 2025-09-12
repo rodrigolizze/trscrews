@@ -1,0 +1,70 @@
+<!-- app/views/admin/orders/show.html.erb -->
+<div class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">Pedido <%= @order.order_number || "##{@order.id}" %></h1>
+    <div class="d-flex gap-2">
+      <%# // Buttons to change status %>
+      <%= form_with url: admin_order_path(@order), method: :patch, local: true do %>
+        <%= hidden_field_tag "order[status]", "placed" %>
+        <%= submit_tag "Marcar como Placed", class: "btn btn-sm btn-outline-secondary" %>
+      <% end %>
+
+      <%= form_with url: admin_order_path(@order), method: :patch, local: true do %>
+        <%= hidden_field_tag "order[status]", "shipped" %>
+        <%= submit_tag "Marcar como Shipped", class: "btn btn-sm btn-primary" %>
+      <% end %>
+
+      <%= form_with url: admin_order_path(@order), method: :patch, local: true,
+                    data: { turbo_confirm: "Cancelar este pedido?" } do %>
+        <%= hidden_field_tag "order[status]", "cancelled" %>
+        <%= submit_tag "Cancelar", class: "btn btn-sm btn-danger" %>
+      <% end %>
+    </div>
+  </div>
+
+  <p class="text-muted mb-3">
+    <strong>Cliente:</strong> <%= @order.customer_name %> —
+    <strong>Email:</strong> <%= @order.customer_email %> —
+    <strong>Status:</strong>
+    <span class="badge <%= { 'placed'=>'bg-success', 'cancelled'=>'bg-danger', 'shipped'=>'bg-primary' }[@order.status] || 'bg-secondary' %>">
+      <%= @order.status %>
+    </span>
+  </p>
+
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th class="text-end">Qtd</th>
+          <th class="text-end">Preço</th>
+          <th class="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @order.order_items.each do |item| %>
+          <tr>
+            <td><%= item.screw.description %></td>
+            <td class="text-end"><%= item.quantity %></td>
+            <td class="text-end"><%= format_price(item.unit_price) %></td>
+            <td class="text-end"><%= format_price(item.line_total) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="3" class="text-end">Subtotal</th>
+          <th class="text-end"><%= format_price(@order.subtotal) %></th>
+        </tr>
+        <tr>
+          <th colspan="3" class="text-end">Frete</th>
+          <th class="text-end"><%= format_price(@order.shipping) %></th>
+        </tr>
+        <tr>
+          <th colspan="3" class="text-end">Total</th>
+          <th class="text-end h5"><%= format_price(@order.total) %></th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>

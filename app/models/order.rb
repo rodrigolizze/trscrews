@@ -1,7 +1,7 @@
 class Order < ApplicationRecord
   has_many :order_items, dependent: :destroy
 
-  enum status: { draft: 0, placed: 1, cancelled: 2 }
+  enum status: { draft: 0, placed: 1, cancelled: 2, shipped: 3 }
 
   # // Basic presence
   validates :customer_name,  presence: true
