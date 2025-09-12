@@ -1,0 +1,15 @@
+Obrigado pelo seu pedido!
+
+Pedido: <%= @order.order_number || "##{@order.id}" %>
+Nome: <%= @order.customer_name %>
+
+Itens:
+<% @order.order_items.each do |item| %>
+- <%= item.screw.description %> | Qtd: <%= item.quantity %> | Preço: <%= format_price(item.unit_price) %> | Total: <%= format_price(item.line_total) %>
+<% end %>
+
+Subtotal: <%= format_price(@order.subtotal) %>
+Frete:    <%= format_price(@order.shipping) %>
+Total:    <%= format_price(@order.total) %>
+
+Ver pedido: <%= order_url(@order) %>

@@ -11,6 +11,15 @@ Rails.application.routes.draw do
     delete "clear",            to: "carts#clear",  as: :clear
   end
 
+  # // Orders: new (checkout), create, show (confirmation)
+  resources :orders, only: [:new, :create, :show]
+  get "/checkout", to: "orders#new", as: :checkout # // pretty alias
+
+  # // Dev-only email viewer (mount at top-level, NOT inside the cart block)
+  if Rails.env.development?
+    mount LetterOpenerWeb::Engine, at: "/letter_opener"
+  end
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

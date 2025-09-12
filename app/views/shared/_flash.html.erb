@@ -1,0 +1,11 @@
+<!-- Renders Rails flash messages with Bootstrap styles -->
+<div class="container mt-3">
+  <% flash.each do |type, message| %>
+    <%# Map Rails flash types to Bootstrap alert classes %>
+    <% bootstrap = { notice: "success", alert: "danger", error: "danger" }[type.to_sym] || "info" %>
+    <div class="alert alert-<%= bootstrap %> alert-dismissible fade show" role="alert">
+      <%= message %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% end %>
+</div>

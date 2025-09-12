@@ -1,0 +1,40 @@
+<h2>Obrigado pelo seu pedido!</h2>
+<p>Pedido: <strong><%= @order.order_number || "##{@order.id}" %></strong></p>
+<p>Nome: <strong><%= @order.customer_name %></strong></p>
+
+<table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+  <thead>
+    <tr>
+      <th align="left">Produto</th>
+      <th align="right">Qtd</th>
+      <th align="right">Preço</th>
+      <th align="right">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @order.order_items.each do |item| %>
+      <tr>
+        <td><%= item.screw.description %></td>
+        <td align="right"><%= item.quantity %></td>
+        <td align="right"><%= format_price(item.unit_price) %></td>
+        <td align="right"><%= format_price(item.line_total) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="3" align="right">Subtotal</td>
+      <td align="right"><%= format_price(@order.subtotal) %></td>
+    </tr>
+    <tr>
+      <td colspan="3" align="right">Frete</td>
+      <td align="right"><%= format_price(@order.shipping) %></td>
+    </tr>
+    <tr>
+      <td colspan="3" align="right"><strong>Total</strong></td>
+      <td align="right"><strong><%= format_price(@order.total) %></strong></td>
+    </tr>
+  </tfoot>
+</table>
+
+<p>Você pode visualizar seu pedido aqui: <%= link_to "Ver pedido", order_url(@order) %></p>

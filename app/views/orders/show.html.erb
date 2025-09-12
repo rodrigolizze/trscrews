@@ -1,0 +1,64 @@
+<!-- app/views/orders/show.html.erb -->
+<div class="container py-4">
+  <h1 class="h3 mb-3">Pedido <%= @order.order_number || "#{@order.id}" %></h1>
+  <p class="mb-4">
+    Obrigado, <strong><%= @order.customer_name %></strong>!
+    Enviaremos a confirmação para <strong><%= @order.customer_email %></strong>.
+  </p>
+
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th class="text-end">Qtd</th>
+          <th class="text-end">Preço</th>
+          <th class="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @order.order_items.includes(screw: { images_attachments: :blob }).each do |item| %>
+          <tr>
+            <td>
+              <div class="d-flex gap-3">
+                <div style="width:64px;height:64px" class="border rounded d-flex align-items-center justify-content-center bg-white">
+                  <% if item.screw.images.attached? %>
+                    <%= image_tag item.screw.images.first.variant(resize_to_limit: [120,120]),
+                                  class: "img-fluid p-1", style: "object-fit:contain" %>
+                  <% else %>
+                    <span class="text-muted small">Sem imagem</span>
+                  <% end %>
+                </div>
+                <div>
+                  <strong><%= item.screw.description %></strong><br>
+                  <small class="text-muted"><%= item.screw.thread %> - <%= item.screw.surface_treatment %></small>
+                </div>
+              </div>
+            </td>
+            <td class="text-end"><%= item.quantity %></td>
+            <td class="text-end"><%= format_price(item.unit_price) %></td>
+            <td class="text-end"><%= format_price(item.line_total) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="3" class="text-end">Subtotal</th>
+          <th class="text-end"><%= format_price(@order.subtotal) %></th>
+        </tr>
+        <tr>
+          <th colspan="3" class="text-end">Frete</th>
+          <th class="text-end"><%= format_price(@order.shipping) %></th>
+        </tr>
+        <tr>
+          <th colspan="3" class="text-end">Total</th>
+          <th class="text-end h5"><%= format_price(@order.total) %></th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= link_to "Voltar ao catálogo", screws_path, class: "btn btn-outline-secondary" %>
+  </div>
+</div>

@@ -78,7 +78,7 @@
     <div class="d-flex gap-2">
       <%= link_to "Continuar comprando", screws_path, class: "btn btn-outline-secondary" %>
       <%= button_to "Esvaziar", clear_cart_path, method: :delete, form: { data: { turbo_confirm: "Esvaziar carrinho?" } }, class: "btn btn-outline-danger" %>
-      <%= link_to "Finalizar compra (stub)", "#", class: "btn btn-yellow ms-auto" %>
+      <%= link_to "Finalizar compra", checkout_path, class: "btn btn-yellow ms-auto" %>
     </div>
   <% else %>
     <div class="alert alert-info">Seu carrinho está vazio.</div>

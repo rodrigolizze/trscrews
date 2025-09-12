@@ -1,3 +1,13 @@
 module ApplicationHelper
-  include Pagy::Frontend  # # gives us pagy_nav helpers for views
+  include ActionView::Helpers::NumberHelper
+
+  # // Format money as BRL (R$ 1.234,56)
+  def format_price(value)
+    number_to_currency(value.to_d,
+      unit: "R$ ",
+      separator: ",",
+      delimiter: ".",
+      precision: 2
+    )
+  end
 end
