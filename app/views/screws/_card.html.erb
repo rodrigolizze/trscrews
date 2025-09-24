@@ -28,14 +28,23 @@
       <strong><%= format_price(screw.price) %></strong>
 
       <div class="d-flex align-items-center gap-2">
+      <%# // Stock badge: shows when 0 %>
+        <% if screw.out_of_stock? %>
+          <span class="badge bg-secondary">Indisponível</span>
+        <% end %>
+
         <%= link_to "Ver", screw_path(screw), class: "btn btn-sm btn-outline-dark" %>
 
-        <!-- Add 1 unit and go to the cart -->
-        <%= button_to "Add",
-                      add_cart_path(screw_id: screw.id),
-                      method: :post,
-                      params: { quantity: 1 },
-                      class: "btn btn-sm btn-yellow" %>
+        <!-- Add 1 unit (disabled if no stock) and go to the cart -->
+        <% if screw.in_stock? %>
+          <%= button_to "Add",
+                        add_cart_path(screw_id: screw.id),
+                        method: :post,
+                        params: { quantity: 1 },
+                        class: "btn btn-sm btn-yellow" %>
+        <% else %>
+          <button class="btn btn-sm btn-secondary" disabled>Adicionar</button>
+        <% end %>
       </div>
     </div>
   </div>

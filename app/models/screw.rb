@@ -2,6 +2,8 @@
 class Screw < ApplicationRecord
   has_many_attached :images
 
+  validates :stock, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+
   # -- Helpers --------------------------------------------------------------
   # Normalize and make a safe SQL pattern from user input
   def self.safe_pattern(str)
@@ -66,4 +68,16 @@ class Screw < ApplicationRecord
       .by_thread(filter_params[:thread])
       .by_surface(filter_params[:surface_treatment])
   end
+
+  # // Nice helpers for views/logic
+  def in_stock?
+    stock.to_i > 0
+  end
+
+  def out_of_stock?
+    !in_stock?
+  end
+
+  # // scope for queries
+  scope :in_stock, -> { where("stock > 0") }
 end

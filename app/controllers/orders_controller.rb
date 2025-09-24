@@ -32,31 +32,55 @@ class OrdersController < ApplicationController
     @order.status = :placed
     @order.placed_at = Time.current
 
-    # // Build items from the session snapshot
-    ids = session[:cart].keys
-    screws = Screw.where(id: ids).index_by(&:id)
+    # // Wrap everything in a DB transaction so stock + order are consistent
+    ActiveRecord::Base.transaction do
+      # // Load screws once and index by id
+      screw_ids = session[:cart].keys.map!(&:to_i)
+      screws_by_id = Screw.where(id: screw_ids).index_by(&:id)
 
-    session[:cart].each do |screw_id_str, qty|
-      screw = screws[screw_id_str.to_i]
-      next unless screw
-      @order.add_item!(screw, qty)
+      # // Track shortages to show a useful message if needed
+      shortages = []
+
+      session[:cart].each do |screw_id_str, qty|
+        screw = screws_by_id[screw_id_str.to_i]
+        next unless screw
+        qty = qty.to_i
+
+        # // Lock the row to avoid race conditions (two checkouts at once)
+        screw.with_lock do
+          if screw.stock < qty
+            shortages << { description: screw.description, requested: qty, available: screw.stock }
+          else
+            # // Enough stock: add item snapshot and decrement stock
+            @order.add_item!(screw, qty)
+            screw.update!(stock: screw.stock - qty)
+          end
+        end
+      end
+
+      if shortages.any?
+        # // Roll back everything: raise to abort the transaction
+        raise ActiveRecord::Rollback
+      end
+
+      @order.recalc_totals!
+
+      unless @order.save
+        # // If validations fail, rollback
+        raise ActiveRecord::Rollback
+      end
     end
 
-    # // Compute totals server-side
-    @order.recalc_totals!
-
-    if @order.save
-      # // Clear the cart after successful order
+    if @order.persisted?
       session[:cart] = {}
-
-      # Send confirmation (dev: goes to /letter_opener)
       OrderMailer.confirmation(@order).deliver_later
-      
       redirect_to @order, notice: "Pedido realizado com sucesso!"
     else
-      # // Re-render new with the summary again
+      # // Rebuild summary and show a message if there was a shortage
       rebuild_summary_for_render
-      flash.now[:alert] = "Corrija os dados para continuar."
+      flash.now[:alert] = "Alguns itens não têm estoque suficiente. Atualizamos as quantidades do carrinho."
+      # // Optional: sync the cart quantities to current stock to be friendly
+      sync_cart_to_stock!
       render :new, status: :unprocessable_entity
     end
   end
@@ -83,5 +107,19 @@ class OrdersController < ApplicationController
     @subtotal = @lines.sum { |l| l[:line_total] }
     @shipping = 0.to_d
     @total    = @subtotal + @shipping
+  end
+
+  # // If checkout failed, bring cart quantities down to available stock
+  def sync_cart_to_stock!
+    ids = session[:cart].keys.map!(&:to_i)
+    Screw.where(id: ids).each do |s|
+      key = s.id.to_s
+      qty = session[:cart][key].to_i
+      if s.stock <= 0
+        session[:cart].delete(key)
+      elsif qty > s.stock
+        session[:cart][key] = s.stock
+      end
+    end
   end
 end

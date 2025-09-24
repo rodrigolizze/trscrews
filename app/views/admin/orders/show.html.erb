@@ -48,6 +48,12 @@
             <td class="text-end"><%= item.quantity %></td>
             <td class="text-end"><%= format_price(item.unit_price) %></td>
             <td class="text-end"><%= format_price(item.line_total) %></td>
+            <td>
+              <%= item.screw.description %>
+              <% if item.screw.stock <= 2 %>
+                <br><small class="text-danger">Estoque baixo: <%= item.screw.stock %> un.</small>
+              <% end %>
+            </td>
           </tr>
         <% end %>
       </tbody>
