@@ -1,4 +1,9 @@
-<!-- app/views/admin/orders/show.html.erb -->
+<!-- Small admin navbar (optional) -->
+<div class="mb-3 d-flex gap-2">
+  <%= link_to "Pedidos", admin_root_path, class: "btn btn-sm btn-outline-secondary" %>
+  <%= link_to "Screws (Estoque)", admin_screws_path, class: "btn btn-sm btn-outline-secondary" %>
+</div>
+
 <div class="container py-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h1 class="h4 mb-0">Pedido <%= @order.order_number || "##{@order.id}" %></h1>

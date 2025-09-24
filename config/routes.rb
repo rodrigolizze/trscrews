@@ -17,8 +17,14 @@ Rails.application.routes.draw do
 
   # // Admin (basic auth; no user system yet)
   namespace :admin do
+    get 'screws/index'
+    get 'screws/edit'
+    get 'screws/update'
     root to: "orders#index"
     resources :orders, only: [:index, :show, :update]
+
+    # // Add a small CRUD just for stock (index + edit + update)
+    resources :screws, only: [:index, :edit, :update]
   end
 
   # // Dev-only email viewer (mount at top-level, NOT inside the cart block)

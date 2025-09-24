@@ -1,0 +1,36 @@
+<div class="container py-4">
+  <h1 class="h4 mb-3">Editar estoque</h1>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex gap-3 mb-3 align-items-center">
+        <div style="width:72px;height:72px" class="border rounded d-flex align-items-center justify-content-center bg-white">
+          <% if @screw.images.attached? %>
+            <%= image_tag @screw.images.first.variant(resize_to_limit: [120,120]),
+                          class: "img-fluid p-1", style: "object-fit:contain" %>
+          <% else %>
+            <span class="text-muted small">Sem imagem</span>
+          <% end %>
+        </div>
+        <div>
+          <strong><%= @screw.description %></strong><br>
+          <small class="text-muted"><%= @screw.thread %> — <%= @screw.surface_treatment %></small><br>
+          <small class="text-muted"><%= @screw.automaker %> / <%= @screw.model %></small>
+        </div>
+      </div>
+
+      <%= form_with model: [:admin, @screw], local: true do |f| %>
+        <div class="mb-3" style="max-width: 240px;">
+          <%= f.label :stock, "Estoque", class: "form-label" %>
+          <%= f.number_field :stock, min: 0, step: 1, class: "form-control" %>
+          <div class="form-text">Use números inteiros. Não pode ser negativo.</div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <%= f.submit "Salvar", class: "btn btn-yellow" %>
+          <%= link_to "Cancelar", admin_screws_path, class: "btn btn-outline-secondary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

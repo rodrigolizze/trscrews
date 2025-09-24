@@ -1,0 +1,67 @@
+<div class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">Screws — Estoque</h1>
+
+    <%= form_with url: admin_screws_path, method: :get, local: true, class: "d-flex gap-2" do %>
+      <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por descrição, montadora, modelo" %>
+      <%= select_tag :sort,
+            options_for_select([["Criados", "created_at"], ["Preço", "price"], ["Estoque", "stock"], ["Montadora", "automaker"], ["Modelo", "model"]], @sort),
+            class: "form-select" %>
+      <%= select_tag :dir,
+            options_for_select([["↓ desc", "desc"], ["↑ asc", "asc"]], @dir),
+            class: "form-select" %>
+      <%= submit_tag "Filtrar", class: "btn btn-outline-secondary" %>
+    <% end %>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th style="width:72px"></th>
+          <th>Descrição</th>
+          <th>Rosca</th>
+          <th>Montadora / Modelo</th>
+          <th class="text-end">Preço</th>
+          <th class="text-end">Estoque</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @screws.each do |s| %>
+          <tr>
+            <td>
+              <div style="width:56px;height:56px" class="border rounded d-flex align-items-center justify-content-center bg-white">
+                <% if s.images.attached? %>
+                  <%= image_tag s.images.first.variant(resize_to_limit: [120,120]),
+                                class: "img-fluid p-1", style: "object-fit:contain" %>
+                <% else %>
+                  <span class="text-muted small">—</span>
+                <% end %>
+              </div>
+            </td>
+            <td>
+              <strong><%= s.description %></strong><br>
+              <small class="text-muted"><%= s.surface_treatment %></small>
+            </td>
+            <td><%= s.thread %></td>
+            <td><%= s.automaker %> / <%= s.model %></td>
+            <td class="text-end"><%= format_price(s.price) %></td>
+            <td class="text-end">
+              <% if s.stock.to_i <= 0 %>
+                <span class="badge bg-secondary">0 (Indisponível)</span>
+              <% elsif s.stock.to_i <= 2 %>
+                <span class="badge bg-danger"><%= s.stock %></span>
+              <% else %>
+                <span class="badge bg-success"><%= s.stock %></span>
+              <% end %>
+            </td>
+            <td class="text-end">
+              <%= link_to "Editar estoque", edit_admin_screw_path(s), class: "btn btn-sm btn-outline-dark" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
