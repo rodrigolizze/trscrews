@@ -15,11 +15,14 @@ class OrdersController < ApplicationController
     end
 
     @subtotal = @lines.sum { |l| l[:line_total] }
-    @shipping = 0.to_d  # // placeholder
-    @total    = @subtotal + @shipping
 
-    # // For the customer form
+    # // For the customer form (blank order just to reuse the shipping rule)
     @order = Order.new
+
+    # // Preview shipping with the same rule the model will use at save time
+    # // (keeps UI and DB computation consistent)
+    @shipping = @order.compute_shipping(@subtotal)
+    @total    = @subtotal + @shipping
   end
 
   # // Step 2: Persist order + items; clear session cart; show confirmation
@@ -63,10 +66,11 @@ class OrdersController < ApplicationController
         raise ActiveRecord::Rollback
       end
 
+      # // IMPORTANT: totals now include shipping (computed in the model)
       @order.recalc_totals!
 
       unless @order.save
-        # // If validations fail, rollback
+        # // If validations fail (e.g., address/cep), rollback
         raise ActiveRecord::Rollback
       end
     end
@@ -93,7 +97,11 @@ class OrdersController < ApplicationController
   private
 
   def order_params
-    params.require(:order).permit(:customer_name, :customer_email)
+    # // Now we also accept address fields from the checkout form
+    params.require(:order).permit(
+      :customer_name, :customer_email,
+      :cep, :street, :number, :complement, :district, :city, :state
+    )
   end
 
   # // Helper to rebuild checkout summary if we need to re-render :new
@@ -105,7 +113,10 @@ class OrdersController < ApplicationController
       { screw: s, qty: qty, unit_price: s.price, line_total: s.price * qty }
     end
     @subtotal = @lines.sum { |l| l[:line_total] }
-    @shipping = 0.to_d
+
+    # // Recompute shipping preview consistently with the model rule
+    tmp_order = @order || Order.new
+    @shipping = tmp_order.compute_shipping(@subtotal)
     @total    = @subtotal + @shipping
   end
 

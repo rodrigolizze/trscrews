@@ -75,13 +75,70 @@
               <%= f.email_field :customer_email, class: "form-control", required: true %>
             </div>
 
+            <hr class="my-4">
+
+            <h6 class="mb-3">Endereço de entrega</h6>
+            <div class="mb-3">
+              <%= f.label :cep, "CEP", class: "form-label" %>
+              <%= f.text_field :cep, class: "form-control", placeholder: "12345-678", required: true, maxlength: 9 %>
+              <div class="form-text">Apenas números ou com hífen.</div>
+            </div>
+
+            <div class="mb-3">
+              <%= f.label :street, "Rua", class: "form-label" %>
+              <%= f.text_field :street, class: "form-control", required: true %>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-6">
+                <%= f.label :number, "Número", class: "form-label" %>
+                <%= f.text_field :number, class: "form-control", required: true %>
+              </div>
+              <div class="col-6">
+                <%= f.label :complement, "Complemento", class: "form-label" %>
+                <%= f.text_field :complement, class: "form-control" %>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+              <div class="col-6">
+                <%= f.label :district, "Bairro", class: "form-label" %>
+                <%= f.text_field :district, class: "form-control", required: true %>
+              </div>
+              <div class="col-6">
+                <%= f.label :city, "Cidade", class: "form-label" %>
+                <%= f.text_field :city, class: "form-control", required: true %>
+              </div>
+            </div>
+
+            <div class="mb-3 mt-1">
+              <%= f.label :state, "UF", class: "form-label" %>
+              <%= f.text_field :state, class: "form-control", placeholder: "SP", required: true, maxlength: 2 %>
+            </div>
+
+            <div class="border-top pt-3 mt-3 d-flex align-items-center justify-content-between">
+              <div>
+                <div class="small text-muted">Subtotal</div>
+                <div><%= format_price(@subtotal) %></div>
+              </div>
+              <div>
+                <div class="small text-muted">Frete</div>
+                <div><%= format_price(@shipping) %></div>
+              </div>
+              <div>
+                <div class="small text-muted">Total</div>
+                <div class="h5 mb-0"><%= format_price(@total) %></div>
+              </div>
+            </div>
+
+
             <div class="d-grid">
               <%= f.submit "Confirmar pedido", class: "btn btn-yellow" %>
             </div>
           <% end %>
 
           <p class="text-muted small mt-3 mb-0">
-            * Pagamento será adicionado depois (ex.: Stripe/PIX). Este é um pedido de teste.
+            * Pagamento será adicionado depois (ex.: Stripe/PIX). Este é um pedido de teste. Regra provisória: frete R$ 20,00 (grátis acima de R$ 150,00).
           </p>
         </div>
       </div>

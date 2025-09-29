@@ -1,6 +1,22 @@
 <!-- app/views/orders/show.html.erb -->
 <div class="container py-4">
   <h1 class="h3 mb-3">Pedido <%= @order.order_number || "#{@order.id}" %></h1>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="p-3 bg-light rounded">
+        <h6 class="mb-2">Entrega</h6>
+        <div class="small">
+          <div><strong><%= @order.customer_name %></strong></div>
+          <div><%= @order.street %>, <%= @order.number %> <%= @order.complement.presence %></div>
+          <div><%= @order.district %></div>
+          <div><%= @order.city %> - <%= @order.state %></div>
+          <div>CEP: <%= @order.cep %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <p class="mb-4">
     Obrigado, <strong><%= @order.customer_name %></strong>!
     Enviaremos a confirmação para <strong><%= @order.customer_email %></strong>.

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_24_164518) do
+ActiveRecord::Schema[7.1].define(version: 2025_09_26_144617) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -65,6 +65,13 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_24_164518) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "order_number"
+    t.string "cep", default: "", null: false
+    t.string "street", default: "", null: false
+    t.string "number", default: "", null: false
+    t.string "complement", default: "", null: false
+    t.string "district", default: "", null: false
+    t.string "city", default: "", null: false
+    t.string "state", default: "", null: false
     t.index ["order_number"], name: "index_orders_on_order_number", unique: true
   end
 

@@ -7,16 +7,27 @@ class Order < ApplicationRecord
   validates :customer_name,  presence: true
   validates :customer_email, presence: true
 
+  # // Address presence (complement optional on the form; it can stay empty)
+  validates :cep, :street, :number, :district, :city, :state, presence: true
+
+  # // CEP format: accepts "12345-678" or "12345678"
+  validates :cep, format: { with: /\A\d{5}-?\d{3}\z/, message: "formato inválido (ex.: 12345-678)" }
+
   # Generate a unique, readable number once the record exists
   after_create_commit :assign_order_number!
 
   # // Recalculate totals based on order_items
   def recalc_totals!
     self.subtotal = order_items.sum(:line_total)
-    # // Shipping: placeholder (flat 0 for now). Change as needed.
-    self.shipping = 0
+    self.shipping = compute_shipping(subtotal)  # // central place to compute shipping
     self.total    = subtotal + shipping
   end
+
+  # // Simple shipping rule: R$ 20,00; grátis acima de R$ 150,00
+  def compute_shipping(subtotal_value)
+    subtotal_value.to_d >= 150 ? 0.to_d : 20.to_d
+  end
+
 
   # // Convenience for adding an item snapshot
   def add_item!(screw, qty)
