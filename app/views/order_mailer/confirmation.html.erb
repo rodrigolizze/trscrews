@@ -11,6 +11,14 @@
       <th align="right">Total</th>
     </tr>
   </thead>
+  <h3>Endereço de entrega</h3>
+  <p>
+    <strong><%= @order.customer_name %></strong><br>
+    <%= @order.street %>, <%= @order.number %> <%= @order.complement.presence %><br>
+    <%= @order.district %><br>
+    <%= @order.city %> - <%= @order.state %><br>
+    CEP: <%= @order.cep %>
+  </p>
   <tbody>
     <% @order.order_items.each do |item| %>
       <tr>
