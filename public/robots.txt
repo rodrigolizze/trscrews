@@ -1,1 +1,26 @@
 # See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+# public/robots.txt
+# -------------------------------------------
+# Robots rules for TR AutoParts (Rails)
+# Purpose:
+# - Allow bots to crawl public pages (home, catalog, product pages)
+# - Disallow internal/admin/checkout/cart pages
+# - Point bots to the sitemap.xml (we’ll add it next)
+# -------------------------------------------
+
+User-agent: *
+# --- Disallow private/system routes ---
+Disallow: /admin/
+Disallow: /cart
+Disallow: /cart/
+Disallow: /orders/new
+Disallow: /letter_opener/
+Disallow: /rails/
+Disallow: /up
+
+# --- Everything else is allowed ---
+Allow: /
+
+# --- IMPORTANT: Update this to your production domain before going live ---
+# Example after deploy: https://trautoparts.com.br/sitemap.xml
+Sitemap: https://example.com/sitemap.xml
