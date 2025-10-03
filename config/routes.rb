@@ -15,6 +15,13 @@ Rails.application.routes.draw do
   resources :orders, only: [:new, :create, :show]
   get "/checkout", to: "orders#new", as: :checkout # // pretty alias
 
+
+    # ViaCEP lookup endpoint
+  # // Example: GET /cep/01311-000 → JSON like {street, district, city, state, cep}
+  # // We set a JSON default so you can call it easily from JS.
+  get "/cep/:cep", to: "cep#lookup", defaults: { format: :json }, as: :cep_looku
+
+
   # // Admin (basic auth; no user system yet)
   namespace :admin do
     get 'screws/index'
