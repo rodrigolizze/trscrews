@@ -72,3 +72,4 @@ gem 'faker'
 gem "sassc-rails"
 gem "bootstrap", "~> 5.3.0"
 gem "pagy"  # # lightweight pagination
+gem "friendly_id", "~> 5.5"

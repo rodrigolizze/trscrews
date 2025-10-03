@@ -4,6 +4,13 @@
     <title>Trscrews</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
+
+    <!-- // SEO meta (title, description, OG/Twitter) -->
+    <%= render_basic_meta_tags %>
+
+    <!-- Canonical URL -->
+    <%= render_canonical_tag %>
+    
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 

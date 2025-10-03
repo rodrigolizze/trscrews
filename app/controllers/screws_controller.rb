@@ -27,6 +27,6 @@ class ScrewsController < ApplicationController
   end
 
   def show
-    @screw = Screw.find(params[:id])
+    @screw = Screw.friendly.find(params[:id])
   end
 end
