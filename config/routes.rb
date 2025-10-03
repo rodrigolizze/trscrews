@@ -47,4 +47,8 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "posts#index"
+
+  # Sitemap (SEO)
+  # // Serve XML sitemap at /sitemap.xml
+  get "/sitemap.xml", to: "sitemaps#show", defaults: { format: :xml }
 end
