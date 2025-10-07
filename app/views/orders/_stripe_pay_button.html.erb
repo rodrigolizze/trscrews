@@ -1,0 +1,37 @@
+<%# // Reusable Stripe Checkout button for an order (@order must be set) %>
+
+<%# // Optional success/cancel hints via URL params from Checkout redirect %>
+<% if params[:paid].present? %>
+  <div class="alert alert-success mb-3">
+    Pagamento em processamento. Você receberá a confirmação por email.
+  </div>
+<% elsif params[:canceled].present? %>
+  <div class="alert alert-warning mb-3">
+    Pagamento cancelado. Você pode tentar novamente abaixo.
+  </div>
+<% end %>
+
+<%# // Show button only if the order is pending (fallback: show if enum not added yet) %>
+<% show_button =
+     if @order.respond_to?(:payment_status)
+       @order.payment_status.to_s == "pending"
+     else
+       true
+     end %>
+
+<% if show_button %>
+  <div class="d-grid gap-2">
+    <%= button_to "Pagar com cartão (Stripe • teste)",
+                  checkout_sessions_path,
+                  method: :post,
+                  params: { order_id: @order.id },
+                  class: "btn btn-success btn-lg" %>
+    <small class="text-muted">
+      Você será redirecionado para a página de pagamento segura da Stripe.
+    </small>
+  </div>
+<% else %>
+  <div class="alert alert-info mb-0">
+    Este pedido não está pendente de pagamento.
+  </div>
+<% end %>

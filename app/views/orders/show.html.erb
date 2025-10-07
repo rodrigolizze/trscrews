@@ -16,7 +16,7 @@
       </div>
     </div>
   </div>
-  
+
   <p class="mb-4">
     Obrigado, <strong><%= @order.customer_name %></strong>!
     Enviaremos a confirmação para <strong><%= @order.customer_email %></strong>.
@@ -74,6 +74,9 @@
     </table>
   </div>
 
+  <%# === Stripe pay button (Checkout) === %>
+  <%= render "stripe_pay_button" %>  <%# uses @order from the controller %>
+  
   <div class="d-flex gap-2">
     <%= link_to "Voltar ao catálogo", screws_path, class: "btn btn-outline-secondary" %>
   </div>

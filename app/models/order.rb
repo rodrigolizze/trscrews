@@ -3,6 +3,9 @@ class Order < ApplicationRecord
 
   enum status: { draft: 0, placed: 1, cancelled: 2, shipped: 3 }
 
+  # // 0=pending, 1=paid, 2=failed
+  enum payment_status: { pending: 0, paid: 1, failed: 2 }, _default: :pending
+
   # // Basic presence
   validates :customer_name,  presence: true
   validates :customer_email, presence: true
@@ -48,5 +51,10 @@ class Order < ApplicationRecord
     number  = format("SC-%s-%06d", yy_mm, id)
     # Avoid extra callbacks by update_column
     update_column(:order_number, number)
+  end
+  # HELPER
+  def mark_paid!(method:, reference:)
+    update!(payment_status: :paid, paid_at: Time.current,
+            payment_method: method, payment_reference: reference)
   end
 end
