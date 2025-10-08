@@ -1,0 +1,51 @@
+<h2 style="margin:0 0 12px 0;">Pagamento confirmado ✅</h2>
+<p style="margin:0 0 16px 0;">
+  Olá <strong><%= @order.customer_name %></strong>, recebemos o pagamento do seu pedido
+  <strong>#<%= @order.id %></strong>.
+</p>
+
+<p style="margin:0 0 16px 0;">
+  <small>Data do pagamento: <%= l(@order.paid_at, format: :short) rescue @order.paid_at %></small><br>
+  <small>Método: <%= @order.payment_method.presence || "Stripe" %></small><br>
+  <small>Ref.: <%= @order.payment_reference %></small>
+</p>
+
+<table width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse;border:1px solid #eee;">
+  <thead>
+    <tr style="background:#f8f8f8;">
+      <th align="left">Produto</th>
+      <th align="right">Qtd</th>
+      <th align="right">Preço</th>
+      <th align="right">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @items.each do |item| %>
+      <tr>
+        <td><%= item.screw&.description || "Item ##{item.id}" %></td>
+        <td align="right"><%= item.quantity %></td>
+        <td align="right"><%= format_price(item.unit_price) %></td>
+        <td align="right"><strong><%= format_price(item.line_total) %></strong></td>
+      </tr>
+    <% end %>
+  </tbody>
+  <tfoot>
+    <tr>
+      <th colspan="3" align="right">Subtotal</th>
+      <th align="right"><%= format_price(@order.subtotal) %></th>
+    </tr>
+    <tr>
+      <th colspan="3" align="right">Frete</th>
+      <th align="right"><%= format_price(@order.shipping || 0) %></th>
+    </tr>
+    <tr>
+      <th colspan="3" align="right">Total</th>
+      <th align="right"><%= format_price(@order.total) %></th>
+    </tr>
+  </tfoot>
+</table>
+
+<p style="margin-top:16px;">
+  Agradecemos a compra! Em breve você receberá atualizações sobre o envio. <br>
+  <a href="<%= order_url(@order) %>">Ver pedido</a>
+</p>

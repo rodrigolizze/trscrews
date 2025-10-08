@@ -25,7 +25,8 @@
                   checkout_sessions_path,
                   method: :post,
                   params: { order_id: @order.id },
-                  class: "btn btn-success btn-lg" %>
+                  class: "btn btn-success btn-lg",
+                  form: { data: { turbo: false } } %>  <!-- 👈 add this -->
     <small class="text-muted">
       Você será redirecionado para a página de pagamento segura da Stripe.
     </small>

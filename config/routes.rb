@@ -51,4 +51,5 @@ Rails.application.routes.draw do
   # // POST /checkout_sessions?order_id=123
   # // The controller will build a Stripe Checkout Session and redirect.
   post "/checkout_sessions", to: "checkout_sessions#create", as: :checkout_sessions
+  post "/stripe/webhooks", to: "stripe_webhooks#receive"
 end

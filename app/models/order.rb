@@ -43,6 +43,12 @@ class Order < ApplicationRecord
     order_items.build(screw: screw, quantity: qty, unit_price: unit_price, line_total: line_total)
   end
 
+  # HELPER
+  def mark_paid!(method:, reference:)
+    update!(payment_status: :paid, paid_at: Time.current,
+            payment_method: method, payment_reference: reference)
+  end
+  
   private
 
   def assign_order_number!
@@ -51,10 +57,5 @@ class Order < ApplicationRecord
     number  = format("SC-%s-%06d", yy_mm, id)
     # Avoid extra callbacks by update_column
     update_column(:order_number, number)
-  end
-  # HELPER
-  def mark_paid!(method:, reference:)
-    update!(payment_status: :paid, paid_at: Time.current,
-            payment_method: method, payment_reference: reference)
   end
 end
