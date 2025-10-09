@@ -22,12 +22,22 @@ Rails.application.routes.draw do
   get "/cep/:cep", to: "cep#lookup", defaults: { format: :json }, as: :cep_looku
 
 
-  # // Admin (basic auth; no user system yet)
+  # // Admin area
   namespace :admin do
-    root to: "orders#index"
+    root to: "orders#index"  # if you already have another root here, keep it
+
+    # Orders already exist…
     resources :orders, only: [:index, :show, :update]
-    resources :screws, only: [:index, :edit, :update]
-  end
+
+    # Screws CRUD (NEW)
+    resources :screws do
+      # DELETE /admin/screws/:id/images/:attachment_id
+      # // lets the admin remove a single uploaded image from a screw
+      member do
+        delete :destroy_image
+      end
+    end
+end
 
   # // Dev-only email viewer (mount at top-level, NOT inside the cart block)
   if Rails.env.development?

@@ -1,0 +1,108 @@
+<%# app/views/admin/screws/_form.html.erb %>
+<%# // Reusable form for New/Edit (we'll render this from new.html.erb and edit.html.erb) %>
+
+<%# // Use the namespaced model path so Rails posts to /admin/screws or /admin/screws/:id %>
+<%= form_with model: [:admin, @screw], local: true, html: { multipart: true, class: "card shadow-sm" } do |f| %>
+  <div class="card-body">
+    <%# // Show validation errors, if any %>
+    <% if @screw.errors.any? %>
+      <div class="alert alert-danger">
+        <strong><%= pluralize(@screw.errors.count, "erro") %> ao salvar:</strong>
+        <ul class="mb-0">
+          <% @screw.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%# == Main fields ==================================================== %>
+    <div class="row g-3">
+      <div class="col-md-8">
+        <div class="mb-3">
+          <%= f.label :description, "Descrição", class: "form-label" %>
+          <%= f.text_field :description, class: "form-control", required: true %>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-4">
+            <%= f.label :thread, "Rosca (ex.: M12-1.5)", class: "form-label" %>
+            <%= f.text_field :thread, class: "form-control" %>
+          </div>
+          <div class="col-md-4">
+            <%= f.label :thread_length, "Comprimento da rosca", class: "form-label" %>
+            <%= f.text_field :thread_length, class: "form-control" %>
+          </div>
+          <div class="col-md-4">
+            <%= f.label :resistance_class, "Classe de resistência", class: "form-label" %>
+            <%= f.text_field :resistance_class, class: "form-control" %>
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-md-4">
+            <%= f.label :surface_treatment, "Tratamento", class: "form-label" %>
+            <%= f.text_field :surface_treatment, class: "form-control" %>
+          </div>
+          <div class="col-md-4">
+            <%= f.label :automaker, "Montadora", class: "form-label" %>
+            <%= f.text_field :automaker, class: "form-control" %>
+          </div>
+          <div class="col-md-4">
+            <%= f.label :model, "Modelo", class: "form-label" %>
+            <%= f.text_field :model, class: "form-control" %>
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-md-4">
+            <%= f.label :price, "Preço (R$)", class: "form-label" %>
+            <%= f.number_field :price, step: "0.01", min: 0, class: "form-control", required: true %>
+          </div>
+          <div class="col-md-4">
+            <%= f.label :stock, "Estoque", class: "form-label" %>
+            <%= f.number_field :stock, step: 1, min: 0, class: "form-control", required: true %>
+          </div>
+        </div>
+      </div>
+
+      <%# == Images upload / preview ===================================== %>
+      <div class="col-md-4">
+        <label class="form-label">Imagens</label>
+        <%# // Multiple files input; Active Storage takes it from here %>
+        <div class="mb-2">
+          <%= f.file_field :images, multiple: true, class: "form-control", accept: "image/*" %>
+          <div class="form-text">Você pode selecionar várias imagens.</div>
+        </div>
+
+        <%# // Existing images preview with a tiny remove button %>
+        <% if @screw.images.attached? %>
+          <div class="d-flex flex-wrap gap-2">
+            <% @screw.images.each do |att| %>
+              <div class="position-relative border rounded p-1 bg-white" style="width: 110px;">
+                <%= image_tag att.variant(resize_to_limit: [200, 200]), class: "img-fluid", alt: @screw.description %>
+                <%# // Remove single image: hits DELETE /admin/screws/:id/images/:attachment_id %>
+                <%= link_to "×",
+                  destroy_image_admin_screw_path(@screw, attachment_id: att.id),
+                  data: { turbo_method: :delete, turbo_confirm: "Remover esta imagem?" },
+                  class: "btn btn-sm btn-outline-danger position-absolute top-0 end-0 px-2 py-0",
+                  title: "Remover" %>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="text-muted small">Sem imagens ainda.</div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-footer d-flex gap-2">
+    <%= f.submit (@screw.persisted? ? "Atualizar" : "Criar"), class: "btn btn-primary" %>
+    <%= link_to "Cancelar", (@screw.persisted? ? admin_screw_path(@screw) : admin_screws_path), class: "btn btn-outline-secondary" %>
+    <%# // Danger zone: allow delete on edit page %>
+    <% if @screw.persisted? %>
+      <%= link_to "Excluir", admin_screw_path(@screw),
+      data: { turbo_method: :delete, turbo_confirm: "Tem certeza? Esta ação não pode ser desfeita." },
+      class: "btn btn-outline-danger ms-auto" %>
+    <% end %>
+  </div>
+<% end %>
