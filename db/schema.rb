@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_03_192443) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_06_195607) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -72,7 +72,13 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_03_192443) do
     t.string "district", default: "", null: false
     t.string "city", default: "", null: false
     t.string "state", default: "", null: false
+    t.integer "payment_status", default: 0, null: false
+    t.datetime "paid_at"
+    t.string "payment_method"
+    t.string "payment_reference"
     t.index ["order_number"], name: "index_orders_on_order_number", unique: true
+    t.index ["payment_reference"], name: "index_orders_on_payment_reference"
+    t.index ["payment_status"], name: "index_orders_on_payment_status"
   end
 
   create_table "screws", force: :cascade do |t|

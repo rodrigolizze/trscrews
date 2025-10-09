@@ -47,7 +47,10 @@ Rails.application.configure do
 
   # Helpful for URL helpers inside emails
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
-  
+
+  # Force jobs inline so emails send immediately in dev
+  config.active_job.queue_adapter = :inline
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 

@@ -1,26 +1,35 @@
 class Admin::ScrewsController < ApplicationController
+  before_action :require_admin_basic_auth
+
+  # // Find by slug OR numeric id (FriendlyId handles both)
+  before_action :set_screw, only: [:edit, :update]
+
+  # == LIST ===============================================================
   def index
-    # // Basic search & sorting (optional nicety)
-    @q = params[:q].to_s.strip
+    # // Basic search & sorting (same as your version)
+    @q   = params[:q].to_s.strip
     @sort = params[:sort].presence_in(%w[created_at price stock automaker model]) || "created_at"
     @dir  = params[:dir].presence_in(%w[asc desc]) || "desc"
 
     scope = Screw.all
-    scope = scope.where("description ILIKE :q OR automaker ILIKE :q OR model ILIKE :q", q: "%#{@q}%") if @q.present?
+    if @q.present?
+      # // ILIKE works on Postgres; in SQLite dev it behaves as case-insensitive LIKE
+      scope = scope.where("description ILIKE :q OR automaker ILIKE :q OR model ILIKE :q", q: "%#{@q}%")
+    end
 
-    @screws = scope.order(Arel.sql("#{@sort} #{@dir}")).limit(300).includes(images_attachments: :blob)
+    @screws = scope.order(Arel.sql("#{@sort} #{@dir}"))
+                   .limit(300)
+                   .includes(images_attachments: :blob)
   end
 
-  # // GET /admin/screws/:id/edit
+  # == EDIT ===============================================================
   def edit
-    @screw = Screw.find(params[:id])  # // sets @screw → edit view uses it
+    # // @screw is set by set_screw
   end
 
-  # // PATCH /admin/screws/:id
+  # == UPDATE =============================================================
   def update
-    @screw = Screw.find(params[:id])
-
-    # // Permit only stock to avoid accidental field edits
+    # // Only stock is editable here (as in your version)
     if @screw.update(screw_params)
       redirect_to admin_screws_path, notice: "Estoque atualizado para #{@screw.stock}."
     else
@@ -31,7 +40,12 @@ class Admin::ScrewsController < ApplicationController
 
   private
 
+  # // FriendlyId-aware finder
+  def set_screw
+    @screw = Screw.friendly.find(params[:id])  # // accepts slug or id
+  end
+
   def screw_params
-    params.require(:screw).permit(:stock)  # // only stock is editable here
+    params.require(:screw).permit(:stock)      # // only stock is editable
   end
 end

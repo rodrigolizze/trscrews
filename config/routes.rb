@@ -24,13 +24,8 @@ Rails.application.routes.draw do
 
   # // Admin (basic auth; no user system yet)
   namespace :admin do
-    get 'screws/index'
-    get 'screws/edit'
-    get 'screws/update'
     root to: "orders#index"
     resources :orders, only: [:index, :show, :update]
-
-    # // Add a small CRUD just for stock (index + edit + update)
     resources :screws, only: [:index, :edit, :update]
   end
 
@@ -51,4 +46,10 @@ Rails.application.routes.draw do
   # Sitemap (SEO)
   # // Serve XML sitemap at /sitemap.xml
   get "/sitemap.xml", to: "sitemaps#show", defaults: { format: :xml }
+
+  # Stripe Checkout (create a Session)
+  # // POST /checkout_sessions?order_id=123
+  # // The controller will build a Stripe Checkout Session and redirect.
+  post "/checkout_sessions", to: "checkout_sessions#create", as: :checkout_sessions
+  post "/stripe/webhooks", to: "stripe_webhooks#receive"
 end

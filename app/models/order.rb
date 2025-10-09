@@ -3,6 +3,9 @@ class Order < ApplicationRecord
 
   enum status: { draft: 0, placed: 1, cancelled: 2, shipped: 3 }
 
+  # // 0=pending, 1=paid, 2=failed
+  enum payment_status: { pending: 0, paid: 1, failed: 2 }, _default: :pending
+
   # // Basic presence
   validates :customer_name,  presence: true
   validates :customer_email, presence: true
@@ -38,6 +41,29 @@ class Order < ApplicationRecord
     line_total = unit_price * qty
 
     order_items.build(screw: screw, quantity: qty, unit_price: unit_price, line_total: line_total)
+  end
+
+  def paid?
+    if respond_to?(:payment_status) && self.payment_status.present?
+      # If using an enum like payment_status: { pending: 0, paid: 1, cancelled: 2 }
+      self.payment_status.to_s == "paid" || self.payment_status == "paid"
+    else
+      self.paid_at.present?
+    end
+  end
+
+  # HELPER
+  def mark_paid!(method:, reference:)
+    update!(payment_status: :paid, paid_at: Time.current,
+            payment_method: method, payment_reference: reference)
+  end
+
+  def payment_pending?
+    if respond_to?(:payment_status) && self.payment_status.present?
+      self.payment_status.to_s == "pending"
+    else
+      !paid?
+    end
   end
 
   private

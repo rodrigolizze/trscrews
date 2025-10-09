@@ -73,3 +73,4 @@ gem "sassc-rails"
 gem "bootstrap", "~> 5.3.0"
 gem "pagy"  # # lightweight pagination
 gem "friendly_id", "~> 5.5"
+gem "stripe", "~> 11.0"
