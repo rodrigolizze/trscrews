@@ -11,13 +11,8 @@
   </div>
 <% end %>
 
-<%# // Show button only if the order is pending (fallback: show if enum not added yet) %>
-<% show_button =
-     if @order.respond_to?(:payment_status)
-       @order.payment_status.to_s == "pending"
-     else
-       true
-     end %>
+<%# // Decide if we should show the Stripe button ------------------------ %>
+<% show_button = !@order.paid? %>  <!-- // show only when NOT paid -->
 
 <% if show_button %>
   <div class="d-grid gap-2">
@@ -26,7 +21,7 @@
                   method: :post,
                   params: { order_id: @order.id },
                   class: "btn btn-success btn-lg",
-                  form: { data: { turbo: false } } %>  <!-- 👈 add this -->
+                  form: { data: { turbo: false } } %>  <!-- // non-Turbo POST to follow Stripe redirect -->
     <small class="text-muted">
       Você será redirecionado para a página de pagamento segura da Stripe.
     </small>

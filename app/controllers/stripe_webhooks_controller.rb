@@ -88,24 +88,25 @@ class StripeWebhooksController < ApplicationController
   def mark_paid_and_email(order, payment_ref)
     Rails.logger.info("[Stripe] Marking order #{order.id} paid (ref=#{payment_ref})")
 
-    if order.respond_to?(:payment_status)
-      if order.paid? && order.payment_reference == payment_ref
-        Rails.logger.info("[Stripe] Already paid; idempotent skip")
-        return
-      end
-      order.mark_paid!(method: "stripe", reference: payment_ref)
-    else
-      order.update(paid_at: Time.current, payment_method: "stripe", payment_reference: payment_ref)
+    # idempotency: skip if already paid with same ref
+    if order.payment_reference == payment_ref && (order.respond_to?(:paid?) ? order.paid? : order.paid_at.present?)
+      Rails.logger.info("[Stripe] Already paid with same ref; skipping")
+      return
     end
 
-    # 🔊 LOG before sending
-    Rails.logger.info("[Stripe] About to send payment_received email to #{order.customer_email.inspect} for order #{order.id}")
+    attrs = {
+      paid_at:           Time.current,
+      payment_method:    "stripe",
+      payment_reference: payment_ref
+    }
+    attrs[:payment_status] = :paid if order.respond_to?(:payment_status)
+    order.update!(attrs)
 
-    # 👉 while debugging: send synchronously so any template error explodes here
+    # 🔊 debug logs + synchronous delivery to surface errors
+    Rails.logger.info("[Stripe] About to send payment_received email to #{order.customer_email.inspect} for order #{order.id}")
     mail = OrderMailer.payment_received(order)
     Rails.logger.info("[Stripe] Built mail subject=#{mail.subject.inspect}")
-    mail.deliver_later
-
+    mail.deliver_now
     Rails.logger.info("[Stripe] Payment email SENT for order #{order.id}")
   end
 end

@@ -2,6 +2,32 @@
 <div class="container py-4">
   <h1 class="h3 mb-3">Pedido <%= @order.order_number || "#{@order.id}" %></h1>
 
+  <%# // Payment status badge ------------------------------------------------ %>
+  <% status_label, status_class =
+      if @order.paid?
+        ["Pago", "success"]        # green badge
+      else
+        ["Pendente", "warning"]    # yellow badge
+      end %>
+
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <h1 class="h4 mb-0">Pedido #<%= @order.id %></h1>
+    <span class="badge bg-<%= status_class %>"><%= status_label %></span>
+  </div>
+
+  <%# // Optional: show payment details when paid %>
+  <% if @order.paid? %>
+    <div class="alert alert-success py-2">
+      Pagamento recebido
+      <% if @order.paid_at.present? %>
+        em <%= l(@order.paid_at, format: :short) rescue @order.paid_at %>
+      <% end %>.
+      <% if @order.payment_reference.present? %>
+        <span class="text-muted">Ref: <%= @order.payment_reference %></span>
+      <% end %>
+    </div>
+  <% end %>
+
   <div class="row g-3 mb-4">
     <div class="col-md-6">
       <div class="p-3 bg-light rounded">
@@ -76,7 +102,7 @@
 
   <%# === Stripe pay button (Checkout) === %>
   <%= render "stripe_pay_button" %>  <%# uses @order from the controller %>
-  
+
   <div class="d-flex gap-2">
     <%= link_to "Voltar ao catálogo", screws_path, class: "btn btn-outline-secondary" %>
   </div>
