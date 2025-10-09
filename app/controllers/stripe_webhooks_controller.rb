@@ -1,112 +1,190 @@
 class StripeWebhooksController < ApplicationController
+  # // Webhooks are machine-to-machine: no CSRF token, no HTML layout
   skip_before_action :verify_authenticity_token
   layout false
 
+  # // Lightweight duplicate-event protection (swap to DB later if you want)
+  IDEMPOTENCY_CACHE_TTL = 7.days
+
+  # == Entry point ==========================================================
   def receive
-    begin
-      Rails.logger.info("[Stripe] Webhook received: raw_length=#{request.body.size}, sig_present=#{request.env['HTTP_STRIPE_SIGNATURE'].present?}")
+    # // Read raw payload + signature header
+    payload    = request.raw_post
+    sig_header = request.env["HTTP_STRIPE_SIGNATURE"]
+    secret     = ENV["STRIPE_SIGNING_SECRET"]
 
-      payload    = request.body.read
-      sig_header = request.env["HTTP_STRIPE_SIGNATURE"]
-      secret     = ENV["STRIPE_SIGNING_SECRET"]
+    Rails.logger.info("[Stripe] Webhook received: bytes=#{payload.bytesize} sig_present=#{sig_header.present?}")
 
-      event =
-        if secret.present?
-          Stripe::Webhook.construct_event(payload, sig_header, secret)
-        else
-          Rails.logger.warn("[Stripe] STRIPE_SIGNING_SECRET missing; parsing without verification (dev only)")
-          Stripe::Event.construct_from(JSON.parse(payload))
-        end
+    # // In production we REQUIRE signature verification
+    if Rails.env.production? && secret.blank?
+      Rails.logger.error("[Stripe] STRIPE_SIGNING_SECRET missing in production")
+      return head :unauthorized
+    end
 
-      Rails.logger.info("[Stripe] Event verified: type=#{event['type']} id=#{event['id']}")
-
-      case event["type"]
-      when "checkout.session.completed"
-        session = event["data"]["object"]
-        Rails.logger.info("[Stripe] Handling checkout.session.completed id=#{session['id']}")
-        handle_checkout_session_completed(session)
-
-      when "payment_intent.succeeded"
-        intent = event["data"]["object"]
-        Rails.logger.info("[Stripe] Handling payment_intent.succeeded id=#{intent['id']}")
-        handle_payment_intent_succeeded(intent)
-
-      when "charge.succeeded"
-        charge = event["data"]["object"]
-        Rails.logger.info("[Stripe] Handling charge.succeeded id=#{charge['id']}")
-        handle_charge_succeeded(charge)
-
+    # // Verify signature (or parse JSON in dev if no secret)
+    event =
+      if secret.present?
+        Stripe::Webhook.construct_event(payload, sig_header, secret)
       else
-        Rails.logger.info("[Stripe] Ignored event type: #{event['type']}")
+        Rails.logger.warn("[Stripe] Parsing without signature verification (non-prod)")
+        Stripe::Event.construct_from(JSON.parse(payload))
       end
 
-      head :ok
-    rescue JSON::ParserError => e
-      Rails.logger.error("[Stripe] Invalid payload: #{e.message}")
-      head :bad_request
-    rescue Stripe::SignatureVerificationError => e
-      Rails.logger.error("[Stripe] Signature verification failed: #{e.message}")
-      head :bad_request
-    rescue => e
-      # 👇 catch-all so we DON’T return 500 to Stripe; we also log a backtrace snippet
-      Rails.logger.error("[Stripe] Webhook fatal: #{e.class} - #{e.message}\n#{e.backtrace&.first(12)&.join("\n")}")
-      head :ok
+    Rails.logger.info("[Stripe] Event verified: type=#{event['type']} id=#{event['id']}")
+
+    # // Idempotency: skip if we already processed this event id
+    if processed_event?(event.id)
+      Rails.logger.info("[Stripe] Duplicate event id=#{event.id}; skipping")
+      return head :ok
     end
+
+    # -- Handle only the event types we care about --------------------------
+    case event["type"]
+    when "checkout.session.completed"
+      session = event["data"]["object"]
+      handle_checkout_session_completed(session)
+
+    when "payment_intent.succeeded"
+      intent = event["data"]["object"]
+      handle_payment_intent_succeeded(intent)
+
+    when "charge.succeeded"
+      charge = event["data"]["object"]
+      handle_charge_succeeded(charge)
+
+    else
+      Rails.logger.info("[Stripe] Ignored event type: #{event['type']}")
+    end
+
+    # // Mark this event as done (so retries won’t double-process)
+    mark_event_processed(event.id)
+    head :ok
+
+  rescue JSON::ParserError => e
+    Rails.logger.warn("[Stripe] Invalid JSON payload: #{e.message}")
+    head :bad_request
+  rescue Stripe::SignatureVerificationError => e
+    Rails.logger.warn("[Stripe] Signature verification failed: #{e.message}")
+    head :bad_request
+  rescue => e
+    # // Return 5xx so Stripe retries transient/unexpected failures
+    Rails.logger.error("[Stripe] Webhook fatal: #{e.class} - #{e.message}\n#{(e.backtrace || [])[0,12].join("\n")}")
+    head :internal_server_error
   end
 
   private
 
-  def handle_checkout_session_completed(session)
-    # Stripe object → use attribute accessors (no `dig`)
-    order_id = session.metadata && session.metadata['order_id']
-    Rails.logger.info("[Stripe] session.metadata.order_id=#{order_id.inspect}")
-    return unless (order = Order.find_by(id: order_id))
+  # ---------- Event handlers ----------------------------------------------
 
-    ref = session.id # "cs_..."
-    mark_paid_and_email(order, ref)
+  def handle_checkout_session_completed(session)
+    # // Metadata lives in session.metadata (Stripe object, not a Hash)
+    order_id    = safe_metadata_get(session, "order_id")
+    pi_id       = normalize_payment_intent_id(session.respond_to?(:payment_intent) ? session.payment_intent : session["payment_intent"])
+    payment_ref = pi_id || session_id(session)   # prefer PI id; fallback to "cs_..." if PI missing
+    handle_payment_for_order!(order_id, payment_ref)
   end
 
   def handle_payment_intent_succeeded(intent)
-    order_id = intent.metadata && intent.metadata['order_id']
-    Rails.logger.info("[Stripe] intent.metadata.order_id=#{order_id.inspect}")
-    return unless (order = Order.find_by(id: order_id))
-
-    ref = intent.id # "pi_..."
-    mark_paid_and_email(order, ref)
+    order_id    = safe_metadata_get(intent, "order_id")
+    payment_ref = intent_id(intent)              # "pi_..."
+    handle_payment_for_order!(order_id, payment_ref)
   end
 
   def handle_charge_succeeded(charge)
-    order_id = charge.metadata && charge.metadata['order_id']
-    Rails.logger.info("[Stripe] charge.metadata.order_id=#{order_id.inspect}")
-    return unless (order = Order.find_by(id: order_id))
-
-    # Prefer the PaymentIntent id if present; fallback to charge id
-    ref = charge.payment_intent.presence || charge.id
-    mark_paid_and_email(order, ref)
+    order_id    = safe_metadata_get(charge, "order_id")
+    pi_id       = normalize_payment_intent_id(charge.respond_to?(:payment_intent) ? charge.payment_intent : charge["payment_intent"])
+    payment_ref = pi_id || charge_id(charge)     # prefer PI id; fallback to "ch_..."
+    handle_payment_for_order!(order_id, payment_ref)
   end
 
-  def mark_paid_and_email(order, payment_ref)
-    Rails.logger.info("[Stripe] Marking order #{order.id} paid (ref=#{payment_ref})")
+  # ---------- Core business logic -----------------------------------------
 
-    # idempotency: skip if already paid with same ref
-    if order.payment_reference == payment_ref && (order.respond_to?(:paid?) ? order.paid? : order.paid_at.present?)
-      Rails.logger.info("[Stripe] Already paid with same ref; skipping")
-      return
+  def handle_payment_for_order!(order_id, payment_ref)
+    raise "missing_order_id_metadata" if order_id.blank?
+
+    order = Order.find_by(id: order_id)
+    raise "order_not_found #{order_id}" unless order
+
+    # // Concurrency guard: process each order once under lock
+    order.with_lock do
+      Rails.logger.info("[Stripe] Marking order #{order.id} paid (ref=#{payment_ref})")
+
+      # // Idempotency on the order: if already paid w/ same ref, skip
+      already_paid =
+        if order.respond_to?(:payment_status) && order.respond_to?(:paid?)
+          order.paid? && order.payment_reference.to_s == payment_ref.to_s
+        else
+          order.payment_reference.to_s == payment_ref.to_s && order.paid_at.present?
+        end
+      if already_paid
+        Rails.logger.info("[Stripe] Already paid; idempotent skip for order #{order.id}")
+      else
+        # // Prefer a public model API if present; otherwise update attrs inline
+        if order.respond_to?(:mark_paid!) && order.public_methods(false).include?(:mark_paid!)
+          order.mark_paid!(method: "stripe", reference: payment_ref)
+        else
+          attrs = {
+            paid_at:           Time.current,
+            payment_method:    "stripe",
+            payment_reference: payment_ref
+          }
+          attrs[:payment_status] = :paid if order.respond_to?(:payment_status)
+          order.update!(attrs)
+        end
+      end
+
+      # // Enqueue the paid email (in dev with :inline, this sends immediately)
+      Rails.logger.info("[Stripe] Enqueueing payment_received email for order #{order.id}")
+      OrderMailer.payment_received(order).deliver_later
     end
+  end
 
-    attrs = {
-      paid_at:           Time.current,
-      payment_method:    "stripe",
-      payment_reference: payment_ref
-    }
-    attrs[:payment_status] = :paid if order.respond_to?(:payment_status)
-    order.update!(attrs)
+  # ---------- Helpers ------------------------------------------------------
 
-    # 🔊 debug logs + synchronous delivery to surface errors
-    Rails.logger.info("[Stripe] About to send payment_received email to #{order.customer_email.inspect} for order #{order.id}")
-    mail = OrderMailer.payment_received(order)
-    Rails.logger.info("[Stripe] Built mail subject=#{mail.subject.inspect}")
-    mail.deliver_now
-    Rails.logger.info("[Stripe] Payment email SENT for order #{order.id}")
+  # // Reads metadata["key"] regardless of Stripe object vs Hash
+  def safe_metadata_get(obj, key)
+    md = if obj.respond_to?(:metadata)
+           obj.metadata
+         else
+           obj["metadata"] rescue nil
+         end
+    md && (md.respond_to?(:[]) ? md[key] : md.try(:[], key))
+  end
+
+  def session_id(session)
+    session.respond_to?(:id) ? session.id : session["id"]
+  end
+
+  def intent_id(intent)
+    intent.respond_to?(:id) ? intent.id : intent["id"]
+  end
+
+  def charge_id(charge)
+    charge.respond_to?(:id) ? charge.id : charge["id"]
+  end
+
+  # // Accepts a String "pi_..." or an expanded object; returns "pi_..." or nil
+  def normalize_payment_intent_id(payment_intent)
+    case payment_intent
+    when String
+      payment_intent
+    else
+      payment_intent.respond_to?(:id) ? payment_intent.id : (payment_intent && payment_intent["id"])
+    end
+  end
+
+  # -- Very small idempotency cache (Rails.cache). Swap to DB if needed. ----
+  def processed_event?(event_id)
+    return false if event_id.blank?
+    Rails.cache.read(cache_key_for_event(event_id)).present?
+  end
+
+  def mark_event_processed(event_id)
+    return if event_id.blank?
+    Rails.cache.write(cache_key_for_event(event_id), true, expires_in: IDEMPOTENCY_CACHE_TTL)
+  end
+
+  def cache_key_for_event(event_id)
+    "stripe_webhook_event_processed:#{event_id}"
   end
 end
