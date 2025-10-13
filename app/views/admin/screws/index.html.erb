@@ -1,67 +1,111 @@
 <div class="container py-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">Screws — Estoque</h1>
-
-    <%= form_with url: admin_screws_path, method: :get, local: true, class: "d-flex gap-2" do %>
-      <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por descrição, montadora, modelo" %>
-      <%= select_tag :sort,
-            options_for_select([["Criados", "created_at"], ["Preço", "price"], ["Estoque", "stock"], ["Montadora", "automaker"], ["Modelo", "model"]], @sort),
-            class: "form-select" %>
-      <%= select_tag :dir,
-            options_for_select([["↓ desc", "desc"], ["↑ asc", "asc"]], @dir),
-            class: "form-select" %>
-      <%= submit_tag "Filtrar", class: "btn btn-outline-secondary" %>
-    <% end %>
+    <h1 class="h4 mb-0">Produtos</h1>
+    <%= link_to "Novo produto", new_admin_screw_path, class: "btn btn-primary" %>
   </div>
 
+  <%# // Quick search form ------------------------------------------------- %>
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <%= form_with url: admin_screws_path, method: :get, local: true, class: "row g-2 align-items-end" do %>
+        <div class="col-md-6">
+          <%= label_tag :q, "Buscar (descrição, montadora, modelo, rosca)", class: "form-label" %>
+          <%= text_field_tag :q, @q, class: "form-control", placeholder: "ex.: parafuso m12 vw golf" %>
+        </div>
+
+        <div class="col-md-3">
+          <%= label_tag :sort, "Ordenar por", class: "form-label" %>
+          <%= select_tag :sort,
+                options_for_select([["Criado em", "created_at"],
+                                    ["Preço", "price"],
+                                    ["Estoque", "stock"],
+                                    ["Montadora", "automaker"],
+                                    ["Modelo", "model"]], @sort),
+                class: "form-select" %>
+        </div>
+
+        <div class="col-md-2">
+          <%= label_tag :dir, "Direção", class: "form-label" %>
+          <%= select_tag :dir,
+                options_for_select([["Desc", "desc"], ["Asc", "asc"]], @dir),
+                class: "form-select" %>
+        </div>
+
+        <div class="col-md-1">
+          <%= submit_tag "Filtrar", class: "btn btn-outline-secondary w-100" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# // Table of screws --------------------------------------------------- %>
   <div class="table-responsive">
     <table class="table align-middle">
       <thead>
         <tr>
-          <th style="width:72px"></th>
+          <th style="width:76px;"></th>
           <th>Descrição</th>
           <th>Rosca</th>
-          <th>Montadora / Modelo</th>
+          <th>Montadora/Modelo</th>
           <th class="text-end">Preço</th>
           <th class="text-end">Estoque</th>
-          <th></th>
+          <th class="text-end" style="width:180px;"></th>
         </tr>
       </thead>
       <tbody>
         <% @screws.each do |s| %>
           <tr>
             <td>
-              <div style="width:56px;height:56px" class="border rounded d-flex align-items-center justify-content-center bg-white">
+              <div style="width:64px;height:64px" class="border rounded d-flex align-items-center justify-content-center bg-white">
                 <% if s.images.attached? %>
                   <%= image_tag s.images.first.variant(resize_to_limit: [120,120]),
                                 class: "img-fluid p-1", style: "object-fit:contain" %>
                 <% else %>
-                  <span class="text-muted small">—</span>
+                  <span class="text-muted small">Sem<br>imagem</span>
                 <% end %>
               </div>
             </td>
             <td>
               <strong><%= s.description %></strong><br>
-              <small class="text-muted"><%= s.surface_treatment %></small>
+              <small class="text-muted"><code><%= s.slug || "(sem slug)" %></code></small>
             </td>
-            <td><%= s.thread %></td>
-            <td><%= s.automaker %> / <%= s.model %></td>
+            <td><%= s.thread.presence || "-" %></td>
+            <td>
+              <%= s.automaker.presence || "-" %>
+              <span class="text-muted">/</span>
+              <%= s.model.presence || "-" %>
+            </td>
             <td class="text-end"><%= format_price(s.price) %></td>
             <td class="text-end">
-              <% if s.stock.to_i <= 0 %>
-                <span class="badge bg-secondary">0 (Indisponível)</span>
-              <% elsif s.stock.to_i <= 2 %>
-                <span class="badge bg-danger"><%= s.stock %></span>
-              <% else %>
+              <% if s.in_stock? %>
                 <span class="badge bg-success"><%= s.stock %></span>
+              <% else %>
+                <span class="badge bg-secondary">0</span>
               <% end %>
             </td>
             <td class="text-end">
-              <%= link_to "Editar estoque", edit_admin_screw_path(s), class: "btn btn-sm btn-outline-dark" %>
-            </td>
+            <div class="d-inline-flex gap-2">
+              <%= link_to "Ver", admin_screw_path(s), class: "btn btn-sm btn-outline-dark" %>
+              <%= link_to "Editar", edit_admin_screw_path(s), class: "btn btn-sm btn-primary" %>
+
+              <%= button_to "Excluir",
+                    admin_screw_path(s),
+                    method: :delete,
+                    class: "btn btn-sm btn-outline-danger",
+                    form: {
+                      class: "d-inline",                                 # // make the form inline
+                      data: { turbo_confirm: "Tem certeza? Esta ação não pode ser desfeita." }
+                    } %>
+            </div>
+          </td>
           </tr>
         <% end %>
       </tbody>
     </table>
+
+    <%# // If you later add pagination, render it here %>
+    <% if @screws.empty? %>
+      <div class="alert alert-info">Nenhum produto encontrado.</div>
+    <% end %>
   </div>
 </div>
