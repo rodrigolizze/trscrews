@@ -4,8 +4,11 @@
 
   <!-- Image area with a fixed 1:1 ratio so all cards align nicely -->
   <div class="ratio ratio-1x1 bg-white d-flex align-items-center justify-content-center">
-    <% if screw.images.attached? %>
-      <%= image_tag screw.images.first.variant(resize_to_limit: [600, 600]),
+    <%# // pick the newest attached image; nil if none %>
+    <% primary = primary_attachment(screw) %>
+
+    <% if primary %>
+      <%= image_tag primary.variant(resize_to_limit: [600, 600]),
                     class: "img-fluid p-2",
                     style: "object-fit: contain;",
                     alt: screw.description,

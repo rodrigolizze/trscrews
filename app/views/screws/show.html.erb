@@ -43,11 +43,13 @@
              class="d-inline-block"
              data-action="click->gallery#swap"
              data-gallery-target="thumb"
-             data-url="<%= url_for(img.variant(resize_to_limit: [1000, 1000])) %>">
-            <%= image_tag img.variant(resize_to_limit: [200, 200]),
-                          class: "rounded border opacity-75",
-                          style: "width: 72px; height: 72px; object-fit: cover;",
-                          alt: @screw.description %>
+             data-url="<%= url_for(cdn_variant(img, resize_to_limit: [1000, 1000])) %>">
+            <%= image_tag cdn_variant(img, resize_to_limit: [200, 200]),
+              class: "rounded border opacity-75",
+              style: "width: 72px; height: 72px; object-fit: cover;",
+              alt: @screw.description,
+              loading: "lazy",
+              decoding: "async" %>
           </a>
         <% end %>
       <% end %>
@@ -57,18 +59,22 @@
     <div class="col-12 col-md order-1 order-md-2">
       <div class="row gx-2 gy-4 align-items-start">
         <div class="col-md-7">
-          <% if @screw.images.attached? %>
-            <%= image_tag @screw.images.first.variant(resize_to_limit: [1000, 1000]),
-                          data: { gallery_target: "main" },
-                          class: "img-fluid rounded shadow-sm w-100",
-                          style: "max-height: 460px; object-fit: contain; background: #fff;",
-                          alt: @screw.description %>
+          <%# // pick the newest attached image; nil if none %>
+          <% primary = primary_attachment(@screw) %>
+
+          <% if primary %>
+            <%= image_tag primary.variant(resize_to_limit: [1000, 1000]),
+                  data: { gallery_target: "main" },
+                  class: "img-fluid rounded shadow-sm w-100",
+                  style: "max-height: 460px; object-fit: contain; background: #fff;",
+                  alt: @screw.description %>
           <% else %>
             <div class="bg-light d-flex align-items-center justify-content-center rounded"
-                 style="height: 360px;">
+                style="height: 360px;">
               <span class="text-muted">Sem imagens</span>
             </div>
           <% end %>
+        </div>
 
           <%# // Mobile thumbnails below the main image %>
           <div class="d-md-none mt-3 d-flex gap-2 overflow-auto">
