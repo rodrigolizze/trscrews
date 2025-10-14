@@ -6,6 +6,9 @@ class ApplicationController < ActionController::Base
 
   before_action :load_cart
 
+  # // Allow Devise to accept :name on sign up / profile update
+  before_action :configure_permitted_parameters, if: :devise_controller?
+
   private
 
   # // Ensure a Hash in the session: { "screw_id" => qty }
@@ -19,6 +22,7 @@ class ApplicationController < ActionController::Base
   end
 
   protected
+  
   # // Basic Auth for /admin/*
   # // Reads ADMIN_USER / ADMIN_PASS from ENV (falls back to dev defaults).
   def require_admin_basic_auth
@@ -30,5 +34,13 @@ class ApplicationController < ActionController::Base
       ActiveSupport::SecurityUtils.secure_compare(u.to_s, user.to_s) &
       ActiveSupport::SecurityUtils.secure_compare(p.to_s, pass.to_s)
     end
+  end
+
+  # // Devise strong params
+  def configure_permitted_parameters
+    # // sign up form
+    devise_parameter_sanitizer.permit(:sign_up, keys: [:name])
+    # // account edit form
+    devise_parameter_sanitizer.permit(:account_update, keys: [:name])
   end
 end

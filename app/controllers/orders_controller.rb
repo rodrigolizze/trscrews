@@ -19,6 +19,13 @@ class OrdersController < ApplicationController
     # // For the customer form (blank order just to reuse the shipping rule)
     @order = Order.new
 
+    # // Prefill from the signed-in user (if any)
+    # // This does NOT lock the fields — the user can still edit them.
+    if defined?(current_user) && current_user
+      @order.customer_name  ||= current_user.respond_to?(:name)  ? current_user.name  : nil  # // optional if you add a name later
+      @order.customer_email ||= current_user.email
+    end
+
     # // Preview shipping with the same rule the model will use at save time
     # // (keeps UI and DB computation consistent)
     @shipping = @order.compute_shipping(@subtotal)
@@ -32,6 +39,8 @@ class OrdersController < ApplicationController
     end
 
     @order = Order.new(order_params)
+    # // If the buyer is logged in, link the order to their account
+    @order.user = current_user if defined?(current_user) && current_user.present?
     @order.status = :placed
     @order.placed_at = Time.current
 
@@ -92,6 +101,20 @@ class OrdersController < ApplicationController
   # // Step 3: Confirmation page
   def show
     @order = Order.includes(order_items: [screw: { images_attachments: :blob }]).find(params[:id])
+  end
+
+  # // List the current user’s own orders (requires login)
+  def mine
+    # // If not logged in, send to Devise sign-in
+    unless defined?(user_signed_in?) && user_signed_in?
+      redirect_to new_user_session_path, alert: "Entre para ver seus pedidos." and return
+    end
+
+    # // Load orders for this user, newest first.
+    # // includes(...) avoids N+1 when we render items/images in the view.
+    @orders = current_user.orders
+                          .order(created_at: :desc)
+                          .includes(order_items: [screw: { images_attachments: :blob }])
   end
 
   private

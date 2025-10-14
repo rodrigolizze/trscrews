@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_06_195607) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_14_154353) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -76,9 +76,11 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_06_195607) do
     t.datetime "paid_at"
     t.string "payment_method"
     t.string "payment_reference"
+    t.bigint "user_id"
     t.index ["order_number"], name: "index_orders_on_order_number", unique: true
     t.index ["payment_reference"], name: "index_orders_on_payment_reference"
     t.index ["payment_status"], name: "index_orders_on_payment_status"
+    t.index ["user_id"], name: "index_orders_on_user_id"
   end
 
   create_table "screws", force: :cascade do |t|
@@ -98,8 +100,22 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_06_195607) do
     t.index ["stock"], name: "index_screws_on_stock"
   end
 
+  create_table "users", force: :cascade do |t|
+    t.string "email", default: "", null: false
+    t.string "encrypted_password", default: "", null: false
+    t.string "reset_password_token"
+    t.datetime "reset_password_sent_at"
+    t.datetime "remember_created_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "name"
+    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "screws"
+  add_foreign_key "orders", "users"
 end

@@ -1,6 +1,7 @@
 class Order < ApplicationRecord
   has_many :order_items, dependent: :destroy
-
+  belongs_to :user, optional: true
+  
   enum status: { draft: 0, placed: 1, cancelled: 2, shipped: 3 }
 
   # // 0=pending, 1=paid, 2=failed
