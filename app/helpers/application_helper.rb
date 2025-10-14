@@ -10,4 +10,10 @@ module ApplicationHelper
       precision: 2
     )
   end
+
+  # // Prefer user's name; fallback to email; final fallback to "Minha conta"
+  def user_display_name(user)
+    user&.name.presence || user&.email.presence || "Minha conta"
+  end
+  
 end

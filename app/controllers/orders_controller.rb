@@ -32,6 +32,8 @@ class OrdersController < ApplicationController
     end
 
     @order = Order.new(order_params)
+    # // If the buyer is logged in, link the order to their account
+    @order.user = current_user if defined?(current_user) && current_user.present?
     @order.status = :placed
     @order.placed_at = Time.current
 
@@ -92,6 +94,20 @@ class OrdersController < ApplicationController
   # // Step 3: Confirmation page
   def show
     @order = Order.includes(order_items: [screw: { images_attachments: :blob }]).find(params[:id])
+  end
+
+  # // List the current user’s own orders (requires login)
+  def mine
+    # // If not logged in, send to Devise sign-in
+    unless defined?(user_signed_in?) && user_signed_in?
+      redirect_to new_user_session_path, alert: "Entre para ver seus pedidos." and return
+    end
+
+    # // Load orders for this user, newest first.
+    # // includes(...) avoids N+1 when we render items/images in the view.
+    @orders = current_user.orders
+                          .order(created_at: :desc)
+                          .includes(order_items: [screw: { images_attachments: :blob }])
   end
 
   private

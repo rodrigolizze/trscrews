@@ -18,17 +18,41 @@
     </div>
 
     <div class="d-flex align-items-center gap-3">
-    <%= link_to cart_path, class: "nav-link d-flex align-items-center gap-1" do %>
-            <span class="me-1">🛒</span>
-            <span>Carrinho</span>
+      <%# // Cart link (kept as-is) %>
+      <%= link_to cart_path, class: "nav-link d-flex align-items-center gap-1" do %>
+        <span class="me-1">🛒</span>
+        <span>Carrinho</span>
+        <% if cart_count.to_i > 0 %>
+          <span class="badge bg-warning text-dark ms-1"><%= cart_count %></span>
+        <% end %>
+      <% end %>
 
-            <%# Only show the badge when there are items %>
-            <% if cart_count.to_i > 0 %>
-              <span class="badge bg-warning text-dark ms-1"><%= cart_count %></span>
-            <% end %>
-          <% end %>
-      <a href="#" class="text-dark">Entrar</a>
-      <a href="#" class="btn text-white rounded-pill px-3" style="background-color: $color-secondary;">Cadastrar</a>
+      <%# // If signed in: show "Meus pedidos" + user menu %>
+      <% if defined?(user_signed_in?) && user_signed_in? %>
+        <%= link_to "Meus pedidos", my_orders_path, class: "nav-link" %>
+
+        <%# // Simple user dropdown (email shown). You can swap for name later. %>
+        <div class="dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <%= current_user.email %>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><%= link_to "Meus pedidos", my_orders_path, class: "dropdown-item" %></li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <%= link_to "Sair", destroy_user_session_path, data: { turbo_method: :delete }, class: "dropdown-item" %>
+              <%# // Using Turbo-friendly method for Devise sign out %>
+            </li>
+          </ul>
+        </div>
+
+      <% else %>
+        <%# // If not signed in: show Devise links %>
+        <%= link_to "Entrar", new_user_session_path, class: "text-dark nav-link" %>
+        <%= link_to "Cadastrar", new_user_registration_path,
+                    class: "btn text-white rounded-pill px-3",
+                    style: "background-color: $color-secondary;" %>
+      <% end %>
     </div>
   </div>
 </nav>

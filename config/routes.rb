@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  devise_for :users
   root to: "pages#home"
 
   resources :screws, only: [:index, :show]
@@ -11,10 +12,17 @@ Rails.application.routes.draw do
     delete "clear",            to: "carts#clear",  as: :clear
   end
 
-  # // Orders: new (checkout), create, show (confirmation)
-  resources :orders, only: [:new, :create, :show]
-  get "/checkout", to: "orders#new", as: :checkout # // pretty alias
+  # Orders: checkout/new/create/show + collection route "mine"
+  resources :orders, only: [:new, :create, :show] do
+    collection do
+      get :mine, as: :my_orders  # // now the helper is my_orders_path
+    end
+  end
 
+  get "/checkout", to: "orders#new", as: :checkout
+
+  # ✅ This creates `my_orders_path` → /orders/mine
+  get "/orders/mine", to: "orders#mine", as: :my_orders
 
     # ViaCEP lookup endpoint
   # // Example: GET /cep/01311-000 → JSON like {street, district, city, state, cep}
