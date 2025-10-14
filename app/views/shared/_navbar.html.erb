@@ -29,23 +29,20 @@
 
       <%# // If signed in: show "Meus pedidos" + user menu %>
       <% if defined?(user_signed_in?) && user_signed_in? %>
-        <%= link_to "Meus pedidos", my_orders_path, class: "nav-link" %>
+        <% display_name = current_user.name.presence || current_user.email %>
 
-        <%# // Simple user dropdown (email shown). You can swap for name later. %>
         <div class="dropdown">
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <%= current_user.email %>
+          <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            <%= display_name %> <!-- // prefer name, fallback to email -->
           </a>
-          <ul class="dropdown-menu dropdown-menu-end">
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
             <li><%= link_to "Meus pedidos", my_orders_path, class: "dropdown-item" %></li>
+            <li><%= link_to "Editar conta", edit_user_registration_path, class: "dropdown-item" %></li>
             <li><hr class="dropdown-divider"></li>
-            <li>
-              <%= link_to "Sair", destroy_user_session_path, data: { turbo_method: :delete }, class: "dropdown-item" %>
-              <%# // Using Turbo-friendly method for Devise sign out %>
-            </li>
+            <li><%= button_to "Sair", destroy_user_session_path, method: :delete, class: "dropdown-item" %></li>
           </ul>
         </div>
-
       <% else %>
         <%# // If not signed in: show Devise links %>
         <%= link_to "Entrar", new_user_session_path, class: "text-dark nav-link" %>

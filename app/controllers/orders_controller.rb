@@ -19,6 +19,13 @@ class OrdersController < ApplicationController
     # // For the customer form (blank order just to reuse the shipping rule)
     @order = Order.new
 
+    # // Prefill from the signed-in user (if any)
+    # // This does NOT lock the fields — the user can still edit them.
+    if defined?(current_user) && current_user
+      @order.customer_name  ||= current_user.respond_to?(:name)  ? current_user.name  : nil  # // optional if you add a name later
+      @order.customer_email ||= current_user.email
+    end
+
     # // Preview shipping with the same rule the model will use at save time
     # // (keeps UI and DB computation consistent)
     @shipping = @order.compute_shipping(@subtotal)
