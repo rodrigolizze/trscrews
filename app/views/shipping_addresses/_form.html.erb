@@ -74,6 +74,8 @@
 
   <div class="card-footer d-flex gap-2">
     <%= f.submit (@shipping_address.persisted? ? "Atualizar" : "Salvar"), class: "btn btn-primary" %>
-    <%= link_to "Cancelar", shipping_addresses_path, class: "btn btn-outline-secondary" %>  <%# // fix helper %>
+    <%= link_to "Cancelar",
+            (params[:return_to] == "checkout" ? checkout_path(address_id: @shipping_address&.id) : shipping_addresses_path),
+            class: "btn btn-outline-secondary" %>
   </div>
 <% end %>

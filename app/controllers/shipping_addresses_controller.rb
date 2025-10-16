@@ -40,7 +40,12 @@ class ShippingAddressesController < ApplicationController
   # PATCH/PUT /shipping_addresses/:id
   def update
     if @shipping_address.update(address_params)
-      redirect_to shipping_addresses_path, notice: "Endereço atualizado."  # // fix helper
+      if params[:return_to] == "checkout"   # // came from checkout?
+        redirect_to checkout_path(address_id: @shipping_address.id),  # // pre-select edited address
+                    notice: "Endereço atualizado."
+      else
+        redirect_to shipping_addresses_path, notice: "Endereço atualizado."
+      end
     else
       flash.now[:alert] = "Não foi possível atualizar o endereço."
       render :edit, status: :unprocessable_entity
