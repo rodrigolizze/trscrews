@@ -1,3 +1,4 @@
+# app/controllers/orders_controller.rb
 class OrdersController < ApplicationController
   # // Step 1: Show checkout form with a summary of the session cart
   def new
@@ -15,21 +16,37 @@ class OrdersController < ApplicationController
     end
 
     @subtotal = @lines.sum { |l| l[:line_total] }
+    @shipping = 0.to_d  # // placeholder
+    @total    = @subtotal + @shipping
 
-    # // For the customer form (blank order just to reuse the shipping rule)
+    # // For the customer form
     @order = Order.new
 
-    # // Prefill from the signed-in user (if any)
-    # // This does NOT lock the fields — the user can still edit them.
-    if defined?(current_user) && current_user
-      @order.customer_name  ||= current_user.respond_to?(:name)  ? current_user.name  : nil  # // optional if you add a name later
+    # --------------------------------------------------------------------
+    # // NOVO: pré-preencher com dados do usuário + endereço salvo
+    # --------------------------------------------------------------------
+    if defined?(user_signed_in?) && user_signed_in?
+      # // Preenche nome/email com dados do usuário (se ainda não estiver no form)
+      @order.customer_name  ||= current_user.name.presence
       @order.customer_email ||= current_user.email
-    end
 
-    # // Preview shipping with the same rule the model will use at save time
-    # // (keeps UI and DB computation consistent)
-    @shipping = @order.compute_shipping(@subtotal)
-    @total    = @subtotal + @shipping
+      # // Carrega endereços do usuário para o próximo passo (picker na view)
+      @addresses = current_user.shipping_addresses.default_first
+
+      # // Se veio ?address_id na URL, tentamos usar esse endereço;
+      # // senão, usamos o padrão (ou o primeiro da lista).
+      chosen =
+        if params[:address_id].present?
+          @addresses.find_by(id: params[:address_id])
+        else
+          @addresses.find_by(is_default: true) || @addresses.first
+        end
+
+      # // Copia os campos do endereço escolhido para o @order (só na tela)
+      if chosen
+        assign_shipping_from(@order, chosen)
+      end
+    end
   end
 
   # // Step 2: Persist order + items; clear session cart; show confirmation
@@ -39,10 +56,13 @@ class OrdersController < ApplicationController
     end
 
     @order = Order.new(order_params)
-    # // If the buyer is logged in, link the order to their account
-    @order.user = current_user if defined?(current_user) && current_user.present?
     @order.status = :placed
     @order.placed_at = Time.current
+
+    # // Se usuário logado, associa o pedido ao usuário
+    if defined?(user_signed_in?) && user_signed_in?
+      @order.user = current_user
+    end
 
     # // Wrap everything in a DB transaction so stock + order are consistent
     ActiveRecord::Base.transaction do
@@ -75,11 +95,10 @@ class OrdersController < ApplicationController
         raise ActiveRecord::Rollback
       end
 
-      # // IMPORTANT: totals now include shipping (computed in the model)
       @order.recalc_totals!
 
       unless @order.save
-        # // If validations fail (e.g., address/cep), rollback
+        # // If validations fail, rollback
         raise ActiveRecord::Rollback
       end
     end
@@ -105,22 +124,17 @@ class OrdersController < ApplicationController
 
   # // List the current user’s own orders (requires login)
   def mine
-    # // If not logged in, send to Devise sign-in
     unless defined?(user_signed_in?) && user_signed_in?
       redirect_to new_user_session_path, alert: "Entre para ver seus pedidos." and return
     end
 
-    # // Load orders for this user, newest first.
-    # // includes(...) avoids N+1 when we render items/images in the view.
-    @orders = current_user.orders
-                          .order(created_at: :desc)
-                          .includes(order_items: [screw: { images_attachments: :blob }])
+    @orders = current_user.orders.order(created_at: :desc).includes(order_items: :screw)
   end
 
   private
 
   def order_params
-    # // Now we also accept address fields from the checkout form
+    # // Permite também os campos de endereço (já existiam quando criamos o checkout com CEP)
     params.require(:order).permit(
       :customer_name, :customer_email,
       :cep, :street, :number, :complement, :district, :city, :state
@@ -136,11 +150,13 @@ class OrdersController < ApplicationController
       { screw: s, qty: qty, unit_price: s.price, line_total: s.price * qty }
     end
     @subtotal = @lines.sum { |l| l[:line_total] }
-
-    # // Recompute shipping preview consistently with the model rule
-    tmp_order = @order || Order.new
-    @shipping = tmp_order.compute_shipping(@subtotal)
+    @shipping = 0.to_d
     @total    = @subtotal + @shipping
+
+    # // Recarrega lista de endereços para mostrar o picker ao re-renderizar
+    if defined?(user_signed_in?) && user_signed_in?
+      @addresses = current_user.shipping_addresses.default_first
+    end
   end
 
   # // If checkout failed, bring cart quantities down to available stock
@@ -155,5 +171,21 @@ class OrdersController < ApplicationController
         session[:cart][key] = s.stock
       end
     end
+  end
+
+  # ------------------------------------------------------------------------
+  # // NOVO helper: copia campos de um ShippingAddress para o @order
+  # // (só para pré-preenchimento no formulário do checkout)
+  # ------------------------------------------------------------------------
+  def assign_shipping_from(order, addr)
+    # order.customer_name  ||= addr.recipient_name  # // se quiser, pode manter assim; não é necessário
+
+    order.cep        = addr.cep        # // sem ||= (importante!)
+    order.street     = addr.street
+    order.number     = addr.number
+    order.complement = addr.complement
+    order.district   = addr.district
+    order.city       = addr.city
+    order.state      = addr.state
   end
 end

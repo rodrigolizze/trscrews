@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_14_154353) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_14_174255) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -100,6 +100,23 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_14_154353) do
     t.index ["stock"], name: "index_screws_on_stock"
   end
 
+  create_table "shipping_addresses", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "recipient_name", null: false
+    t.string "cep", null: false
+    t.string "street", null: false
+    t.string "number", null: false
+    t.string "complement"
+    t.string "district", null: false
+    t.string "city", null: false
+    t.string "state", null: false
+    t.boolean "is_default", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "is_default"], name: "index_shipping_addresses_on_user_id_and_is_default"
+    t.index ["user_id"], name: "index_shipping_addresses_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -118,4 +135,5 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_14_154353) do
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "screws"
   add_foreign_key "orders", "users"
+  add_foreign_key "shipping_addresses", "users"
 end

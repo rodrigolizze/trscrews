@@ -3,6 +3,7 @@
   <h1 class="h3 mb-3">Checkout</h1>
 
   <div class="row g-4">
+    <!-- Left column: items summary -->
     <div class="col-lg-7">
       <div class="table-responsive">
         <table class="table align-middle">
@@ -59,18 +60,55 @@
       <%= link_to "Voltar ao carrinho", cart_path, class: "btn btn-outline-secondary" %>
     </div>
 
+    <!-- Right column: address picker + form -->
     <div class="col-lg-5">
+      <% if defined?(user_signed_in?) && user_signed_in? %>
+        <div class="card shadow-sm mb-3">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">Escolher endereço de entrega</h6>
+              <%= link_to "Novo endereço", new_shipping_address_path(return_to: "checkout"), class: "btn btn-sm btn-outline-secondary" %>
+            </div>
+
+            <% if @addresses.present? %>
+              <div class="list-group">
+                <% @addresses.each do |a| %>
+                  <% is_active =
+                      (params[:address_id].present? && params[:address_id].to_i == a.id) ||
+                      (!params[:address_id].present? && (a.is_default? || a == @addresses.first)) %>
+
+                  <div class="list-group-item d-flex justify-content-between align-items-start <%= 'active' if is_active %>">
+                    <div class="me-3">
+                      <strong><%= a.recipient_name.presence || current_user.name || "Destinatário" %></strong><br>
+                      <small class="text-muted">
+                        <%= a.street %>, <%= a.number %><%= a.complement.present? ? " — #{a.complement}" : "" %><br>
+                        <%= a.district %> — <%= a.city %>/<%= a.state %><br>
+                        CEP: <%= a.cep %>
+                      </small>
+                    </div>
+                    <div class="ms-auto">
+                      <%= link_to "Usar este",
+                        checkout_path(address_id: a.id),
+                        class: "btn btn-sm btn-outline-primary",
+                        data: { turbo: false } %>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            <% else %>
+              <div class="alert alert-info mb-0">
+                Você ainda não cadastrou endereços.
+                <%= link_to "Adicionar agora", new_shipping_address_path, class: "alert-link" %>.
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
       <div class="card shadow-sm">
         <div class="card-body">
           <h5 class="card-title mb-3">Seus dados</h5>
 
-          <%# // Tiny hint for UX — optional %>
-          <% if defined?(user_signed_in?) && user_signed_in? %>
-            <div class="alert alert-light border small">
-              Logado como <strong><%= current_user.email %></strong>. Os campos abaixo já foram preenchidos.
-            </div>
-          <% end %>
-          
           <%= form_with model: @order, url: orders_path, local: true do |f| %>
             <div class="mb-3">
               <%= f.label :customer_name, "Nome completo", class: "form-label" %>
@@ -83,10 +121,8 @@
             </div>
 
             <hr class="my-4">
-
             <h6 class="mb-3">Endereço de entrega</h6>
 
-            <!-- // Wrap address area with the Stimulus controller -->
             <div data-controller="cep">
               <div class="mb-3">
                 <%= f.label :cep, "CEP", class: "form-label" %>
@@ -95,11 +131,7 @@
                       placeholder: "12345-678",
                       required: true,
                       maxlength: 9,
-                      data: {
-                        cep_target: "cep",
-                        action: "input->cep#debouncedLookup blur->cep#lookup" # // triggers lookup
-                      } %>
-                <!-- // Feedback message from the controller (status/error) -->
+                      data: { cep_target: "cep", action: "input->cep#debouncedLookup blur->cep#lookup" } %>
                 <div data-cep-target="feedback" class="small text-muted mt-1"></div>
               </div>
 
@@ -132,15 +164,9 @@
 
               <div class="mb-3 mt-1">
                 <%= f.label :state, "UF", class: "form-label" %>
-                <%= f.text_field :state,
-                      class: "form-control",
-                      placeholder: "SP",
-                      required: true,
-                      maxlength: 2,
-                      data: { cep_target: "state" } %>
+                <%= f.text_field :state, class: "form-control", placeholder: "SP", required: true, maxlength: 2, data: { cep_target: "state" } %>
               </div>
             </div>
-            <!-- // /data-controller="cep" -->
 
             <div class="border-top pt-3 mt-3 d-flex align-items-center justify-content-between">
               <div>
