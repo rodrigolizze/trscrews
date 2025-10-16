@@ -4,7 +4,7 @@
 Rails.configuration.x.shipping = ActiveSupport::OrderedOptions.new
 
 # // Free-shipping threshold
-Rails.configuration.x.shipping.free_limit = 200.to_d
+Rails.configuration.x.shipping.free_limit = ENV.fetch("SHIPPING_FREE_LIMIT", "150").to_d
 
 # // Region → fee table
 Rails.configuration.x.shipping.region_fee_table = {
