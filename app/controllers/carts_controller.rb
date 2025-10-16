@@ -6,12 +6,22 @@ class CartsController < ApplicationController
     # // Build lines for the table; stays valid even when the cart is empty
     @lines = @screws.map do |s|
       qty = session[:cart][s.id.to_s].to_i
-      { screw: s, qty: qty, line_total: s.price * qty }
+      { screw: s, qty: qty, unit_price: s.price, line_total: s.price * qty }
     end
 
     @subtotal = @lines.sum { |l| l[:line_total] }
-    @shipping = 0.to_d
+
+    uf = nil
+      if defined?(user_signed_in?) && user_signed_in?
+        addresses = current_user.shipping_addresses.default_first
+        default_addr = addresses.find_by(is_default: true) || addresses.first  # // padrão ou primeiro
+        uf = default_addr&.state                                               # // pode ser nil
+      end
+
+    @shipping = shipping_for(@subtotal, uf: uf)
     @total    = @subtotal + @shipping
+    @shipping_uf     = uf.to_s.upcase.presence
+    @shipping_region = region_for_uf(@shipping_uf)
   end
 
   def add

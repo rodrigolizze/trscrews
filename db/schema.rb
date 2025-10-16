@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_14_174255) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_16_164618) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -77,6 +77,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_14_174255) do
     t.string "payment_method"
     t.string "payment_reference"
     t.bigint "user_id"
+    t.decimal "shipping_fee", precision: 10, scale: 2, default: "0.0", null: false
     t.index ["order_number"], name: "index_orders_on_order_number", unique: true
     t.index ["payment_reference"], name: "index_orders_on_payment_reference"
     t.index ["payment_status"], name: "index_orders_on_payment_status"

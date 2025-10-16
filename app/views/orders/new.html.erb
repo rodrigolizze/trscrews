@@ -174,7 +174,8 @@
                 <div><%= format_price(@subtotal) %></div>
               </div>
               <div>
-                <div class="small text-muted">Frete</div>
+                <div class="small text-muted">
+                Frete<% if @shipping_uf.present? %> (<%= @shipping_uf %> – <%= @shipping_region.to_s.humanize %>)<% end %></div>
                 <div><%= format_price(@shipping) %></div>
               </div>
               <div>
