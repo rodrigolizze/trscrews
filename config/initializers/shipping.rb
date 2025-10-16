@@ -1,0 +1,32 @@
+# config/initializers/shipping.rb
+# // Central config for shipping rules (one source of truth)
+
+Rails.configuration.x.shipping = ActiveSupport::OrderedOptions.new
+
+# // Free-shipping threshold
+Rails.configuration.x.shipping.free_limit = ENV.fetch("SHIPPING_FREE_LIMIT", "150").to_d
+
+def env_fee(key, fallback)
+  ENV.fetch(key, fallback.to_s).to_d
+end
+
+# // Region → fee table (ENV override-able)
+Rails.configuration.x.shipping.region_fee_table = {
+  sudeste:       env_fee("SHIPPING_FEE_SUDESTE",      20),
+  sul:           env_fee("SHIPPING_FEE_SUL",          25),
+  centro_oeste:  env_fee("SHIPPING_FEE_CENTRO_OESTE", 30),
+  nordeste:      env_fee("SHIPPING_FEE_NORDESTE",     35),
+  norte:         env_fee("SHIPPING_FEE_NORTE",        40)
+}.freeze
+
+# // UF → region map
+Rails.configuration.x.shipping.uf_region_map = {
+  "SP" => :sudeste, "RJ" => :sudeste, "MG" => :sudeste, "ES" => :sudeste,
+  "PR" => :sul,     "SC" => :sul,     "RS" => :sul,
+  "DF" => :centro_oeste, "GO" => :centro_oeste, "MT" => :centro_oeste, "MS" => :centro_oeste,
+  "BA" => :nordeste, "SE" => :nordeste, "AL" => :nordeste, "PE" => :nordeste,
+  "PB" => :nordeste, "RN" => :nordeste, "CE" => :nordeste, "PI" => :nordeste, "MA" => :nordeste,
+  "PA" => :norte, "AP" => :norte, "AM" => :norte, "RR" => :norte, "RO" => :norte, "AC" => :norte, "TO" => :norte
+}.freeze
+
+Rails.configuration.x.shipping.uf_codes = Rails.configuration.x.shipping.uf_region_map.keys.freeze

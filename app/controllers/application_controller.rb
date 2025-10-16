@@ -23,27 +23,17 @@ class ApplicationController < ActionController::Base
 
   # // UF -> região (bem simples; ajustável depois)
   def region_for_uf(uf)
-    case uf.to_s.upcase
-    when "SP","RJ","MG","ES"                            then :sudeste
-    when "PR","SC","RS"                                 then :sul
-    when "DF","GO","MT","MS"                            then :centro_oeste
-    when "BA","SE","AL","PE","PB","RN","CE","PI","MA"   then :nordeste
-    when "PA","AP","AM","RR","RO","AC","TO"             then :norte
-    else :sudeste                                       # // fallback razoável
-    end
+    map = Rails.configuration.x.shipping.uf_region_map
+    map[uf.to_s.upcase] || :sudeste   # // fallback stays sudeste
   end
 
   # // Frete por região + grátis ≥ R$150
   def shipping_for(subtotal, uf:)
-    return 0.to_d if subtotal.to_d >= 150.to_d          # // frete grátis
-    table = {
-      sudeste:       20.to_d,
-      sul:           25.to_d,
-      centro_oeste:  30.to_d,
-      nordeste:      35.to_d,
-      norte:         40.to_d
-    }
-    table.fetch(region_for_uf(uf), 20.to_d)             # // fallback 20
+    free_limit = Rails.configuration.x.shipping.free_limit
+    return 0.to_d if subtotal.to_d >= free_limit
+
+    table = Rails.configuration.x.shipping.region_fee_table
+    table.fetch(region_for_uf(uf), table[:sudeste])  # // fallback fee
   end
 
   protected

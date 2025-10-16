@@ -11,6 +11,10 @@ class ShippingAddress < ApplicationRecord
   validates :cep, presence: true, format: { with: CEP_REGEX, message: "inválido (use 12345-678)" }
 
   validates :state, presence: true, length: { is: 2 }
+  validates :state, inclusion: {
+    in: Rails.configuration.x.shipping.uf_codes,                     # // central list
+    message: "inválido (use uma UF válida, ex.: SP)"
+  }
 
   # // Garante único default antes de salvar (suficiente)
   before_save :ensure_single_default, if: :will_save_change_to_is_default?

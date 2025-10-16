@@ -2,7 +2,7 @@
   <h1 class="h3 mb-3">Seu carrinho</h1>
 
   <%# -- Minimal “it renders” test; remove after you see it working -- %>
-  <p class="text-muted">rendering carts/show</p>
+  <p class="text-muted">Verifique cada item e quantidade.</p>
 
   <% if @lines.present? %>
     <div class="table-responsive">
@@ -56,20 +56,52 @@
           <% end %>
         </tbody>
         <tfoot>
+          <%# // NEW: full-width row for the progress bar %>
+          <tr>
+            <td colspan="4">
+              <%# // Progress bar de frete grátis (usa @subtotal) %>
+              <% free_limit = Rails.configuration.x.shipping.free_limit %>
+              <% remaining  = [free_limit - @subtotal.to_d, 0.to_d].max %>
+              <% percent    = [((@subtotal.to_d / free_limit) * 100).to_i, 100].min %>
+
+              <% if remaining > 0 %>
+                <div class="small mb-1">
+                  Faltam <strong><%= format_price(remaining) %></strong> para frete grátis
+                </div>
+                <div class="progress mb-3">
+                  <div class="progress-bar"
+                      role="progressbar"
+                      style="width: <%= percent %>%;"
+                      aria-valuenow="<%= percent %>"
+                      aria-valuemin="0"
+                      aria-valuemax="100">
+                    <%= percent %>%
+                  </div>
+                </div>
+              <% else %>
+                <div class="alert alert-success py-2 mb-3">
+                  🎉 Você ganhou <strong>frete grátis</strong>!
+                </div>
+              <% end %>
+            </td>
+          </tr>
+
+          <%# // Subtotal row (unchanged) %>
           <tr>
             <th colspan="3" class="text-end">Subtotal</th>
             <th><%= format_price(@subtotal) %></th>
-            <th></th>
           </tr>
+
+          <%# // Frete row %>
           <tr>
             <th colspan="3" class="text-end">Frete</th>
             <th><%= format_price(@shipping) %></th>
-            <th></th>
           </tr>
+
+          <%# // Total row %>
           <tr>
             <th colspan="3" class="text-end">Total</th>
             <th class="h5"><%= format_price(@total) %></th>
-            <th></th>
           </tr>
         </tfoot>
       </table>
