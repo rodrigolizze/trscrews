@@ -6,13 +6,17 @@ Rails.configuration.x.shipping = ActiveSupport::OrderedOptions.new
 # // Free-shipping threshold
 Rails.configuration.x.shipping.free_limit = ENV.fetch("SHIPPING_FREE_LIMIT", "150").to_d
 
-# // Region → fee table
+def env_fee(key, fallback)
+  ENV.fetch(key, fallback.to_s).to_d
+end
+
+# // Region → fee table (ENV override-able)
 Rails.configuration.x.shipping.region_fee_table = {
-  sudeste:       20.to_d,
-  sul:           25.to_d,
-  centro_oeste:  30.to_d,
-  nordeste:      35.to_d,
-  norte:         40.to_d
+  sudeste:       env_fee("SHIPPING_FEE_SUDESTE",      20),
+  sul:           env_fee("SHIPPING_FEE_SUL",          25),
+  centro_oeste:  env_fee("SHIPPING_FEE_CENTRO_OESTE", 30),
+  nordeste:      env_fee("SHIPPING_FEE_NORDESTE",     35),
+  norte:         env_fee("SHIPPING_FEE_NORTE",        40)
 }.freeze
 
 # // UF → region map
