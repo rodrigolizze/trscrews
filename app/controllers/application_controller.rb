@@ -21,8 +21,33 @@ class ApplicationController < ActionController::Base
     session[:cart].values.map(&:to_i).sum
   end
 
+  # // UF -> região (bem simples; ajustável depois)
+  def region_for_uf(uf)
+    case uf.to_s.upcase
+    when "SP","RJ","MG","ES"                            then :sudeste
+    when "PR","SC","RS"                                 then :sul
+    when "DF","GO","MT","MS"                            then :centro_oeste
+    when "BA","SE","AL","PE","PB","RN","CE","PI","MA"   then :nordeste
+    when "PA","AP","AM","RR","RO","AC","TO"             then :norte
+    else :sudeste                                       # // fallback razoável
+    end
+  end
+
+  # // Frete por região + grátis ≥ R$150
+  def shipping_for(subtotal, uf:)
+    return 0.to_d if subtotal.to_d >= 150.to_d          # // frete grátis
+    table = {
+      sudeste:       20.to_d,
+      sul:           25.to_d,
+      centro_oeste:  30.to_d,
+      nordeste:      35.to_d,
+      norte:         40.to_d
+    }
+    table.fetch(region_for_uf(uf), 20.to_d)             # // fallback 20
+  end
+
   protected
-  
+
   # // Basic Auth for /admin/*
   # // Reads ADMIN_USER / ADMIN_PASS from ENV (falls back to dev defaults).
   def require_admin_basic_auth

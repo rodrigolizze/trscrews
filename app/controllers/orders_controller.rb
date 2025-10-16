@@ -16,11 +16,10 @@ class OrdersController < ApplicationController
     end
 
     @subtotal = @lines.sum { |l| l[:line_total] }
-    @shipping = 0.to_d  # // placeholder
-    @total    = @subtotal + @shipping
 
-    # // For the customer form
     @order = Order.new
+
+    chosen = nil
 
     # --------------------------------------------------------------------
     # // NOVO: pré-preencher com dados do usuário + endereço salvo
@@ -42,11 +41,13 @@ class OrdersController < ApplicationController
           @addresses.find_by(is_default: true) || @addresses.first
         end
 
-      # // Copia os campos do endereço escolhido para o @order (só na tela)
-      if chosen
-        assign_shipping_from(@order, chosen)
-      end
+      assign_shipping_from(@order, chosen) if chosen
     end
+
+    @shipping = shipping_for(@subtotal, uf: (chosen&.state || @order.state))
+    @total    = @subtotal + @shipping
+    @shipping_uf     = (chosen&.state || @order.state).to_s.upcase.presence
+    @shipping_region = region_for_uf(@shipping_uf)
   end
 
   # // Step 2: Persist order + items; clear session cart; show confirmation
@@ -94,6 +95,8 @@ class OrdersController < ApplicationController
         # // Roll back everything: raise to abort the transaction
         raise ActiveRecord::Rollback
       end
+
+      @order.shipping_fee = shipping_for(@order.order_items.sum(&:line_total), uf: @order.state) # // calcula frete pelo subtotal atual
 
       @order.recalc_totals!
 
@@ -150,7 +153,7 @@ class OrdersController < ApplicationController
       { screw: s, qty: qty, unit_price: s.price, line_total: s.price * qty }
     end
     @subtotal = @lines.sum { |l| l[:line_total] }
-    @shipping = 0.to_d
+    @shipping = shipping_for(@subtotal, uf: @order&.state)
     @total    = @subtotal + @shipping
 
     # // Recarrega lista de endereços para mostrar o picker ao re-renderizar

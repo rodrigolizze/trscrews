@@ -1,7 +1,7 @@
 class Order < ApplicationRecord
   has_many :order_items, dependent: :destroy
   belongs_to :user, optional: true
-  
+
   enum status: { draft: 0, placed: 1, cancelled: 2, shipped: 3 }
 
   # // 0=pending, 1=paid, 2=failed
@@ -23,8 +23,8 @@ class Order < ApplicationRecord
   # // Recalculate totals based on order_items
   def recalc_totals!
     self.subtotal = order_items.sum(:line_total)
-    self.shipping = compute_shipping(subtotal)  # // central place to compute shipping
-    self.total    = subtotal + shipping
+    # self.shipping = compute_shipping(subtotal)  # // central place to compute shipping
+    self.total    = subtotal + (shipping_fee || 0)
   end
 
   # // Simple shipping rule: R$ 20,00; grátis acima de R$ 150,00
