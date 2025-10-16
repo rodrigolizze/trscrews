@@ -178,12 +178,15 @@
 
               <div class="mb-3 mt-1">
                 <%= f.label :state, "UF", class: "form-label" %>
-                <%= f.text_field :state, class: "form-control", placeholder: "SP", required: true, maxlength: 2, data: { cep_target: "state" } %>
+                  <%= f.select :state,
+                              options_for_select(%w[AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO], @order.state),  # // pré-seleciona se já veio do endereço salvo
+                              { prompt: "Selecione a UF" },
+                              class: "form-select", required: true, data: { cep_target: "state" } %>
               </div>
             </div>
 
             <%# // Progress bar de frete grátis (usa @subtotal) %>
-            <% free_limit = 150.to_d %>   <%# // valor do frete grátis %>
+            <% free_limit = Rails.configuration.x.shipping.free_limit %>   <%# // from initializer %>
             <% remaining  = [free_limit - @subtotal.to_d, 0.to_d].max %>
             <% percent    = [((@subtotal.to_d / free_limit) * 100).to_i, 100].min %>
 

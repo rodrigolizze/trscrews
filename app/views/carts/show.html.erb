@@ -60,7 +60,7 @@
           <tr>
             <td colspan="4">
               <%# // Progress bar de frete grátis (usa @subtotal) %>
-              <% free_limit = 150.to_d %>   <%# // valor do frete grátis %>
+              <% free_limit = Rails.configuration.x.shipping.free_limit %>
               <% remaining  = [free_limit - @subtotal.to_d, 0.to_d].max %>
               <% percent    = [((@subtotal.to_d / free_limit) * 100).to_i, 100].min %>
 
