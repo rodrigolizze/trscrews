@@ -171,6 +171,27 @@
               </div>
             </div>
 
+            <%# // Progress bar de frete grátis (usa @subtotal) %>
+            <% free_limit = 150.to_d %>   <%# // valor do frete grátis %>
+            <% remaining  = [free_limit - @subtotal.to_d, 0.to_d].max %>
+            <% percent    = [((@subtotal.to_d / free_limit) * 100).to_i, 100].min %>
+
+            <% if remaining > 0 %>
+              <div class="small mb-1">Faltam <strong><%= format_price(remaining) %></strong> para frete grátis</div>
+              <div class="progress mb-3">
+                <div class="progress-bar"
+                    role="progressbar"
+                    style="width: <%= percent %>%;"
+                    aria-valuenow="<%= percent %>"
+                    aria-valuemin="0"
+                    aria-valuemax="100">
+                  <%= percent %>%
+                </div>
+              </div>
+            <% else %>
+              <div class="alert alert-success py-2 mb-3">🎉 Você ganhou <strong>frete grátis</strong>!</div>
+            <% end %>
+
             <div class="border-top pt-3 mt-3 d-flex align-items-center justify-content-between">
               <div>
                 <div class="small text-muted">Subtotal</div>
