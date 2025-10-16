@@ -24,3 +24,5 @@ Rails.configuration.x.shipping.uf_region_map = {
   "PB" => :nordeste, "RN" => :nordeste, "CE" => :nordeste, "PI" => :nordeste, "MA" => :nordeste,
   "PA" => :norte, "AP" => :norte, "AM" => :norte, "RR" => :norte, "RO" => :norte, "AC" => :norte, "TO" => :norte
 }.freeze
+
+Rails.configuration.x.shipping.uf_codes = Rails.configuration.x.shipping.uf_region_map.keys.freeze

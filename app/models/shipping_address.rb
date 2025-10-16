@@ -4,10 +4,6 @@ class ShippingAddress < ApplicationRecord
   before_validation :normalize_cep
   before_validation :normalize_state
 
-  UF_CODES = %w[
-    AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO
-  ].freeze
-
   validates :recipient_name, presence: true
   validates :street, :number, :district, :city, presence: true
 
@@ -15,7 +11,10 @@ class ShippingAddress < ApplicationRecord
   validates :cep, presence: true, format: { with: CEP_REGEX, message: "inválido (use 12345-678)" }
 
   validates :state, presence: true, length: { is: 2 }
-  validates :state, inclusion: { in: UF_CODES, message: "inválido (use uma UF válida, ex.: SP)" }
+  validates :state, inclusion: {
+    in: Rails.configuration.x.shipping.uf_codes,                     # // central list
+    message: "inválido (use uma UF válida, ex.: SP)"
+  }
 
   # // Garante único default antes de salvar (suficiente)
   before_save :ensure_single_default, if: :will_save_change_to_is_default?

@@ -60,8 +60,8 @@
           <div class="col-md-3">
             <%= f.label :state, "UF", class: "form-label" %>
             <%= f.select :state,
-             options_for_select(%w[AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO], @shipping_address.state),
-             { prompt: "Selecione a UF" },                                    # // força escolha explícita
+             options_for_select(Rails.configuration.x.shipping.uf_codes, @shipping_address.state),  # // central list
+             { prompt: "Selecione a UF" },
              class: "form-select", required: true, data: { cep_target: "state" } %>
           </div>
         </div>

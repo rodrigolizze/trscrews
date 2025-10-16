@@ -7,10 +7,6 @@ class Order < ApplicationRecord
   # // 0=pending, 1=paid, 2=failed
   enum payment_status: { pending: 0, paid: 1, failed: 2 }, _default: :pending
 
-  UF_CODES = %w[
-    AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO
-  ].freeze
-
   before_validation :normalize_state
 
   # // Basic presence
@@ -24,7 +20,10 @@ class Order < ApplicationRecord
   # // CEP format: accepts "12345-678" or "12345678"
   validates :cep, format: { with: /\A\d{5}-?\d{3}\z/, message: "formato inválido (ex.: 12345-678)" }
 
-  validates :state, inclusion: { in: UF_CODES, message: "inválido (use uma UF válida, ex.: SP)" }
+  validates :state, inclusion: {
+    in: Rails.configuration.x.shipping.uf_codes,                     # // central list
+    message: "inválido (use uma UF válida, ex.: SP)"
+  }
 
   # Generate a unique, readable number once the record exists
   after_create_commit :assign_order_number!
