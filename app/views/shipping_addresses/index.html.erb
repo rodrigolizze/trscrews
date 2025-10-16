@@ -1,0 +1,59 @@
+<!-- app/views/shipping_addresses/index.html.erb -->
+<div class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">Meus endereços</h1>
+    <!-- // Botão para criar novo endereço -->
+    <%= link_to "Novo endereço", new_shipping_address_path, class: "btn btn-primary" %>  <%# // fix %>
+  </div>
+
+  <% if @addresses.any? %>
+    <div class="row g-3">
+      <% @addresses.each do |addr| %>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start">
+                <strong><%= addr.recipient_name.presence || "Sem nome" %></strong>
+                <% if addr.is_default? %>
+                  <span class="badge bg-success">Padrão</span>
+                <% end %>
+              </div>
+
+              <div class="small text-muted mt-1">
+                <%= [addr.street, addr.number].compact.join(", ") %>
+                <% if addr.complement.present? %> — <%= addr.complement %><% end %><br>
+                <%= [addr.district, addr.city, addr.state].compact.join(" • ") %><br>
+                CEP: <%= addr.cep %>
+              </div>
+            </div>
+
+            <div class="card-footer d-flex gap-2">
+              <!-- // Editar -->
+              <%= link_to "Editar", edit_shipping_address_path(addr), class: "btn btn-sm btn-outline-secondary" %>  <%# // fix %>
+
+              <!-- // Tornar padrão (aparece só se ainda não for) -->
+              <% unless addr.is_default? %>
+                <%= button_to "Tornar padrão",
+                              make_default_shipping_address_path(addr),   # // fix
+                              method: :patch,
+                              class: "btn btn-sm btn-outline-success" %>
+              <% end %>
+
+              <!-- // Excluir -->
+              <%= button_to "Excluir",
+                            shipping_address_path(addr),  # // fix
+                            method: :delete,
+                            form: { data: { turbo_confirm: "Excluir este endereço?" } },
+                            class: "btn btn-sm btn-outline-danger ms-auto" %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="alert alert-info">
+      Você ainda não cadastrou endereços.
+      <%= link_to "Criar agora", new_shipping_address_path, class: "alert-link" %>  <%# // fix %>
+    </div>
+  <% end %>
+</div>

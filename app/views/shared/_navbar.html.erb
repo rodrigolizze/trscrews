@@ -39,6 +39,7 @@
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
             <li><%= link_to "Meus pedidos", my_orders_path, class: "dropdown-item" %></li>
             <li><%= link_to "Editar conta", edit_user_registration_path, class: "dropdown-item" %></li>
+            <li><%= link_to "Meus endereços", shipping_addresses_path, class: "dropdown-item" %></li> 
             <li><hr class="dropdown-divider"></li>
             <li><%= button_to "Sair", destroy_user_session_path, method: :delete, class: "dropdown-item" %></li>
           </ul>
