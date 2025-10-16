@@ -112,6 +112,17 @@
         <div class="card-body">
           <h5 class="card-title mb-3">Seus dados</h5>
 
+          <% if @order.errors.any? %>
+            <div class="alert alert-danger">
+              <strong><%= pluralize(@order.errors.count, "erro") %> ao salvar:</strong>
+              <ul class="mb-0">
+                <% @order.errors.full_messages.each do |msg| %>
+                  <li><%= msg %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
           <%= form_with model: @order, url: orders_path, local: true do |f| %>
             <div class="mb-3">
               <%= f.label :customer_name, "Nome completo", class: "form-label" %>
