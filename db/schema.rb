@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_16_164618) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_04_154943) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -116,6 +116,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_16_164618) do
     t.datetime "updated_at", null: false
     t.index ["user_id", "is_default"], name: "index_shipping_addresses_on_user_id_and_is_default"
     t.index ["user_id"], name: "index_shipping_addresses_on_user_id"
+    t.index ["user_id"], name: "index_shipping_addresses_one_default_per_user", unique: true, where: "(is_default = true)"
   end
 
   create_table "users", force: :cascade do |t|
