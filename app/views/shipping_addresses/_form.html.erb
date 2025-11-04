@@ -35,7 +35,10 @@
                     placeholder: "00000-000",
                     maxlength: 9,
                     required: true,
-                    data: { cep_target: "cep", action: "input->cep#debouncedLookup blur->cep#lookup" } %>
+                    data: {
+                      cep_target: "cep",
+                      action: "input->cep#mask input->cep#debouncedLookup blur->cep#lookup"  # // <-- add mask
+                    } %>
               <div data-cep-target="feedback" class="small text-muted mt-1"></div>
             </div>
 
