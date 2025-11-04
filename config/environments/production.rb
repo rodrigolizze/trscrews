@@ -37,7 +37,7 @@ Rails.application.configure do
   # config.action_dispatch.x_sendfile_header = "X-Accel-Redirect" # for NGINX
 
   # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
+  config.active_storage.service = :cloudinary
 
   # Mount Action Cable outside main process or domain.
   # config.action_cable.mount_path = nil
@@ -72,6 +72,15 @@ Rails.application.configure do
   # config.active_job.queue_name_prefix = "trscrews_production"
 
   config.action_mailer.perform_caching = false
+
+  # // URLs inside emails (e.g., link_to @order) will use this host
+  config.action_mailer.default_url_options = {
+    host: ENV.fetch("APP_HOST", "example.herokuapp.com"), # // set real host via ENV in prod
+    protocol: "https"
+  }
+
+  # // Assets in email templates (if any) resolve with the same host
+  config.action_mailer.asset_host = "https://#{ENV.fetch("APP_HOST", "example.herokuapp.com")}"
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.

@@ -108,7 +108,7 @@ class OrdersController < ApplicationController
 
     if @order.persisted?
       session[:cart] = {}
-      OrderMailer.confirmation(@order).deliver_later
+      OrderMailer.confirmation(@order).deliver_now
       redirect_to @order, notice: "Pedido realizado com sucesso!"
     else
       # // Rebuild summary and show a message if there was a shortage
