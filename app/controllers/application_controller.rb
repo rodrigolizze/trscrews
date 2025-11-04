@@ -8,6 +8,7 @@ class ApplicationController < ActionController::Base
 
   # // Allow Devise to accept :name on sign up / profile update
   before_action :configure_permitted_parameters, if: :devise_controller?
+  before_action :ensure_first_address_created
 
   private
 
@@ -34,6 +35,26 @@ class ApplicationController < ActionController::Base
 
     table = Rails.configuration.x.shipping.region_fee_table
     table.fetch(region_for_uf(uf), table[:sudeste])  # // fallback fee
+  end
+
+  def ensure_first_address_created
+    # // Only enforce for authenticated users
+    return unless defined?(user_signed_in?) && user_signed_in?
+
+    # // Let Devise routes work (sign in/out/up, confirmations, etc.)
+    return if respond_to?(:devise_controller?) && devise_controller?
+
+    # // If the user has zero addresses, only allow shipping_addresses#new/create
+    if current_user.shipping_addresses.none?
+      is_addresses = controller_path == "shipping_addresses"
+      is_allowed_action = %w[new create].include?(action_name)
+
+      return if is_addresses && is_allowed_action  # // allow the form + submit
+
+      # // Otherwise, push them to create the first address
+      redirect_to new_shipping_address_path(return_to: "checkout"),
+                  alert: "Cadastre seu primeiro endereço para continuar." and return
+    end
   end
 
   protected

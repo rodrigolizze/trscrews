@@ -1,6 +1,8 @@
 class ShippingAddress < ApplicationRecord
   belongs_to :user
 
+  before_create :set_default_if_first
+
   before_validation :normalize_cep
   before_validation :normalize_state
 
@@ -59,5 +61,12 @@ class ShippingAddress < ApplicationRecord
     return unless is_default?
     # // zera os outros defaults deste usuário
     user.shipping_addresses.where.not(id: id).update_all(is_default: false)
+  end
+
+  def set_default_if_first
+    # // Se o usuário ainda não tem endereço padrão, marca este como padrão
+    if user.shipping_addresses.where(is_default: true).none?
+      self.is_default = true
+    end
   end
 end
