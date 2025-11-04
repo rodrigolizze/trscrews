@@ -25,52 +25,59 @@
           <%= f.text_field :recipient_name, class: "form-control", required: true %>
         </div>
 
-        <div class="row g-3">
-          <div class="col-md-4">
-            <%= f.label :cep, "CEP", class: "form-label" %>
-            <%= f.text_field :cep, class: "form-control", placeholder: "00000-000", maxlength: 9, required: true %>
-            <div class="form-text">Digite o CEP. (Podemos auto-preencher via ViaCEP depois.)</div>
-          </div>
-          <div class="col-md-8">
-            <%= f.label :street, "Rua", class: "form-label" %>
-            <%= f.text_field :street, class: "form-control", required: true %>
-          </div>
-        </div>
+        <div data-controller="cep">  <%# // enable CEP autofill for this form %>
 
-        <div class="row g-3 mt-1">
-          <div class="col-md-4">
-            <%= f.label :number, "Número", class: "form-label" %>
-            <%= f.text_field :number, class: "form-control", required: true %>
-          </div>
-          <div class="col-md-8">
-            <%= f.label :complement, "Complemento", class: "form-label" %>
-            <%= f.text_field :complement, class: "form-control" %>
-          </div>
-        </div>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <%= f.label :cep, "CEP", class: "form-label" %>
+              <%= f.text_field :cep,
+                    class: "form-control",
+                    placeholder: "00000-000",
+                    maxlength: 9,
+                    required: true,
+                    data: {
+                      cep_target: "cep",
+                      action: "input->cep#mask input->cep#debouncedLookup blur->cep#lookup"  # // <-- add mask
+                    } %>
+              <div data-cep-target="feedback" class="small text-muted mt-1"></div>
+            </div>
 
-        <div class="row g-3 mt-1">
-          <div class="col-md-4">
-            <%= f.label :district, "Bairro", class: "form-label" %>
-            <%= f.text_field :district, class: "form-control", required: true %>
+            <div class="col-md-8">
+              <%= f.label :street, "Rua", class: "form-label" %>
+              <%= f.text_field :street, class: "form-control", required: true, data: { cep_target: "street" } %>
+            </div>
           </div>
-          <div class="col-md-5">
-            <%= f.label :city, "Cidade", class: "form-label" %>
-            <%= f.text_field :city, class: "form-control", required: true %>
-          </div>
-          <div class="col-md-3">
-            <%= f.label :state, "UF", class: "form-label" %>
-            <%= f.select :state,
-             options_for_select(Rails.configuration.x.shipping.uf_codes, @shipping_address.state),  # // central list
-             { prompt: "Selecione a UF" },
-             class: "form-select", required: true, data: { cep_target: "state" } %>
-          </div>
-        </div>
 
-        <div class="form-check mt-3">
-          <%# // Permite já marcar como padrão neste formulário %>
-          <%= f.check_box :is_default, class: "form-check-input", id: "addr_default" %>
-          <%= f.label :is_default, "Definir como endereço padrão", class: "form-check-label", for: "addr_default" %>
-        </div>
+          <div class="row g-3 mt-1">
+            <div class="col-md-4">
+              <%= f.label :number, "Número", class: "form-label" %>
+              <%= f.text_field :number, class: "form-control", required: true %>
+            </div>
+            <div class="col-md-8">
+              <%= f.label :complement, "Complemento", class: "form-label" %>
+              <%= f.text_field :complement, class: "form-control" %>
+            </div>
+          </div>
+
+          <div class="row g-3 mt-1">
+            <div class="col-md-4">
+              <%= f.label :district, "Bairro", class: "form-label" %>
+              <%= f.text_field :district, class: "form-control", required: true, data: { cep_target: "district" } %>
+            </div>
+            <div class="col-md-5">
+              <%= f.label :city, "Cidade", class: "form-label" %>
+              <%= f.text_field :city, class: "form-control", required: true, data: { cep_target: "city" } %>
+            </div>
+            <div class="col-md-3">
+              <%= f.label :state, "UF", class: "form-label" %>
+              <%= f.select :state,
+                    options_for_select(Rails.configuration.x.shipping.uf_codes, @shipping_address.state),
+                    { prompt: "Selecione a UF" },
+                    class: "form-select", required: true, data: { cep_target: "state" } %>
+            </div>
+          </div>
+
+        </div> <%# // /data-controller="cep" %>
       </div>
     </div>
   </div>

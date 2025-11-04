@@ -28,6 +28,23 @@ export default class extends Controller {
     this._timer = null
   }
 
+  // // Formats the CEP input as "12345-678" while typing
+  mask() {
+    // // 1) Get raw value and keep only digits
+    const el = this.cepTarget
+    if (!el) return
+    const digits = (el.value || "").replace(/\D/g, "").slice(0, 8) // // max 8
+
+    // // 2) Build masked string: "12345-678" when >= 6 digits
+    let masked = digits
+    if (digits.length > 5) {
+      masked = `${digits.slice(0, 5)}-${digits.slice(5)}`
+    }
+
+    // // 3) Set back to the field (no cursor gymnastics needed here)
+    el.value = masked
+  }
+
   // // Called on 'input' (debounced) — see debouncedLookup below
   lookup() {
     const raw = this.cepTarget.value || ""
