@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_11_04_154943) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_04_162754) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -82,6 +82,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_04_154943) do
     t.index ["payment_reference"], name: "index_orders_on_payment_reference"
     t.index ["payment_status"], name: "index_orders_on_payment_status"
     t.index ["user_id"], name: "index_orders_on_user_id"
+    t.check_constraint "state::text = ANY (ARRAY['AC'::character varying, 'AL'::character varying, 'AP'::character varying, 'AM'::character varying, 'BA'::character varying, 'CE'::character varying, 'DF'::character varying, 'ES'::character varying, 'GO'::character varying, 'MA'::character varying, 'MT'::character varying, 'MS'::character varying, 'MG'::character varying, 'PA'::character varying, 'PB'::character varying, 'PR'::character varying, 'PE'::character varying, 'PI'::character varying, 'RJ'::character varying, 'RN'::character varying, 'RS'::character varying, 'RO'::character varying, 'RR'::character varying, 'SC'::character varying, 'SP'::character varying, 'SE'::character varying, 'TO'::character varying]::text[])", name: "orders_state_valid_uf"
   end
 
   create_table "screws", force: :cascade do |t|
@@ -117,6 +118,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_04_154943) do
     t.index ["user_id", "is_default"], name: "index_shipping_addresses_on_user_id_and_is_default"
     t.index ["user_id"], name: "index_shipping_addresses_on_user_id"
     t.index ["user_id"], name: "index_shipping_addresses_one_default_per_user", unique: true, where: "(is_default = true)"
+    t.check_constraint "state::text = ANY (ARRAY['AC'::character varying, 'AL'::character varying, 'AP'::character varying, 'AM'::character varying, 'BA'::character varying, 'CE'::character varying, 'DF'::character varying, 'ES'::character varying, 'GO'::character varying, 'MA'::character varying, 'MT'::character varying, 'MS'::character varying, 'MG'::character varying, 'PA'::character varying, 'PB'::character varying, 'PR'::character varying, 'PE'::character varying, 'PI'::character varying, 'RJ'::character varying, 'RN'::character varying, 'RS'::character varying, 'RO'::character varying, 'RR'::character varying, 'SC'::character varying, 'SP'::character varying, 'SE'::character varying, 'TO'::character varying]::text[])", name: "shipping_addresses_state_valid_uf"
   end
 
   create_table "users", force: :cascade do |t|
