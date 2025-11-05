@@ -47,15 +47,15 @@ export default class extends Controller {
 
   // // Called on 'input' (debounced) — see debouncedLookup below
   lookup() {
+    this.mask();
+
     const raw = this.cepTarget.value || ""
     const digits = raw.replace(/\D/g, "")
 
     // // Clear messages if user is typing
     this._setFeedback("")
-
     // // Only call when we have exactly 8 digits
     if (digits.length !== 8) return
-
     // // Show a small loading hint
     this._setFeedback("Consultando CEP...")
 
@@ -93,6 +93,8 @@ export default class extends Controller {
 
   // // Debounced wrapper to avoid firing on every keystroke (hook this to 'input' event)
   debouncedLookup() {
+    this.mask();
+    
     clearTimeout(this._timer)
     this._timer = setTimeout(() => this.lookup(), 350) // // 350ms debounce
   }
