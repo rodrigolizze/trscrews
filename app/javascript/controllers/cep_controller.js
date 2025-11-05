@@ -24,18 +24,24 @@ export default class extends Controller {
   static targets = ["cep", "street", "district", "city", "state", "feedback"]
 
   connect() {
-    // // Small debounce timer used by debouncedLookup
+    // Debounce timer for lookup
     this._timer = null
-    this.mask()
 
+    // --- NEW: bind mask directly on the input element ---
+    this._boundMask = () => this.mask()
     if (this.hasCepTarget) {
-    this._onInput = () => { this.mask(); this.debouncedLookup() }
-    this._onBlur  = () => this.lookup()
-
-    this.cepTarget.addEventListener("input", this._onInput)
-    this.cepTarget.addEventListener("blur",  this._onBlur)
+      this.cepTarget.addEventListener("input", this._boundMask)
+      // format any pre-filled value
+      this.mask()
+    }
   }
-}
+
+  disconnect() {
+    // --- NEW: clean up the listener ---
+    if (this.hasCepTarget && this._boundMask) {
+      this.cepTarget.removeEventListener("input", this._boundMask)
+    }
+  }
 
   // // Formats the CEP input as "12345-678" while typing
   mask() {
@@ -52,14 +58,6 @@ export default class extends Controller {
 
     // // 3) Set back to the field (no cursor gymnastics needed here)
     el.value = masked
-  }
-
-    disconnect() {
-    clearTimeout(this._timer)
-    if (this.hasCepTarget && this._onInput) {
-      this.cepTarget.removeEventListener("input", this._onInput)
-      this.cepTarget.removeEventListener("blur",  this._onBlur)
-    }
   }
 
   // // Called on 'input' (debounced) — see debouncedLookup below
