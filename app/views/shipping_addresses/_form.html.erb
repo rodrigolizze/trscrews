@@ -31,18 +31,35 @@
             <div class="col-md-4">
               <%= f.label :cep, "CEP", class: "form-label" %>
               <%= f.text_field :cep,
-                                class: "form-control",
-                                placeholder: "00000-000",
-                                maxlength: 9,
-                                required: true,
-                                inputmode: "numeric",
-                                autocomplete: "postal-code",
-                                pattern: "\\d{5}-\\d{3}",
-                                data: {
-                                  cep_target: "cep",
-                                  action: "input->cep#mask input->cep#debouncedLookup blur->cep#lookup"
-                                } %>
+                    class: "form-control",
+                    placeholder: "00000-000",
+                    maxlength: 9,
+                    required: true,
+                    data: {
+                      cep_target: "cep",
+                      action: "input->cep#debouncedLookup blur->cep#lookup"  # keep lookup; mask handled by fallback
+                    } %>
               <div data-cep-target="feedback" class="small text-muted mt-1"></div>
+
+              <!-- CEP mask fallback (nonce-safe, no Stimulus/importmap needed) -->
+              <script nonce="<%= content_security_policy_nonce %>">
+                (function () {
+                  function mask(el) {
+                    var digits = (el.value || "").replace(/\D/g, "").slice(0, 8);
+                    el.value = digits.length > 5 ? digits.slice(0,5) + "-" + digits.slice(5) : digits;
+                  }
+                  function bind() {
+                    var el = document.querySelector('[data-cep-target="cep"]');
+                    if (!el || el.dataset.maskBound) return;
+                    el.dataset.maskBound = "1";
+                    el.addEventListener("input", function(){ mask(el); }, { passive: true });
+                    el.addEventListener("blur",  function(){ mask(el); });
+                    mask(el);
+                  }
+                  document.addEventListener("turbo:load", bind);
+                  document.addEventListener("DOMContentLoaded", bind);
+                })();
+              </script>
             </div>
 
             <div class="col-md-8">
