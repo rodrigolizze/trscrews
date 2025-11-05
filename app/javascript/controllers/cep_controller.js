@@ -26,7 +26,16 @@ export default class extends Controller {
   connect() {
     // // Small debounce timer used by debouncedLookup
     this._timer = null
+    this.mask()
+
+    if (this.hasCepTarget) {
+    this._onInput = () => { this.mask(); this.debouncedLookup() }
+    this._onBlur  = () => this.lookup()
+
+    this.cepTarget.addEventListener("input", this._onInput)
+    this.cepTarget.addEventListener("blur",  this._onBlur)
   }
+}
 
   // // Formats the CEP input as "12345-678" while typing
   mask() {
@@ -43,6 +52,14 @@ export default class extends Controller {
 
     // // 3) Set back to the field (no cursor gymnastics needed here)
     el.value = masked
+  }
+
+    disconnect() {
+    clearTimeout(this._timer)
+    if (this.hasCepTarget && this._onInput) {
+      this.cepTarget.removeEventListener("input", this._onInput)
+      this.cepTarget.removeEventListener("blur",  this._onBlur)
+    }
   }
 
   // // Called on 'input' (debounced) — see debouncedLookup below
@@ -94,7 +111,7 @@ export default class extends Controller {
   // // Debounced wrapper to avoid firing on every keystroke (hook this to 'input' event)
   debouncedLookup() {
     this.mask();
-    
+
     clearTimeout(this._timer)
     this._timer = setTimeout(() => this.lookup(), 350) // // 350ms debounce
   }
