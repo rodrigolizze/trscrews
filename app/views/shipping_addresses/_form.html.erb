@@ -31,14 +31,16 @@
             <div class="col-md-4">
               <%= f.label :cep, "CEP", class: "form-label" %>
               <%= f.text_field :cep,
-                    class: "form-control",
-                    placeholder: "00000-000",
-                    maxlength: 9,
-                    required: true,
-                    data: {
-                      cep_target: "cep",
-                      action: "input->cep#mask input->cep#debouncedLookup blur->cep#lookup"  # // <-- add mask
-                    } %>
+                                class: "form-control",
+                                placeholder: "00000-000",
+                                maxlength: 9,
+                                inputmode: "numeric",
+                                pattern: "\\d{5}-?\\d{3}",
+                                required: true,
+                                data: {
+                                  cep_target: "cep",
+                                  action: "input->cep#mask input->cep#debouncedLookup blur->cep#lookup"
+                                } %>
               <div data-cep-target="feedback" class="small text-muted mt-1"></div>
             </div>
 
