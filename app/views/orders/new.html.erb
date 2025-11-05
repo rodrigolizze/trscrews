@@ -140,14 +140,17 @@
             <div data-controller="cep">
               <div class="mb-3">
                 <%= f.text_field :cep,
-                  class: "form-control",
-                  placeholder: "12345-678",
-                  required: true,
-                  maxlength: 9,
-                  data: {
-                    cep_target: "cep",
-                    action: "input->cep#mask input->cep#debouncedLookup blur->cep#lookup"  # // <-- add mask
-                  } %>
+                                  class: "form-control",
+                                  placeholder: "12345-678",
+                                  required: true,
+                                  maxlength: 9,
+                                  inputmode: "numeric",
+                                  autocomplete: "postal-code",
+                                  pattern: "\\d{5}-\\d{3}",
+                                  data: {
+                                    cep_target: "cep",
+                                    action: "input->cep#mask input->cep#debouncedLookup blur->cep#lookup"
+                                  } %>
                 <div data-cep-target="feedback" class="small text-muted mt-1"></div>
               </div>
 

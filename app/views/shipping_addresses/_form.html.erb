@@ -34,9 +34,10 @@
                                 class: "form-control",
                                 placeholder: "00000-000",
                                 maxlength: 9,
-                                inputmode: "numeric",
-                                pattern: "\\d{5}-?\\d{3}",
                                 required: true,
+                                inputmode: "numeric",
+                                autocomplete: "postal-code",
+                                pattern: "\\d{5}-\\d{3}",
                                 data: {
                                   cep_target: "cep",
                                   action: "input->cep#mask input->cep#debouncedLookup blur->cep#lookup"
