@@ -62,48 +62,47 @@ export default class extends Controller {
 
   // // Called on 'input' (debounced) — see debouncedLookup below
   lookup() {
-    this.mask();
+    this.mask(); // // keep CEP formatted as 12345-678
 
-    const raw = this.cepTarget.value || ""
-    const digits = raw.replace(/\D/g, "")
+    const raw = this.cepTarget.value || "";
+    const digits = raw.replace(/\D/g, "");
 
-    // // Clear messages if user is typing
-    this._setFeedback("")
-    // // Only call when we have exactly 8 digits
-    if (digits.length !== 8) return
-    // // Show a small loading hint
-    this._setFeedback("Consultando CEP...")
+    // // Clear any previous feedback while user is typing
+    this._setFeedback("");
 
-    fetch(`/cep/${digits}`, {
-      headers: { "Accept": "application/json" },
-      credentials: "same-origin"
-    })
-      .then(async (res) => {
-        const data = await res.json().catch(() => ({}))
+    // // Only call ViaCEP when CEP has exactly 8 digits
+    if (digits.length !== 8) return;
 
-        if (!res.ok) {
-          // // Handle known error messages coming from our controller
-          const msg = data && data.error ? data.error : "Não foi possível consultar o CEP."
-          throw new Error(msg)
+    // // Show a small "loading" message to user
+    this._setFeedback("Consultando CEP...");
+
+    // // ✅ Call ViaCEP directly from the browser using HTTPS
+    // // This bypasses Heroku's network and avoids the 503 you saw.
+    fetch(`https://viacep.com.br/ws/${digits}/json/`)
+      .then((res) => res.json())
+      .then((data) => {
+        // // ViaCEP returns { erro: true } when CEP is not found
+        if (data.erro) {
+          throw new Error("CEP não encontrado");
         }
 
-        // // Fill the fields (overwrite for consistency; change if you prefer "only if empty")
-        this._fillIfPresent(this.streetTarget,   data.street)
-        this._fillIfPresent(this.districtTarget, data.district)
-        this._fillIfPresent(this.cityTarget,     data.city)
-        this._fillIfPresent(this.stateTarget,    data.state)
+        // // Fill the fields with the data from ViaCEP
+        this._fillIfPresent(this.streetTarget,   data.logradouro);
+        this._fillIfPresent(this.districtTarget, data.bairro);
+        this._fillIfPresent(this.cityTarget,     data.localidade);
+        this._fillIfPresent(this.stateTarget,    data.uf);
 
-        // // Normalize CEP field with mask if server returned it (e.g., "01311-000")
+        // // Normalize CEP in the input if API returns it (e.g. 01311-000)
         if (data.cep && this.cepTarget) {
-          this.cepTarget.value = data.cep
+          this.cepTarget.value = data.cep;
         }
 
-        this._setFeedback("Endereço preenchido pelo CEP.", "success")
+        this._setFeedback("Endereço preenchido pelo CEP.", "success");
       })
       .catch((err) => {
-        // // Show a friendly message (e.g., "CEP não encontrado" or timeout)
-        this._setFeedback(err.message || "Falha na consulta do CEP.", "danger")
-      })
+        // // Any error (network, CEP not found, etc.) shows a friendly message
+        this._setFeedback(err.message || "Falha na consulta do CEP.", "danger");
+      });
   }
 
   // // Debounced wrapper to avoid firing on every keystroke (hook this to 'input' event)
