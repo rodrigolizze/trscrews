@@ -1,7 +1,7 @@
 # // Minimal controller to query ViaCEP and return normalized JSON
 # // Usage: GET /cep/:cep   → { street, district, city, state, cep }
 # // Examples: /cep/01311000 or /cep/01311-000
-class CepController < ApplicationController
+class CepController < ApplicationController::Base
   require "net/http"  # // built-in HTTP client
   require "uri"
   require "json"
