@@ -10,7 +10,8 @@ class ShippingAddress < ApplicationRecord
   validates :street, :number, :district, :city, presence: true
 
   CEP_REGEX = /\A\d{5}-?\d{3}\z/
-  validates :cep, presence: true, format: { with: CEP_REGEX, message: "inválido (use 12345-678)" }
+  validates :cep, presence: true,
+                  format: { with: /\A\d{5}-\d{3}\z/, message: "formato inválido (ex.: 12345-678)" }
 
   validates :state, presence: true, length: { is: 2 }
   validates :state, inclusion: {
@@ -44,12 +45,9 @@ class ShippingAddress < ApplicationRecord
   private
 
   def normalize_cep
-    return if cep.blank?
-    digits = cep.gsub(/\D/, "")
-    self.cep = if digits.length == 8
-      "#{digits[0,5]}-#{digits[5,3]}"
-    else
-      cep
+    digits = cep.to_s.gsub(/\D/, "")[0, 8]
+    self.cep = if digits.present?
+      digits.length > 5 ? "#{digits[0,5]}-#{digits[5,3]}" : digits
     end
   end
 
