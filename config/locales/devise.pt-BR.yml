@@ -1,7 +1,20 @@
 pt-BR:
   devise:
     failure:
+      # // usuário já logado tenta acessar página de login/cadastro
+      already_authenticated: "Você já está autenticado."
+      # // conta ainda não ativada (caso de :inactive)
+      inactive: "Sua conta ainda não foi ativada."
+      # // login inválido
+      invalid: "E-mail ou senha inválidos."
+      locked: "Sua conta está bloqueada."
+      last_attempt: "Você tem mais uma tentativa antes de sua conta ser bloqueada."
+      not_found_in_database: "E-mail ou senha inválidos."
+      timeout: "Sua sessão expirou. Faça login novamente para continuar."
+      # // mensagem padrão quando não está logado
       unauthenticated: "Você precisa entrar ou criar uma conta para continuar."
+      # // ESTA é a chave que estava faltando 👇
+      unconfirmed: "Você precisa confirmar seu e-mail antes de continuar."
 
     registrations:
       signed_up_but_unconfirmed: "Enviamos um e-mail com o link de confirmação. Por favor, acesse sua caixa de entrada para ativar sua conta."
