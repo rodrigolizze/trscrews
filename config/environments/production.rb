@@ -75,15 +75,30 @@ Rails.application.configure do
 
   # // URLs inside emails (e.g., link_to @order) will use this host
   config.action_mailer.default_url_options = {
-    host: ENV.fetch("APP_HOST", "example.herokuapp.com"), # // set real host via ENV in prod
+    host: ENV.fetch("APP_HOST", "trscrews-prod-4185ac87e394.herokuapp.com"),  # // fallback host
     protocol: "https"
   }
 
   # // Assets in email templates (if any) resolve with the same host
-  config.action_mailer.asset_host = "https://#{ENV.fetch("APP_HOST", "example.herokuapp.com")}"
+  config.action_mailer.asset_host = "https://#{ENV.fetch("APP_HOST", "trscrews-prod-4185ac87e394.herokuapp.com")}"
 
-  # Ignore bad email addresses and do not raise email delivery errors.
-  # Set this to true and configure the email server for immediate delivery to raise delivery errors.
+   # Use SMTP to send emails in production
+  config.action_mailer.delivery_method = :smtp
+
+  # Read SMTP credentials from ENV so we don't hard-code secrets in Git
+  config.action_mailer.smtp_settings = {
+    address:              ENV.fetch("SMTP_ADDRESS", "smtp.gmail.com"), # // e.g. smtp.gmail.com or your provider
+    port:                 ENV.fetch("SMTP_PORT", 587),
+    domain:               ENV.fetch("SMTP_DOMAIN", "gmail.com"),      # // your domain or provider domain
+    user_name:            ENV["SMTP_USERNAME"],                         # // set in Heroku config
+    password:             ENV["SMTP_PASSWORD"],                         # // set in Heroku config
+    authentication:       "plain",
+    enable_starttls_auto: true
+  }
+
+
+  # If you prefer not to crash when email fails, set this to false,
+  # but for now we keep true so you notice misconfigurations:
   # config.action_mailer.raise_delivery_errors = false
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
