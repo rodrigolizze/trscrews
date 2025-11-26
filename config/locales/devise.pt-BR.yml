@@ -1,0 +1,30 @@
+pt-BR:
+  devise:
+    failure:
+      unauthenticated: "Você precisa entrar ou criar uma conta para continuar."
+
+    registrations:
+      signed_up_but_unconfirmed: "Enviamos um e-mail com o link de confirmação. Por favor, acesse sua caixa de entrada para ativar sua conta."
+
+    # // ✅ Mensagens de sessão (login/logout)
+    sessions:
+      # // Devise tenta primeiro pt-BR.devise.sessions.user.signed_out,
+      # // se não existe, usa pt-BR.devise.sessions.signed_out.
+      signed_in: "Login realizado com sucesso."
+      signed_out: "Você saiu da sua conta com sucesso."
+      already_signed_out: "Você já tinha saído da sua conta."
+
+    # // ✅ Mensagens de confirmação de e-mail
+    confirmations:
+      # // Usada após clicar no link de confirmação do e-mail
+      confirmed: "Seu e-mail foi confirmado com sucesso. Bem-vindo à TRAutoParts!"
+
+    mailer:
+      confirmation_instructions:
+        subject: "Confirme sua conta na Trautoparts"
+
+  errors:
+    messages:
+      not_saved:
+        one: "1 erro impediu este %{resource} de ser salvo:"
+        other: "%{count} erros impediram este %{resource} de ser salvo:"

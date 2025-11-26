@@ -1,0 +1,11 @@
+<%# // Versão texto puro do e-mail de confirmação %>
+Olá <%= @resource.name.presence || @resource.email %>,
+
+Obrigado por se cadastrar na TR AutoParts.
+
+Para ativar sua conta, acesse o link abaixo:
+<%= confirmation_url(@resource, confirmation_token: @token) %>
+
+Se você não criou uma conta na TR AutoParts, pode ignorar esta mensagem.
+
+Equipe TR AutoParts

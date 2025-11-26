@@ -1,5 +1,73 @@
-<p>Welcome <%= @email %>!</p>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <%# // E-mails gostam de estilos inline e simples %>
+  </head>
+  <body style="margin:0; padding:0; background-color:#f3f4f6;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f4f6; padding:24px 0;">
+      <tr>
+        <td align="center">
+          <table width="480" cellpadding="0" cellspacing="0"
+                 style="background-color:#ffffff; border-radius:8px; padding:24px;
+                        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
 
-<p>You can confirm your account email through the link below:</p>
+            <tr>
+              <td align="center" style="padding-bottom:16px;">
+                <%# // “Logo” simples em texto por enquanto %>
+                <span style="font-size:22px; font-weight:700; letter-spacing:0.08em;">
+                  TR AUTOPARTS
+                </span>
+              </td>
+            </tr>
 
-<p><%= link_to 'Confirm my account', confirmation_url(@resource, confirmation_token: @token) %></p>
+            <tr>
+              <td style="font-size:16px; line-height:1.5; color:#111827;">
+                <%# // Tenta usar o nome, se não tiver usa o e-mail %>
+                <p style="margin:0 0 12px 0;">
+                  Olá
+                  <strong><%= @resource.name.presence || @resource.email %></strong>,
+                </p>
+
+                <p style="margin:0 0 12px 0;">
+                  Obrigado por se cadastrar na TR AutoParts. 🎉
+                </p>
+
+                <p style="margin:0 0 16px 0;">
+                  Para ativar sua conta e começar a comprar nossos produtos online com segurança,
+                  clique no botão abaixo:
+                </p>
+
+                <%# // Botão principal com o link de confirmação %>
+                <p style="margin:0 0 16px 0;" align="center">
+                  <%= link_to "Confirmar meu e-mail",
+                              confirmation_url(@resource, confirmation_token: @token),
+                              style: "display:inline-block; padding:12px 24px; border-radius:999px; text-decoration:none; font-weight:600; font-size:15px; background-color:#2563eb; color:#ffffff;" %>
+                </p>
+
+                <%# // Link “cru” para o caso do botão não funcionar %>
+                <p style="margin:0 0 8px 0; font-size:13px; color:#6b7280;">
+                  Se o botão não funcionar, copie e cole este link no seu navegador:
+                </p>
+
+                <p style="margin:0 0 16px 0; font-size:13px; color:#2563eb; word-break:break-all;">
+                  <%= confirmation_url(@resource, confirmation_token: @token) %>
+                </p>
+
+                <p style="margin:0 0 4px 0; font-size:13px; color:#6b7280;">
+                  Se você não criou uma conta na TR AutoParts, pode ignorar este e-mail.
+                </p>
+
+                <p style="margin:8px 0 0 0; font-size:13px; color:#6b7280;">
+                  Abraços,<br />
+                  Equipe TR AutoParts
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

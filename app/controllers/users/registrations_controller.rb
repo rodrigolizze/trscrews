@@ -10,6 +10,6 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   # // If using Devise Confirmable, same redirect after signup (inactive)
   def after_inactive_sign_up_path_for(resource)
-    new_shipping_address_path(return_to: "checkout")
+    root_path  # // ou new_user_session_path, ou outra página pública
   end
 end
