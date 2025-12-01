@@ -1,0 +1,80 @@
+<h1 style="margin: 0 0 12px; font-size: 22px;">Pagamento confirmado 🎉</h1>
+
+<p>Olá, <strong><%= @order.customer_name %></strong>!</p>
+
+<p>
+  Seu pagamento do pedido
+  <strong><%= @order.order_number || "##{@order.id}" %></strong>
+  foi <strong>aprovado</strong>.
+</p>
+
+<p>
+  Em breve vamos separar os produtos e enviar para o endereço abaixo.
+  Assim que o pedido for postado, enviaremos os dados de rastreamento.
+</p>
+
+<hr style="margin: 20px 0; border: 0; border-top: 1px solid #e5e5e5;">
+
+<h2 style="font-size: 18px; margin: 0 0 8px;">Endereço de entrega</h2>
+<p style="margin: 0 0 4px;"><strong><%= @order.customer_name %></strong></p>
+<p style="margin: 0 0 4px;">
+  <%= @order.street %>, <%= @order.number %>
+  <% if @order.complement.present? %>
+    – <%= @order.complement %>
+  <% end %>
+</p>
+<p style="margin: 0 0 4px;"><%= @order.district %></p>
+<p style="margin: 0 0 4px;"><%= @order.city %> – <%= @order.state %></p>
+<p style="margin: 0 0 12px;">CEP: <%= @order.cep %></p>
+
+<h2 style="font-size: 18px; margin: 16px 0 8px;">Resumo do pedido</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; font-size: 14px;">
+  <thead>
+    <tr>
+      <th align="left" style="padding: 4px 0; border-bottom: 1px solid #ddd;">Produto</th>
+      <th align="right" style="padding: 4px 0; border-bottom: 1px solid #ddd;">Qtd</th>
+      <th align="right" style="padding: 4px 0; border-bottom: 1px solid #ddd;">Preço</th>
+      <th align="right" style="padding: 4px 0; border-bottom: 1px solid #ddd;">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @order.order_items.includes(:screw).each do |item| %>
+      <tr>
+        <td style="padding: 6px 0;">
+          <strong><%= item.screw.description %></strong><br>
+          <span style="color: #666;">
+            <%= item.screw.thread %> — <%= item.screw.surface_treatment %>
+          </span>
+        </td>
+        <td align="right" style="padding: 6px 0;"><%= item.quantity %></td>
+        <td align="right" style="padding: 6px 0;"><%= format_price(item.unit_price) %></td>
+        <td align="right" style="padding: 6px 0;"><%= format_price(item.line_total) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="3" align="right" style="padding: 6px 0; border-top: 1px solid #ddd;">Subtotal</td>
+      <td align="right" style="padding: 6px 0; border-top: 1px solid #ddd;">
+        <strong><%= format_price(@order.subtotal) %></strong>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="3" align="right" style="padding: 2px 0;">Frete</td>
+      <td align="right" style="padding: 2px 0;">
+        <strong><%= format_price(@order.shipping) %></strong>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="3" align="right" style="padding: 6px 0; font-size: 15px;">Total</td>
+      <td align="right" style="padding: 6px 0; font-size: 15px;">
+        <strong><%= format_price(@order.total) %></strong>
+      </td>
+    </tr>
+  </tfoot>
+</table>
+
+<p style="margin-top: 20px;">
+  Obrigado por comprar com a TR AutoParts! 🚗🔩
+</p>

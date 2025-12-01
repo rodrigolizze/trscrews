@@ -30,9 +30,14 @@ class Order < ApplicationRecord
 
   # // Recalculate totals based on order_items
   def recalc_totals!
+    # soma dos itens
     self.subtotal = order_items.sum(:line_total)
-    # self.shipping = compute_shipping(subtotal)  # // central place to compute shipping
-    self.total    = subtotal + (shipping_fee || 0)
+
+    # mantém `shipping` em sincronia com `shipping_fee`
+    self.shipping = (shipping_fee || shipping || 0).to_d
+
+    # total = subtotal + frete
+    self.total = subtotal.to_d + shipping
   end
 
   # // Simple shipping rule: R$ 20,00; grátis acima de R$ 150,00

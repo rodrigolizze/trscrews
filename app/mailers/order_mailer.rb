@@ -1,16 +1,24 @@
 class OrderMailer < ApplicationMailer
-  default from: "nao-responder@screwshop.dev"  # dev placeholder
+  # Garante que os helpers da app (incluindo format_price) funcionem no e-mail
+  helper :application   # => usa ApplicationHelper
 
-  def confirmation(order)
+  # 1) E-mail enviado assim que o pedido é criado (pagamento pendente)
+  def pending_order(order)
     @order = order
-    mail to: @order.customer_email, subject: "Confirmação do pedido #{@order.order_number || "##{@order.id}"}"
+
+    mail(
+      to: @order.customer_email,
+      subject: "Pedido #{@order.order_number || "##{@order.id}"} recebido – pagamento pendente"
+    )
   end
 
-  def payment_received(order)
-    @order = order                               # // available in the view
-    @items = @order.order_items.includes(:screw) # // for the table
+  # 2) E-mail enviado depois que o Stripe confirma o pagamento
+  def payment_confirmed(order)
+    @order = order
 
-    # // Nice subject with order code/id
-    mail to: @order.customer_email, subject: "Pagamento confirmado — Pedido ##{@order.id}"
+    mail(
+      to: @order.customer_email,
+      subject: "Pagamento confirmado – Pedido #{@order.order_number || "##{@order.id}"}"
+    )
   end
 end

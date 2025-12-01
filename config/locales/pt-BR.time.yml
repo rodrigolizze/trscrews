@@ -1,0 +1,10 @@
+pt-BR:
+  time:
+    formats:
+      short: "%d/%m/%Y %H:%M"          # ex.: 01/12/2025 14:30
+      long:  "%d de %B de %Y %H:%M"    # ex.: 1 de dezembro de 2025 14:30
+
+  date:
+    formats:
+      short: "%d/%m/%Y"                # ex.: 01/12/2025
+      long:  "%d de %B de %Y"          # ex.: 1 de dezembro de 2025

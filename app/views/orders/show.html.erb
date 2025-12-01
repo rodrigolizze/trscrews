@@ -1,33 +1,57 @@
 <!-- app/views/orders/show.html.erb -->
 <div class="container py-4">
-  <h1 class="h3 mb-3">Pedido <%= @order.order_number || "#{@order.id}" %></h1>
-
-  <%# // Payment status badge ------------------------------------------------ %>
+  <%# --- Status do pagamento (texto + cor da badge) ------------------------ %>
   <% status_label, status_class =
       if @order.paid?
-        ["Pago", "success"]        # green badge
+        ["Pago", "success"]        # verde
       else
-        ["Pendente", "warning"]    # yellow badge
+        ["Pendente", "warning"]    # amarelo
       end %>
 
-  <div class="d-flex align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Pedido #<%= @order.id %></h1>
-    <span class="badge bg-<%= status_class %>"><%= status_label %></span>
+  <%# --- Cabeçalho do pedido (nº + status) -------------------------------- %>
+  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-3">
+    <div>
+      <h1 class="h3 mb-1">
+        Pedido <%= @order.order_number || "##{@order.id}" %>
+      </h1>
+      <div class="small text-muted">
+        Nº interno: #<%= @order.id %>
+      </div>
+    </div>
+
+    <span class="badge bg-<%= status_class %> px-3 py-2 fs-6 mt-2 mt-md-0">
+      <%= status_label %>
+    </span>
   </div>
 
-  <%# // Optional: show payment details when paid %>
+  <%# --- Bloco de pagamento / confirmação --------------------------------- %>
   <% if @order.paid? %>
-    <div class="alert alert-success py-2">
-      Pagamento recebido
-      <% if @order.paid_at.present? %>
-        em <%= l(@order.paid_at, format: :short) rescue @order.paid_at %>
-      <% end %>.
-      <% if @order.payment_reference.present? %>
-        <span class="text-muted">Ref: <%= @order.payment_reference %></span>
-      <% end %>
+    <div class="alert alert-success d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-4">
+      <div>
+        Pagamento recebido
+        <% if @order.paid_at.present? %>
+          em <%= l(@order.paid_at, format: :short) rescue @order.paid_at %>
+        <% end %>.
+        <% if @order.payment_reference.present? %>
+          <span class="text-muted">Ref: <%= @order.payment_reference %></span>
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <div class="alert alert-info d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+      <div>
+        <strong>Próximo passo:</strong>
+        <span>faça o pagamento para confirmar seu pedido.</span>
+      </div>
+
+      <%# Botão do Stripe bem visível no topo %>
+      <div>
+        <%= render "stripe_pay_button" %> <!-- usa @order -->
+      </div>
     </div>
   <% end %>
 
+  <%# --- Bloco de endereço de entrega ------------------------------------- %>
   <div class="row g-3 mb-4">
     <div class="col-md-6">
       <div class="p-3 bg-light rounded">
@@ -43,11 +67,13 @@
     </div>
   </div>
 
+  <%# --- Agradecimento + e-mail ------------------------------------------- %>
   <p class="mb-4">
     Obrigado, <strong><%= @order.customer_name %></strong>!
     Enviaremos a confirmação para <strong><%= @order.customer_email %></strong>.
   </p>
 
+  <%# --- Tabela de itens do pedido ---------------------------------------- %>
   <div class="table-responsive">
     <table class="table align-middle">
       <thead>
@@ -65,8 +91,9 @@
               <div class="d-flex gap-3">
                 <div style="width:64px;height:64px" class="border rounded d-flex align-items-center justify-content-center bg-white">
                   <% if item.screw.images.attached? %>
-                    <%= image_tag item.screw.images.first.variant(resize_to_limit: [120,120]),
-                                  class: "img-fluid p-1", style: "object-fit:contain" %>
+                    <%= image_tag item.screw.images.first.variant(resize_to_limit: [120, 120]),
+                                  class: "img-fluid p-1",
+                                  style: "object-fit:contain" %>
                   <% else %>
                     <span class="text-muted small">Sem imagem</span>
                   <% end %>
@@ -100,10 +127,8 @@
     </table>
   </div>
 
-  <%# === Stripe pay button (Checkout) === %>
-  <%= render "stripe_pay_button" %>  <%# uses @order from the controller %>
-
-  <div class="d-flex gap-2">
+  <%# --- Ações no rodapé --------------------------------------------------- %>
+  <div class="mt-4 text-center">
     <%= link_to "Voltar ao catálogo", screws_path, class: "btn btn-outline-secondary" %>
   </div>
 </div>

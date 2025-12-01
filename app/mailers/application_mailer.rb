@@ -1,6 +1,8 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: "nao-responder@screwshop.dev"
+  default from: "trautoparts.suporte@gmail.com"
   layout "mailer"
 
-  helper :application   # // makes ApplicationHelper available in mailer views
+  # 👇 Isso faz os helpers de ApplicationHelper (incluindo format_price)
+  # ficarem disponíveis em TODOS os templates de e-mail
+  helper :application
 end

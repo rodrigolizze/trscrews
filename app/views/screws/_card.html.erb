@@ -40,7 +40,7 @@
 
         <!-- Add 1 unit (disabled if no stock) and go to the cart -->
         <% if screw.in_stock? %>
-          <%= button_to "Add",
+          <%= button_to "Adicionar ao carrinho",
                         add_cart_path(screw_id: screw.id),
                         method: :post,
                         params: { quantity: 1 },

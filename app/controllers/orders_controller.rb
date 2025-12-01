@@ -52,26 +52,28 @@ class OrdersController < ApplicationController
 
   # // Step 2: Persist order + items; clear session cart; show confirmation
   def create
+    # // 1) Se o carrinho estiver vazio, volta para a lista de produtos
     if session[:cart].blank?
       redirect_to screws_path, alert: "Seu carrinho está vazio." and return
     end
 
+    # // 2) Monta o pedido a partir do form
     @order = Order.new(order_params)
     @order.status = :placed
     @order.placed_at = Time.current
 
-    # // Se usuário logado, associa o pedido ao usuário
+    # // 3) Se usuário estiver logado, associa o pedido ao usuário
     if defined?(user_signed_in?) && user_signed_in?
       @order.user = current_user
     end
 
-    # // Wrap everything in a DB transaction so stock + order are consistent
+    # // 4) Envolve tudo numa transação: pedido + estoque andam juntos
     ActiveRecord::Base.transaction do
-      # // Load screws once and index by id
-      screw_ids = session[:cart].keys.map!(&:to_i)
+      # // Carrega todos os parafusos do carrinho de uma vez
+      screw_ids    = session[:cart].keys.map!(&:to_i)
       screws_by_id = Screw.where(id: screw_ids).index_by(&:id)
 
-      # // Track shortages to show a useful message if needed
+      # // Guarda itens sem estoque suficiente, se houver
       shortages = []
 
       session[:cart].each do |screw_id_str, qty|
@@ -79,12 +81,12 @@ class OrdersController < ApplicationController
         next unless screw
         qty = qty.to_i
 
-        # // Lock the row to avoid race conditions (two checkouts at once)
+        # // Trava a linha no banco para evitar corrida de estoque
         screw.with_lock do
           if screw.stock < qty
             shortages << { description: screw.description, requested: qty, available: screw.stock }
           else
-            # // Enough stock: add item snapshot and decrement stock
+            # // Tem estoque: adiciona item no pedido e desconta o estoque
             @order.add_item!(screw, qty)
             screw.update!(stock: screw.stock - qty)
           end
@@ -92,29 +94,35 @@ class OrdersController < ApplicationController
       end
 
       if shortages.any?
-        # // Roll back everything: raise to abort the transaction
+        # // Se faltou estoque em algum item, cancela tudo
         raise ActiveRecord::Rollback
       end
 
-      @order.shipping_fee = shipping_for(@order.order_items.sum(&:line_total), uf: @order.state) # // calcula frete pelo subtotal atual
+      # // Calcula frete com base no subtotal e UF escolhida
+      @order.shipping_fee = shipping_for(@order.order_items.sum(&:line_total), uf: @order.state)
 
+      # // Recalcula subtotal, total etc.
       @order.recalc_totals!
 
+      # // Se validações falharem, também fazemos rollback
       unless @order.save
-        # // If validations fail, rollback
         raise ActiveRecord::Rollback
       end
     end
 
     if @order.persisted?
+      # // Transação deu certo: limpa o carrinho da sessão
       session[:cart] = {}
-      OrderMailer.confirmation(@order).deliver_now
-      redirect_to @order, notice: "Pedido realizado com sucesso!"
+
+      # // NOVO: e-mail de "pedido recebido / pagamento pendente"
+      OrderMailer.pending_order(@order).deliver_later
+
+      redirect_to @order, notice: "Pedido realizado com sucesso! Enviamos os detalhes para o seu e-mail."
     else
-      # // Rebuild summary and show a message if there was a shortage
+      # // Transação falhou: reconstruímos o resumo e avisamos o usuário
       rebuild_summary_for_render
       flash.now[:alert] = "Alguns itens não têm estoque suficiente. Atualizamos as quantidades do carrinho."
-      # // Optional: sync the cart quantities to current stock to be friendly
+      # // Opcional: ajusta o carrinho para não pedir mais itens do que há em estoque
       sync_cart_to_stock!
       render :new, status: :unprocessable_entity
     end
