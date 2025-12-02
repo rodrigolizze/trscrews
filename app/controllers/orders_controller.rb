@@ -1,5 +1,9 @@
 # app/controllers/orders_controller.rb
 class OrdersController < ApplicationController
+  before_action :authenticate_user!, only: [:show]
+  before_action :set_order, only: [:show]
+  before_action :authorize_order!, only: [:show]
+
   # // Step 1: Show checkout form with a summary of the session cart
   def new
     if session[:cart].blank?
@@ -198,5 +202,23 @@ class OrdersController < ApplicationController
     order.district   = addr.district
     order.city       = addr.city
     order.state      = addr.state
+  end
+
+  def set_order
+    @order = Order.find(params[:id])
+  end
+
+  def authorize_order!
+    if current_user.respond_to?(:admin?) && current_user.admin?
+      return
+    end
+
+    if @order.user_id.present?
+      if @order.user_id != current_user.id
+        redirect_to root_path, alert: "Você não pode acessar este pedido." and return
+      end
+    else
+      redirect_to root_path, alert: "Este pedido não está associado ao seu usuário." and return
+    end
   end
 end
