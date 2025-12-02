@@ -1,44 +1,46 @@
 pt-BR:
   devise:
     failure:
-      # // usuário já logado tenta acessar página de login/cadastro
+      # usuário já logado tenta acessar página de login/cadastro
       already_authenticated: "Você já está autenticado."
-      # // conta ainda não ativada (caso de :inactive)
+      # conta ainda não ativada (caso de :inactive)
       inactive: "Sua conta ainda não foi ativada."
-      # // login inválido
+      # login inválido
       invalid: "E-mail ou senha inválidos."
       locked: "Sua conta está bloqueada."
       last_attempt: "Você tem mais uma tentativa antes de sua conta ser bloqueada."
       not_found_in_database: "E-mail ou senha inválidos."
       timeout: "Sua sessão expirou. Faça login novamente para continuar."
-      # // mensagem padrão quando não está logado
+      # mensagem padrão quando não está logado
       unauthenticated: "Você precisa entrar ou criar uma conta para continuar."
-      # // ESTA é a chave que estava faltando 👇
+      # esta é a chave usada quando a conta ainda não foi confirmada
       unconfirmed: "Você precisa confirmar seu e-mail antes de continuar."
 
     registrations:
       signed_up_but_unconfirmed: "Enviamos um e-mail com o link de confirmação. Por favor, acesse sua caixa de entrada para ativar sua conta."
 
-    # // ✅ Mensagens de sessão (login/logout)
+    # Mensagens de sessão (login/logout)
     sessions:
-      # // Devise tenta primeiro pt-BR.devise.sessions.user.signed_out,
-      # // se não existe, usa pt-BR.devise.sessions.signed_out.
       signed_in: "Login realizado com sucesso."
       signed_out: "Você saiu da sua conta com sucesso."
       already_signed_out: "Você já tinha saído da sua conta."
 
-    # // ✅ Mensagens de confirmação de e-mail
+    # Mensagens de confirmação de e-mail
     confirmations:
-      # // Usada após clicar no link de confirmação do e-mail
       confirmed: "Seu e-mail foi confirmado com sucesso. Bem-vindo à TRAutoParts!"
 
     mailer:
       confirmation_instructions:
         subject: "Confirme sua conta na Trautoparts"
 
+  activerecord:
+    attributes:
+      user:
+        email: "Email"
+
   errors:
     messages:
+      taken: "já está em uso"   # ← ESTA É A CHAVE QUE A GENTE QUER
       not_saved:
         one: "1 erro impediu este %{resource} de ser salvo:"
         other: "%{count} erros impediram este %{resource} de ser salvo:"
-        taken: "já está em uso"
