@@ -25,7 +25,12 @@ Rails.application.routes.draw do
   get "/orders/mine", to: "orders#mine", as: :my_orders
 
   # Orders: checkout/new/create/show
-  resources :orders, only: [:new, :create, :show]
+  resources :orders, only: [:new, :create, :show] do
+    member do
+      get :thank_you   # gera helper thank_you_order_path(@order)
+    end
+  end
+
   get "/checkout", to: "orders#new", as: :checkout
 
   # ViaCEP lookup endpoint (fix helper name)

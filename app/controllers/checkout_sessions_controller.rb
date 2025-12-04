@@ -63,8 +63,8 @@ class CheckoutSessionsController < ApplicationController
       }
     end
 
-    success_url = order_url(@order, paid: 1, session_id: "{CHECKOUT_SESSION_ID}")
-    cancel_url  = order_url(@order, canceled: 1)
+    success_url = thank_you_order_url(@order, paid: 1, session_id: "{CHECKOUT_SESSION_ID}")
+    cancel_url  = thank_you_order_url(@order, canceled: 1)
 
     session = Stripe::Checkout::Session.create(
       mode: "payment",

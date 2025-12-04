@@ -1,8 +1,9 @@
 # app/controllers/orders_controller.rb
 class OrdersController < ApplicationController
   before_action :authenticate_user!, only: [:show]
-  before_action :set_order, only: [:show]
+  before_action :set_order, only: [:show, :thank_you]
   before_action :authorize_order!, only: [:show]
+  before_action :authorize_thank_you!, only: [:thank_you]
 
   # // Step 1: Show checkout form with a summary of the session cart
   def new
@@ -118,10 +119,16 @@ class OrdersController < ApplicationController
       # // Transação deu certo: limpa o carrinho da sessão
       session[:cart] = {}
 
-      # // NOVO: e-mail de "pedido recebido / pagamento pendente"
+      # // Guarda o último pedido na sessão, para liberar o acesso à página "obrigado"
+      session[:last_order_id] = @order.id
+
+      # // E-mail de "pedido recebido / pagamento pendente"
       OrderMailer.pending_order(@order).deliver_later
 
-      redirect_to @order, notice: "Pedido realizado com sucesso! Enviamos os detalhes para o seu e-mail."
+      # // Em vez de ir para /orders/:id (que exige login),
+      # // mandamos todo mundo para a página amigável de obrigado
+      redirect_to thank_you_order_path(@order),
+                  notice: "Pedido realizado com sucesso! Enviamos os detalhes para o seu e-mail."
     else
       # // Transação falhou: reconstruímos o resumo e avisamos o usuário
       rebuild_summary_for_render
@@ -135,6 +142,13 @@ class OrdersController < ApplicationController
   # // Step 3: Confirmation page
   def show
     @order = Order.includes(order_items: [screw: { images_attachments: :blob }]).find(params[:id])
+  end
+
+  def thank_you
+    # // Não precisa de lógica aqui:
+    # // - @order já foi carregado por set_order
+    # // - authorize_thank_you! já rodou
+    # // Só renderiza app/views/orders/thank_you.html.erb
   end
 
   # // List the current user’s own orders (requires login)
@@ -220,5 +234,25 @@ class OrdersController < ApplicationController
     else
       redirect_to root_path, alert: "Este pedido não está associado ao seu usuário." and return
     end
+  end
+
+  def authorize_thank_you!
+    # // Admin logado pode tudo
+    if defined?(current_user) && current_user && current_user.respond_to?(:admin?) && current_user.admin?
+      return
+    end
+
+    # // Se usuário estiver logado E for dono do pedido, permite
+    if defined?(user_signed_in?) && user_signed_in? && @order.user_id.present? && @order.user_id == current_user.id
+      return
+    end
+
+    # // Se a sessão atual acabou de criar esse pedido, permite também
+    if session[:last_order_id].present? && session[:last_order_id].to_i == @order.id
+      return
+    end
+
+    # // Qualquer outro caso: bloqueia acesso
+    redirect_to root_path, alert: "Você não pode acessar esta página." and return
   end
 end
