@@ -40,16 +40,16 @@
       <% if @screw.images.attached? %>
         <% @screw.images.each do |img| %>
           <a href="#"
-             class="d-inline-block"
-             data-action="click->gallery#swap"
-             data-gallery-target="thumb"
-             data-url="<%= url_for(cdn_variant(img, resize_to_limit: [1000, 1000])) %>">
-            <%= image_tag cdn_variant(img, resize_to_limit: [200, 200]),
-              class: "rounded border opacity-75",
-              style: "width: 72px; height: 72px; object-fit: cover;",
-              alt: @screw.description,
-              loading: "lazy",
-              decoding: "async" %>
+            class="d-inline-block"
+            data-action="click->gallery#swap"
+            data-gallery-target="thumb"
+            data-url="<%= url_for(img.variant(resize_to_limit: [1000, 1000])) %>">
+            <%= image_tag img.variant(resize_to_limit: [200, 200]),
+                          class: "rounded border opacity-75",
+                          style: "width: 72px; height: 72px; object-fit: cover;",
+                          alt: @screw.description,
+                          loading: "lazy",
+                          decoding: "async" %>
           </a>
         <% end %>
       <% end %>
