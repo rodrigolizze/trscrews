@@ -64,16 +64,16 @@
 
 <section class="py-5 bg-gray-custom text-title-custom text-center">
   <div class="container">
-    <h2 class="mb-3 fw-bold">Por que escolher a TR AutoParts?</h2>
+    <h2 class="mb-3 fw-bold">Por que escolher a TR AutoFix?</h2>
     <p class="mb-5 text-title-custom">
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim.
+      Do dia a dia da oficina ao projeto em casa: oferecemos fixadores e autopeças com padrão de qualidade, entrega rápida e atendimento para tirar dúvidas antes e depois da compra.
     </p>
 
     <% advertisings = [
-      { icon: "check2-square", title: "Qualidade Garantida", text: "Produtos testados e aprovados pelo fabricante." },
+      { icon: "check2-square", title: "Qualidade Garantida", text: "Fornecedores confiáveis e dispostos a dar o melhor." },
       { icon: "check2-square", title: "Entrega Rápida", text: "Entregamos em todo o Brasil com agilidade e segurança." },
-      { icon: "check2-square", title: "Suporte Técnico", text: "Anos de experiência como fabricante." },
-      { icon: "check2-square", title: "Produtos diretamente com o fabricante.", text: "Fornecedores confiáveis e dispostos a dar o melhor." }
+      { icon: "check2-square", title: "Suporte Técnico", text: "Equipe com experiência no setor." },
+      { icon: "check2-square", title: "Produtos diretamente com o fabricante.", text: "Fornecedores dispostos a solucionar o problema." }
     ] %>
 
     <div class="row row-cols-1 row-cols-md-4 g-4 ">
@@ -90,14 +90,15 @@
   <div class="container">
     <h2 class="fw-bold mb-2">Produtos em Destaque</h2>
     <p class="text-gray-custom mb-5">
-      Confira nossa seleção especial de produtos mais procurados
+      Confira nossa seleção de produtos mais procurados.
     </p>
     <div class="row row-cols-1 row-cols-md-4 g-4">
       <% @featured_screws.each_with_index do |screw, index| %>
         <% carousel_id = "productCarousel-#{SecureRandom.hex(4)}" %>
+
         <div class="col">
-          <div class="card h-100">
-            <!-- Carousel -->
+          <div class="card h-100 d-flex flex-column">
+            <!-- // Carousel (altura fixa já ajuda bastante) -->
             <div id="<%= carousel_id %>" class="carousel slide" data-bs-ride="carousel">
               <div class="carousel-inner">
                 <% screw.images.each_with_index do |img, index| %>
@@ -107,24 +108,29 @@
                 <% end %>
               </div>
 
-              <!-- Carousel arrows -->
               <button class="carousel-control-prev" type="button" data-bs-target="#<%= carousel_id %>" data-bs-slide="prev">
                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Previous</span>
               </button>
+
               <button class="carousel-control-next" type="button" data-bs-target="#<%= carousel_id %>" data-bs-slide="next">
                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Next</span>
               </button>
             </div>
 
-            <!-- Card content -->
-            <div class="card-body text-center">
+            <!-- // Card content vira flex-column e ocupa o resto da altura -->
+            <div class="card-body text-center d-flex flex-column flex-grow-1">
               <small class="text-muted"><%= screw.thread %> — <%= screw.surface_treatment %></small>
+
               <h6 class="fw-bold mt-2"><%= screw.description %></h6>
+
               <p class="mb-1 text-muted"><%= screw.automaker %> - <%= screw.model %></p>
-              <p class="fw-bold">R$ <%= screw.price %></p>
-              <%= link_to "VER DETALHES", screw_path(screw), class: "btn btn-yellow w-100" %>
+
+              <p class="fw-bold mb-3">R$ <%= screw.price %></p>
+
+              <!-- // mt-auto empurra o botão para o fundo do card -->
+              <%= link_to "VER DETALHES", screw_path(screw), class: "btn btn-yellow w-100 mt-auto" %>
             </div>
           </div>
         </div>

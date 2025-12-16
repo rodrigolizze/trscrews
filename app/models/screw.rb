@@ -105,17 +105,24 @@ class Screw < ApplicationRecord
 
   # == Broad search across multiple columns (SQLite & Postgres friendly) ==
   scope :search, ->(q) do
-    if (pat = safe_pattern(q))
-      where(
-        "LOWER(COALESCE(description, ''))        LIKE :q OR
-         LOWER(COALESCE(thread, ''))             LIKE :q OR
-         LOWER(COALESCE(automaker, ''))          LIKE :q OR
-         LOWER(COALESCE(model, ''))              LIKE :q OR
-         LOWER(COALESCE(surface_treatment, ''))  LIKE :q",
-        q: pat
+    # // Se não tem busca, devolve a relação sem filtrar
+    return all if q.blank?
+
+    # // 1) Quebra a busca em palavras: "Parafuso Toyota" => ["Parafuso", "Toyota"]
+    terms = q.to_s.strip.split(/\s+/)
+
+    # // 2) Para cada palavra:
+    # //    - ela pode aparecer em QUALQUER campo (OR)
+    # //    - todas as palavras precisam bater (AND) porque aplicamos um where por termo
+    terms.reduce(all) do |relation, term|
+      # // Evita que caracteres especiais do LIKE (% e _) quebrem a busca
+      safe_term = ActiveRecord::Base.sanitize_sql_like(term)
+      pattern = "%#{safe_term}%"
+
+      relation.where(
+        "description ILIKE :p OR thread ILIKE :p OR automaker ILIKE :p OR model ILIKE :p OR surface_treatment ILIKE :p",
+        p: pattern
       )
-    else
-      all
     end
   end
 

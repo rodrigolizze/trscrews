@@ -32,15 +32,15 @@
   <tfoot>
     <tr>
       <td colspan="3" align="right">Subtotal</td>
-      <td align="right"><%= format_price(@order.subtotal) %></td>
+      <td align="right"><%= format_price(@order.items_subtotal) %></td>
     </tr>
     <tr>
       <td colspan="3" align="right">Frete</td>
-      <td align="right"><%= format_price(@order.shipping) %></td>
+      <td align="right"><%= format_price(@order.shipping_amount) %></td>
     </tr>
     <tr>
       <td colspan="3" align="right"><strong>Total</strong></td>
-      <td align="right"><strong><%= format_price(@order.total) %></strong></td>
+      <td align="right"><strong><%= format_price(@order.total_amount) %></strong></td>
     </tr>
   </tfoot>
 </table>

@@ -8,8 +8,8 @@ Itens:
 - <%= item.screw.description %> | Qtd: <%= item.quantity %> | Preço: <%= format_price(item.unit_price) %> | Total: <%= format_price(item.line_total) %>
 <% end %>
 
-Subtotal: <%= format_price(@order.subtotal) %>
-Frete:    <%= format_price(@order.shipping) %>
-Total:    <%= format_price(@order.total) %>
+Subtotal: <%= format_price(@order.items_subtotal) %>
+Frete:    <%= format_price(@order.shipping_amount) %>
+Total:    <%= format_price(@order.total_amount) %>
 
 Ver pedido: <%= order_url(@order) %>

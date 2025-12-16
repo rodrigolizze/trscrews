@@ -29,21 +29,22 @@
   <% meta_image url_for(@screw.images.first.variant(resize_to_limit: [800, 800])) %>
 <% end %>
 
-<div class="container py-4" data-controller="gallery">
+<div class="container py-4 py-lg-5" data-controller="gallery">
+  <%# // Top link back %>
   <div class="mb-3">
     <%= link_to "← Voltar ao catálogo", screws_path, class: "text-decoration-none" %>
   </div>
 
-  <div class="row gx-2 gy-4 align-items-start">
-    <%# // Left column: vertical thumbnails (desktop) %>
-    <div class="col-12 col-md-auto order-2 order-md-1 d-none d-md-flex flex-column gap-2">
+  <div class="row gx-3 gy-4 align-items-start">
+    <%# // Left column: vertical thumbnails (desktop) — NÃO MEXER (mantido) %>
+    <div class="col-12 col-md-auto d-none d-md-flex flex-column gap-2">
       <% if @screw.images.attached? %>
         <% @screw.images.each do |img| %>
           <a href="#"
-            class="d-inline-block"
-            data-action="click->gallery#swap"
-            data-gallery-target="thumb"
-            data-url="<%= url_for(img.variant(resize_to_limit: [1000, 1000])) %>">
+             class="d-inline-block"
+             data-action="click->gallery#swap"
+             data-gallery-target="thumb"
+             data-url="<%= url_for(img.variant(resize_to_limit: [1000, 1000])) %>">
             <%= image_tag img.variant(resize_to_limit: [200, 200]),
                           class: "rounded border opacity-75",
                           style: "width: 72px; height: 72px; object-fit: cover;",
@@ -55,10 +56,13 @@
       <% end %>
     </div>
 
-    <%# // Right column: main image + details %>
-    <div class="col-12 col-md order-1 order-md-2">
-      <div class="row gx-2 gy-4 align-items-start">
-        <div class="col-md-7">
+    <%# // Main area: image + details %>
+    <div class="col-12 col-md">
+      <div class="row gy-4">
+        <%# =====================
+            Left: main image + mobile thumbs (NÃO MEXER no funcionamento)
+            ===================== %>
+        <div class="col-12 col-lg-7">
           <%# // pick the newest attached image; nil if none %>
           <% primary = primary_attachment(@screw) %>
 
@@ -70,13 +74,12 @@
                   alt: @screw.description %>
           <% else %>
             <div class="bg-light d-flex align-items-center justify-content-center rounded"
-                style="height: 360px;">
+                 style="height: 360px;">
               <span class="text-muted">Sem imagens</span>
             </div>
           <% end %>
-        </div>
 
-          <%# // Mobile thumbnails below the main image %>
+          <%# // Mobile thumbnails below the main image — mantido %>
           <div class="d-md-none mt-3 d-flex gap-2 overflow-auto">
             <% if @screw.images.attached? %>
               <% @screw.images.each do |img| %>
@@ -97,50 +100,101 @@
           </div>
         </div>
 
-        <div class="col-md-5">
-          <small class="text-muted"><%= @screw.thread %> — <%= @screw.surface_treatment %></small>
-          <h3 class="fw-bold mt-1"><%= @screw.description %></h3>
-          <p class="mb-1 text-muted"><%= @screw.automaker %> - <%= @screw.model %></p>
+        <%# =====================
+            Right: Product details (melhoria visual)
+            ===================== %>
+        <div class="col-12 col-lg-5">
+          <%# // Sticky ajuda a manter o CTA visível no desktop %>
+          <div class="position-sticky" style="top: 1rem;">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-4">
+                <%# // Badges com info rápida %>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                  <% if @screw.thread.present? %>
+                    <span class="badge rounded-pill text-bg-light border">Rosca: <%= @screw.thread %></span>
+                  <% end %>
 
-          <hr>
+                  <% if @screw.surface_treatment.present? %>
+                    <span class="badge rounded-pill text-bg-light border"><%= @screw.surface_treatment %></span>
+                  <% end %>
 
-          <%# // Specs list (only render non-blank fields) %>
-          <dl class="row small">
-            <% {
-              "Rosca" => @screw.thread,
-              "Comprimento da rosca" => @screw.thread_length,
-              "Classe de resistência" => @screw.resistance_class,
-              "Tratamento" => @screw.surface_treatment,
-              "Montadora" => @screw.automaker,
-              "Modelo" => @screw.model
-            }.each do |label, value| %>
-              <% next if value.blank? %>
-              <dt class="col-6 text-muted"><%= label %></dt>
-              <dd class="col-6"><%= value %></dd>
-            <% end %>
-          </dl>
+                  <%# // Estoque em destaque (sem prometer nada demais) %>
+                  <% if @screw.out_of_stock? %>
+                    <span class="badge rounded-pill text-bg-secondary">Indisponível</span>
+                  <% else %>
+                    <span class="badge rounded-pill text-bg-success">Em estoque</span>
+                  <% end %>
+                </div>
 
-          <%# // Price + add-to-cart (qty=1) — uses your current route helper add_cart_path %>
-          <div class="p-3 bg-light rounded d-flex align-items-center justify-content-between my-3">
-            <div>
-              <div class="fs-4 fw-bold"><%= format_price(@screw.price) %></div>
-                <% if @screw.out_of_stock? %>
-                  <span class="badge bg-secondary">Indisponível</span>
-                <% else %>
-                  <small class="text-muted">Estoque: <%= @screw.stock %> un.</small>
+                <h1 class="h3 fw-bold mb-1"><%= @screw.description %></h1>
+
+                <div class="text-muted mb-3">
+                  <%= [@screw.automaker, @screw.model].compact_blank.join(" • ") %>
+                </div>
+
+                <%# // Specs em formato de tabela (mais “loja”) %>
+                <% specs = {
+                  "Rosca" => @screw.thread,
+                  "Comprimento da rosca" => @screw.thread_length,
+                  "Classe de resistência" => @screw.resistance_class,
+                  "Tratamento" => @screw.surface_treatment,
+                  "Montadora" => @screw.automaker,
+                  "Modelo" => @screw.model
+                }.select { |_k, v| v.present? } %>
+
+                <% if specs.any? %>
+                  <div class="border rounded-3 overflow-hidden mb-4">
+                    <div class="px-3 py-2 bg-light fw-semibold">Especificações</div>
+
+                    <div class="table-responsive">
+                      <table class="table table-sm mb-0 align-middle">
+                        <tbody>
+                          <% specs.each do |label, value| %>
+                            <tr>
+                              <td class="text-muted" style="width: 52%;"><%= label %></td>
+                              <td class="fw-semibold"><%= value %></td>
+                            </tr>
+                          <% end %>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 <% end %>
-              </div>
 
-              <% if @screw.in_stock? %>
-                <%= button_to "COMPRAR",
-                              add_cart_path(screw_id: @screw.id),
-                              method: :post,
-                              params: { quantity: 1 },
-                              class: "btn btn-yellow px-4" %>
-              <% else %>
-                <button class="btn btn-secondary px-4" disabled>Sem estoque</button>
-              <% end %>
+                <%# // Caixa de preço + CTA %>
+                <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-between gap-3">
+                  <div>
+                    <div class="fs-3 fw-bold mb-1"><%= format_price(@screw.price) %></div>
+
+                    <% if @screw.out_of_stock? %>
+                      <small class="text-muted">Sem estoque no momento</small>
+                    <% else %>
+                      <small class="text-muted">Estoque: <%= @screw.stock %> un.</small>
+                    <% end %>
+                  </div>
+
+                  <div class="text-end">
+                    <% if @screw.in_stock? %>
+                      <%= button_to "COMPRAR",
+                                    add_cart_path(screw_id: @screw.id),
+                                    method: :post,
+                                    params: { quantity: 1 },
+                                    class: "btn btn-yellow px-4 py-2 fw-semibold" %>
+                    <% else %>
+                      <button class="btn btn-secondary px-4 py-2" disabled>Sem estoque</button>
+                    <% end %>
+                  </div>
+                </div>
+
+                <%# // Texto pequeno opcional (neutro, sem promessas) %>
+                <div class="small text-muted mt-3">
+                  <div>• Confira compatibilidade antes da compra.</div>
+                  <div>• Frete e prazo são calculados no checkout.</div>
+                </div>
+              </div>
+            </div>
           </div>
+          <%# // end sticky %>
         </div>
       </div>
     </div>

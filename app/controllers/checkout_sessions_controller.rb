@@ -73,7 +73,13 @@ class CheckoutSessionsController < ApplicationController
       success_url: success_url,
       cancel_url:  cancel_url,
       locale: "pt-BR",
-      shipping_address_collection: { allowed_countries: ["BR"] },
+
+      # // ✅ Endereço de cobrança para recibo/antifraude
+      # // "required" força sempre
+      billing_address_collection: "required",
+
+      # // ❌ Não pedir endereço de entrega no Stripe (você já coleta no pedido)
+      # shipping_address_collection: { allowed_countries: ["BR"] },
 
       metadata: { order_id: @order.id },
 

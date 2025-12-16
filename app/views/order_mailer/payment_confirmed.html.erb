@@ -57,19 +57,19 @@
     <tr>
       <td colspan="3" align="right" style="padding: 6px 0; border-top: 1px solid #ddd;">Subtotal</td>
       <td align="right" style="padding: 6px 0; border-top: 1px solid #ddd;">
-        <strong><%= format_price(@order.subtotal) %></strong>
+        <strong><%= format_price(@order.items_subtotal) %></strong>
       </td>
     </tr>
     <tr>
       <td colspan="3" align="right" style="padding: 2px 0;">Frete</td>
       <td align="right" style="padding: 2px 0;">
-        <strong><%= format_price(@order.shipping) %></strong>
+        <strong><%= format_price(@order.shipping_amount) %></strong>
       </td>
     </tr>
     <tr>
       <td colspan="3" align="right" style="padding: 6px 0; font-size: 15px;">Total</td>
       <td align="right" style="padding: 6px 0; font-size: 15px;">
-        <strong><%= format_price(@order.total) %></strong>
+        <strong><%= format_price(@order.total_amount) %></strong>
       </td>
     </tr>
   </tfoot>

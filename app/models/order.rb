@@ -80,6 +80,21 @@ class Order < ApplicationRecord
     end
   end
 
+  def items_subtotal
+    # // Soma garantida dos itens, sem depender do campo subtotal estar salvo
+    order_items.sum { |item| item.line_total.to_d }
+  end
+
+  def shipping_amount
+    # // Usa o campo que existir/preferir
+    (shipping_fee || shipping || 0).to_d
+  end
+
+  def total_amount
+    # // Total sempre consistente = itens + frete
+    items_subtotal + shipping_amount
+  end
+
   private
 
   def assign_order_number!

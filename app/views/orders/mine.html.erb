@@ -30,6 +30,14 @@
 
             <%# // Choose a badge color based on status %>
             <% status = (order.respond_to?(:payment_status) ? order.payment_status.to_s : (order.paid_at.present? ? "paid" : "pending")) %>
+            <% status_label =
+              case status
+              when "paid"      then "Pago"
+              when "pending"   then "Pendente"
+              when "failed"    then "Falhou"
+              when "cancelled" then "Cancelado"
+              else                  status
+              end %>
             <% badge_class =
                  case status
                  when "paid"       then "bg-success"
@@ -47,7 +55,7 @@
 
             <tr>
               <td><strong><%= code %></strong></td>
-              <td><span class="badge <%= badge_class %>"><%= status %></span></td>
+              <td><span class="badge <%= badge_class %>"><%= status_label %></span></td>
               <td><%= l(order.created_at, format: :short) %></td>
               <td class="text-end"><%= format_price(total) %></td>
               <td class="text-end">

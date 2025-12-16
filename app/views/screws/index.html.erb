@@ -5,7 +5,7 @@
   <%# -- Filter + Search + Sort form (GET) -- %>
   <%= form_with url: screws_path, method: :get, local: true, class: "row g-2 mb-4" do %>
     <div class="col-12 col-md-4">
-      <label class="form-label small">Buscar (descrição)</label>
+      <label class="form-label small">Buscar</label>
       <%= text_field_tag :q, params[:q], class: "form-control", placeholder: "Ex.: parafuso M6, cabeçote hex..." %>
     </div>
 
