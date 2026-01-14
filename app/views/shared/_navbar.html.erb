@@ -1,6 +1,10 @@
 <nav class="navbar navbar-expand-lg" style="background-color: $color-owhite;">
-  <div class="container-fluid px-5 py-2">
-    <a class="navbar-brand fw-bold" style="color: $color-otitle;" href="#">TR AutoParts</a>
+  <div class="container-fluid px-0 py-0">
+    <%= link_to root_path, class: "navbar-brand d-flex align-items-center" do %>
+      <%= image_tag "logo-tr-autofix.png",
+            alt: "TR AutoFix - Peças Automotivas",
+            class: "navbar-logo" %>
+    <% end %>
 
     <div class="collapse navbar-collapse justify-content-center">
       <ul class="navbar-nav mb-2 mb-lg-0 gap-3">
@@ -39,7 +43,7 @@
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
             <li><%= link_to "Meus pedidos", my_orders_path, class: "dropdown-item" %></li>
             <li><%= link_to "Editar conta", edit_user_registration_path, class: "dropdown-item" %></li>
-            <li><%= link_to "Meus endereços", shipping_addresses_path, class: "dropdown-item" %></li> 
+            <li><%= link_to "Meus endereços", shipping_addresses_path, class: "dropdown-item" %></li>
             <li><hr class="dropdown-divider"></li>
             <li><%= button_to "Sair", destroy_user_session_path, method: :delete, class: "dropdown-item" %></li>
           </ul>

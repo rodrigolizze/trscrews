@@ -3,9 +3,25 @@
 
 .navbar {
   background-color: $color-owhite;
+  min-height: 60px; // altura fixa do "container" da navbar
 
   .navbar-brand {
     color: $color-otitle;
+
+    // // 🔒 trava a altura do "slot" do logo dentro da navbar
+    height: 60px;            // igual ao min-height da navbar
+    display: flex;
+    align-items: center;
+    padding-top: 16px;          // evita empurrar
+    padding-bottom: 0;       // evita empurrar
+  }
+
+  .navbar-logo {
+    // // ✅ o logo cresce, mas só até caber no slot (não aumenta a navbar)
+    height: 160px;            // ajuste visual aqui
+    width: auto;
+    object-fit: contain;
+    display: block;          // remove baseline "fantasma" de imagem inline
   }
 
   .nav-link {
