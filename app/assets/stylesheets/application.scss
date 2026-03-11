@@ -36,6 +36,17 @@ body {
   color: white;
 }
 
+// Banner sem borda: imagem preenche todo o espaço
+// IMPORTANTE: não usar display:flex em .carousel-item - quebra o Bootstrap carousel
+.banner-full-bleed {
+  padding: 0;
+  overflow: hidden;
+
+  .carousel-item {
+    min-height: 320px;
+  }
+}
+
 .btn-primary-custom {
   background-color: $color-primary;
   color: #1F2937;
