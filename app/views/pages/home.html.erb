@@ -1,9 +1,14 @@
 <section class="banner-dark banner-full-bleed">
-  <div id="fullHeroCarousel" class="carousel slide" data-bs-ride="carousel">
+  <div id="fullHeroCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-pause="hover">
     <div class="carousel-inner">
+      <div class="carousel-indicators">
+        <button type="button" data-bs-target="#fullHeroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+        <button type="button" data-bs-target="#fullHeroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+        <button type="button" data-bs-target="#fullHeroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+      </div>
 
       <!-- Slide 1: Text + 3 imagens (banner como fundo) -->
-      <div class="carousel-item active" style="background-image: url('<%= asset_path('banner-tr-autofix.png') %>'); background-size: cover; background-position: center;">
+      <div class="carousel-item active banner-slide-1" style="background-image: url('<%= asset_path('banner-tr-autofix.png') %>'); background-size: cover;">
         <div class="container py-5">
           <div class="row align-items-center text-light-custom">
             <div class="col-md-6 banner-hero-text">
@@ -29,24 +34,20 @@
       </div>
 
       <!-- Slide 2 -->
-      <div class="carousel-item" style="background-image: url('<%= asset_path('banner-tr-autofix2.png') %>'); background-size: cover; background-position: center;">
-        <div class="container text-light-custom text-center py-5 banner-hero-text">
+      <div class="carousel-item banner-slide-2" style="background-image: url('<%= asset_path('banner-tr-autofix2.png') %>'); background-size: cover;">
+        <div class="container text-light-custom text-center py-5 banner-hero-text d-flex flex-column align-items-center justify-content-center min-vh-0" style="min-height: 420px;">
           <h2 class="fw-bold">🚗 Encontre o kit ideal para seu carro</h2>
-          <p class="lead mt-3">Temos milhares de parafusos, kits e acessórios compatíveis com seu modelo.</p>
-            <div class ="container">
-              <%= link_to "Ver Catálogo →", screws_path, class: "btn btn-yellow" %>
-            </div>
+          <p class="lead mt-3 mb-4">Temos milhares de parafusos, kits e acessórios compatíveis com seu modelo.</p>
+          <%= link_to "Ver Catálogo →", screws_path, class: "btn btn-yellow" %>
         </div>
       </div>
 
       <!-- Slide 3 -->
-      <div class="carousel-item" style="background-image: url('<%= asset_path('banner-tr-autofix3.png') %>'); background-size: cover; background-position: center;">
-        <div class="container text-light-custom text-center py-5 banner-hero-text">
+      <div class="carousel-item banner-slide-3" style="background-image: url('<%= asset_path('banner-tr-autofix3.png') %>'); background-size: cover;">
+        <div class="container text-light-custom text-center py-5 banner-hero-text d-flex flex-column align-items-center justify-content-center min-vh-0" style="min-height: 420px;">
           <h2 class="fw-bold">💡 Faça pedidos personalizados</h2>
-          <p class="lead mt-3">Não achou o que precisa? Envie seu pedido especial.</p>
-            <div class="container">
-              <a href="#" class="btn btn-yellow">Fazer Pedido →</a>
-            </div>
+          <p class="lead mt-3 mb-4">Não achou o que precisa? Envie seu pedido especial.</p>
+          <a href="#" class="btn btn-yellow">Fazer Pedido →</a>
         </div>
       </div>
     </div>
