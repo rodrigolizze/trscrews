@@ -6,7 +6,7 @@
       <div class="carousel-item active" style="background-image: url('<%= asset_path('banner-tr-autofix.png') %>'); background-size: cover; background-position: center;">
         <div class="container py-5">
           <div class="row align-items-center text-light-custom">
-            <div class="col-md-6">
+            <div class="col-md-6 banner-hero-text">
               <h1 class="display-5 fw-bold">
                 Peças <span class="text-primary-custom">Aftermarket</span><br>
                 de alta performance.
@@ -21,7 +21,7 @@
 
             <div class="col-md-6 d-flex justify-content-center gap-3">
               <% 3.times do |i| %>
-                <%= image_tag "banner#{i + 1}.jpeg", alt: "Produto destaque #{i + 1}", class: "rounded shadow", style: "width: 240px; height: 240px; object-fit: cover;" %>
+                <%= image_tag "banner#{i + 1}.jpeg", alt: "Produto destaque #{i + 1}", class: "banner-hero-card rounded", style: "width: 240px; height: 240px; object-fit: cover;" %>
               <% end %>
             </div>
           </div>
