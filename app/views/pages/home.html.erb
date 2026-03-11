@@ -9,6 +9,7 @@
 
       <!-- Slide 1: Text + 3 imagens (banner como fundo) -->
       <div class="carousel-item active banner-slide-1" style="background-image: url('<%= asset_path('banner-tr-autofix.png') %>'); background-size: cover;">
+        <div class="banner-overlay banner-overlay-left"></div>
         <div class="container py-5">
           <div class="row align-items-center text-light-custom">
             <div class="col-md-6 banner-hero-text">
@@ -35,7 +36,8 @@
 
       <!-- Slide 2 -->
       <div class="carousel-item banner-slide-2" style="background-image: url('<%= asset_path('banner-tr-autofix2.png') %>'); background-size: cover;">
-        <div class="container text-light-custom text-center py-5 banner-hero-text d-flex flex-column align-items-center justify-content-center min-vh-0" style="min-height: 420px;">
+        <div class="banner-overlay banner-overlay-center"></div>
+        <div class="container text-light-custom text-center py-5 banner-hero-text d-flex flex-column align-items-center justify-content-center min-vh-0 position-relative" style="min-height: 420px;">
           <h2 class="fw-bold">🚗 Encontre o kit ideal para seu carro</h2>
           <p class="lead mt-3 mb-4">Temos milhares de parafusos, kits e acessórios compatíveis com seu modelo.</p>
           <%= link_to "Ver Catálogo →", screws_path, class: "btn btn-yellow" %>
@@ -44,7 +46,8 @@
 
       <!-- Slide 3 -->
       <div class="carousel-item banner-slide-3" style="background-image: url('<%= asset_path('banner-tr-autofix3.png') %>'); background-size: cover;">
-        <div class="container text-light-custom text-center py-5 banner-hero-text d-flex flex-column align-items-center justify-content-center min-vh-0" style="min-height: 420px;">
+        <div class="banner-overlay banner-overlay-center"></div>
+        <div class="container text-light-custom text-center py-5 banner-hero-text d-flex flex-column align-items-center justify-content-center min-vh-0 position-relative" style="min-height: 420px;">
           <h2 class="fw-bold">💡 Faça pedidos personalizados</h2>
           <p class="lead mt-3 mb-4">Não achou o que precisa? Envie seu pedido especial.</p>
           <a href="#" class="btn btn-yellow">Fazer Pedido →</a>
