@@ -21,7 +21,7 @@ module CanonicalHelper
       u.query   = nil     # drop ?a=b
       u.fragment = nil    # drop #section
       u.to_s
-    rescue
+    rescue StandardError
       nil
     end
   end

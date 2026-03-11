@@ -2,27 +2,30 @@ require "test_helper"
 
 class CartControllerTest < ActionDispatch::IntegrationTest
   test "should get show" do
-    get cart_show_url
+    get cart_url
     assert_response :success
   end
 
   test "should get add" do
-    get cart_add_url
-    assert_response :success
+    screw = screws(:one)
+    post add_cart_url(screw_id: screw.id)
+    assert_redirected_to cart_url
   end
 
   test "should get set" do
-    get cart_set_url
-    assert_response :success
+    screw = screws(:one)
+    patch set_cart_url(screw_id: screw.id), params: { quantity: 1 }
+    assert_redirected_to cart_url
   end
 
   test "should get remove" do
-    get cart_remove_url
-    assert_response :success
+    screw = screws(:one)
+    delete remove_cart_url(screw_id: screw.id)
+    assert_redirected_to cart_url
   end
 
   test "should get clear" do
-    get cart_clear_url
-    assert_response :success
+    delete clear_cart_url
+    assert_redirected_to cart_url
   end
 end

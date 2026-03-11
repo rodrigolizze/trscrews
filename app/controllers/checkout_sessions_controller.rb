@@ -7,6 +7,7 @@
 
 class CheckoutSessionsController < ApplicationController
   before_action :set_order
+  before_action :authorize_checkout!
 
   def create
     # // Only block payment if the enum exists AND the order isn't pending
@@ -100,5 +101,18 @@ class CheckoutSessionsController < ApplicationController
 
   def set_order
     @order = Order.find(params[:order_id])
+  end
+
+  # Só permite criar checkout session se: dono do pedido (logado) ou sessão acabou de criar o pedido
+  def authorize_checkout!
+    if defined?(user_signed_in?) && user_signed_in? && @order.user_id == current_user.id
+      return
+    end
+
+    if session[:last_order_id].present? && session[:last_order_id].to_i == @order.id
+      return
+    end
+
+    redirect_to root_path, alert: "Você não pode acessar o pagamento deste pedido."
   end
 end

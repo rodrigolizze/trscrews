@@ -36,7 +36,11 @@ class CepController < ActionController::Base
     end
 
     # // 6) Parse JSON (ViaCEP returns { erro: true } for unknown CEP)
-    data = JSON.parse(response.body) rescue {}
+    data = begin
+      JSON.parse(response.body)
+    rescue JSON::ParserError
+      {}
+    end
     if data["erro"]
       render json: { error: "CEP não encontrado" }, status: :not_found and return
     end

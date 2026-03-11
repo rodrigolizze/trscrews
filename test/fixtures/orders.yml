@@ -1,11 +1,37 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-# This model initially had no columns defined. If you add columns to the
-# model remove the "{}" from the fixture names and add the columns immediately
-# below each fixture, per the syntax in the comments below
-#
-one: {}
-# column: value
-#
-two: {}
-# column: value
+one:
+  customer_name: Cliente Um
+  customer_email: cliente1@test.com
+  status: 1
+  subtotal: 100.00
+  shipping: 20.00
+  total: 120.00
+  placed_at: <%= Time.current %>
+  cep: "01310-100"
+  street: Rua Teste
+  number: "123"
+  complement: ""
+  district: Centro
+  city: São Paulo
+  state: SP
+  payment_status: 0
+  shipping_fee: 20.00
+
+two:
+  customer_name: Cliente Dois
+  customer_email: cliente2@test.com
+  status: 1
+  subtotal: 50.00
+  shipping: 20.00
+  total: 70.00
+  placed_at: <%= Time.current %>
+  cep: "01310-100"
+  street: Rua Outra
+  number: "456"
+  complement: ""
+  district: Centro
+  city: São Paulo
+  state: SP
+  payment_status: 0
+  shipping_fee: 20.00

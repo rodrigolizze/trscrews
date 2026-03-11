@@ -2,24 +2,24 @@
 
 one:
   user: one
-  recipient_name: MyString
-  cep: MyString
-  street: MyString
-  number: MyString
-  complement: MyString
-  district: MyString
-  city: MyString
-  state: MyString
-  is_default: false
+  recipient_name: Cliente Um
+  cep: "01310-100"
+  street: Rua Teste
+  number: "123"
+  complement: ""
+  district: Centro
+  city: São Paulo
+  state: SP
+  is_default: true
 
 two:
   user: two
-  recipient_name: MyString
-  cep: MyString
-  street: MyString
-  number: MyString
-  complement: MyString
-  district: MyString
-  city: MyString
-  state: MyString
+  recipient_name: Cliente Dois
+  cep: "01310-100"
+  street: Rua Outra
+  number: "456"
+  complement: ""
+  district: Centro
+  city: São Paulo
+  state: SP
   is_default: false

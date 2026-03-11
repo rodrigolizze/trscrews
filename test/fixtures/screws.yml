@@ -1,19 +1,23 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  description: MyString
-  thread: MyString
-  thread_length: 9.99
-  resistance_class: MyString
-  surface_treatment: MyString
-  automaker: MyString
-  model: MyString
+  description: Parafuso M10 Teste
+  thread: M10
+  thread_length: 20
+  resistance_class: 8.8
+  surface_treatment: Zincado
+  automaker: VW
+  model: Golf
+  price: 15.00
+  stock: 10
 
 two:
-  description: MyString
-  thread: MyString
-  thread_length: 9.99
-  resistance_class: MyString
-  surface_treatment: MyString
-  automaker: MyString
-  model: MyString
+  description: Parafuso M12 Teste
+  thread: M12
+  thread_length: 25
+  resistance_class: 10.9
+  surface_treatment: Geomet
+  automaker: Ford
+  model: Focus
+  price: 22.00
+  stock: 5

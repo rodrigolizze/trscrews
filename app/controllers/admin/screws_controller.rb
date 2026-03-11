@@ -1,8 +1,5 @@
 # app/controllers/admin/screws_controller.rb
-class Admin::ScrewsController < ApplicationController
-  # // Gate: basic auth you already use in admin
-  before_action :require_admin_basic_auth
-
+class Admin::ScrewsController < Admin::BaseController
   # // Load one screw for show/edit/update/destroy/image purge
   before_action :set_screw, only: [:show, :edit, :update, :destroy, :destroy_image]
 
@@ -17,11 +14,12 @@ class Admin::ScrewsController < ApplicationController
     # // 2) base scope (includes images to avoid N+1 in views)
     scope = Screw.includes(images_attachments: :blob).all
 
-    # // 3) quick ILIKE search across a few columns (works in Postgres)
+    # // 3) quick ILIKE search across a few columns (sanitize to avoid %/_ in user input)
     if @q.present?
+      safe_pattern = "%#{ActiveRecord::Base.sanitize_sql_like(@q)}%"
       scope = scope.where(
         "description ILIKE :q OR automaker ILIKE :q OR model ILIKE :q OR thread ILIKE :q",
-        q: "%#{@q}%"
+        q: safe_pattern
       )
     end
 

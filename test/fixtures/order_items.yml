@@ -1,11 +1,16 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# order_items pertencem a order e screw - use os labels dos fixtures
 
-# This model initially had no columns defined. If you add columns to the
-# model remove the "{}" from the fixture names and add the columns immediately
-# below each fixture, per the syntax in the comments below
-#
-one: {}
-# column: value
-#
-two: {}
-# column: value
+one:
+  order: one
+  screw: one
+  quantity: 2
+  unit_price: 15.00
+  line_total: 30.00
+
+two:
+  order: one
+  screw: two
+  quantity: 1
+  unit_price: 22.00
+  line_total: 22.00

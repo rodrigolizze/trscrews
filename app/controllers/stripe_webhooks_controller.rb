@@ -45,7 +45,7 @@ class StripeWebhooksController < ApplicationController
     mark_event_processed(event.id)
     head :ok
 
-  rescue => e
+  rescue StandardError => e
     Rails.logger.error "[Stripe] Webhook fatal: #{e.class} - #{e.message}\n#{(e.backtrace || [])[0,10].join("\n")}"
     head :internal_server_error
   end
@@ -103,19 +103,21 @@ class StripeWebhooksController < ApplicationController
     begin
       OrderMailer.payment_confirmed(order).deliver_later
       Rails.logger.info "[Stripe] Sent payment confirmation email for order #{order.id}"
-    rescue => e
+    rescue StandardError => e
       Rails.logger.error "[Stripe] Email error for order #{order.id}: #{e.class} - #{e.message}"
     end
   end
 
-  # ---------- Idempotência com StripeWebhook ------------------------------
+  # ---------- Idempotência com StripeWebhookEvent -------------------------
 
   def processed_event?(stripe_event_id)
-    false
+    StripeWebhookEvent.exists?(stripe_event_id: stripe_event_id)
   end
 
-  # Só loga; não grava em tabela nenhuma.
   def mark_event_processed(stripe_event_id)
-    Rails.logger.info "[Stripe] (dev) mark_event_processed #{stripe_event_id} (no-op)"
+    StripeWebhookEvent.create!(stripe_event_id: stripe_event_id, processed_at: Time.current)
+  rescue ActiveRecord::RecordNotUnique
+    # Race condition: outro processo já gravou; idempotência garantida
+    Rails.logger.info "[Stripe] Event #{stripe_event_id} already recorded (race)"
   end
 end
