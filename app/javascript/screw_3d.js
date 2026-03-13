@@ -154,11 +154,12 @@ function animate() {
   currentProgress += (targetProgress - currentProgress) * alpha;
 
   const ease = Math.min(1, Math.max(0, currentProgress));
-  const targetRotY = -0.3 + ease * (-Math.PI / 2 + 0.3);
+  const logoRotationDeg = 207;
+  const targetRotY = 0 + ease * (Math.PI / 2 + logoRotationDeg * (Math.PI / 180));
   const targetRotZ = 0.14 * (1 - ease);
-  const targetRotX = -0.04 * (1 - ease);
-  const targetY = 0.65 - ease * 0.45;
-  const targetScale = 0.75 + ease * 0.15;
+  const targetRotX = -0.04 * (1 - ease) + ease * (Math.PI / 2);
+  const targetY = 0.65 - ease * 0.35;
+  const targetScale = 0.7 + ease * 0.12;
 
   if (screwGroup) {
     screwGroup.rotation.y = targetRotY;
