@@ -6,6 +6,23 @@ let scene, camera, renderer, screwGroup, animationId;
 let currentProgress = 0;
 let targetProgress = 0;
 const ratios = [0, 0, 0, 0];
+let heightObserver = null;
+
+function syncScrewHeight() {
+  const root = document.getElementById("screw-3d-root");
+  const cardsCol = document.getElementById("screw-cards-col");
+  if (!root || !cardsCol) return;
+  const h = cardsCol.offsetHeight;
+  if (h > 0) {
+    root.style.height = `${h}px`;
+    if (renderer && camera) {
+      const w = root.offsetWidth;
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+  }
+}
 
 function createProceduralEnvMap(renderer) {
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -226,6 +243,16 @@ function initScrew() {
   updateProgress();
   animate();
 
+  syncScrewHeight();
+  requestAnimationFrame(() => syncScrewHeight());
+
+  if (heightObserver) heightObserver.disconnect();
+  const cardsCol = document.getElementById("screw-cards-col");
+  if (cardsCol) {
+    heightObserver = new ResizeObserver(() => syncScrewHeight());
+    heightObserver.observe(cardsCol);
+  }
+
   window.addEventListener("resize", onResize);
 }
 
@@ -271,11 +298,7 @@ function animate() {
 function onResize() {
   const root = document.getElementById("screw-3d-root");
   if (!root || !camera || !renderer) return;
-  const width = root.offsetWidth;
-  const height = root.offsetHeight;
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
-  renderer.setSize(width, height);
+  syncScrewHeight();
 }
 
 function run() {

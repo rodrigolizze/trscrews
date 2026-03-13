@@ -82,8 +82,8 @@
       { icon: "check2-square", title: "Produtos diretamente com o fabricante.", text: "Fornecedores dispostos a solucionar o problema." }
     ] %>
 
-    <div class="row align-items-start">
-      <div class="col-lg-5 order-2 order-lg-1">
+    <div class="row align-items-start" id="screw-section-row">
+      <div class="col-lg-5 order-2 order-lg-1" id="screw-cards-col">
         <div class="d-flex flex-column gap-4">
           <% advertisings.each_with_index do |advertising, index| %>
             <div id="screw-card-<%= index + 1 %>" data-aos="fade-up" data-aos-delay="<%= index * 100 %>">
@@ -93,7 +93,7 @@
         </div>
       </div>
       <div class="col-lg-7 order-1 order-lg-2">
-        <div id="screw-3d-root" class="position-sticky" data-screw-model="<%= asset_path('screw.glb') %>" style="top: 80px; height: 110vh; min-height: 500px;"></div>
+        <div id="screw-3d-root" class="position-sticky" data-screw-model="<%= asset_path('screw.glb') %>" style="top: 80px; min-height: 400px;"></div>
       </div>
     </div>
   </div>
