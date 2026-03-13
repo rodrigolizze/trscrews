@@ -122,9 +122,13 @@ section {
   z-index: 0;
 }
 
+#por-que-tr-autofix {
+  overflow: visible;
+}
+
 #screw-3d-root {
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
 
   canvas {
     display: block;
