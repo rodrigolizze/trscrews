@@ -68,7 +68,7 @@ function initScrew() {
   scene = new THREE.Scene();
 
   camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
-  camera.position.set(0, 0.4, 1.5);
+  camera.position.set(0, 0.4, 1.35);
   camera.lookAt(0, 0.4, 0);
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -158,8 +158,8 @@ function animate() {
   const targetRotY = 0 + ease * (Math.PI / 2 + logoRotationDeg * (Math.PI / 180));
   const targetRotZ = 0.14 * (1 - ease);
   const targetRotX = -0.04 * (1 - ease) + ease * (Math.PI / 2);
-  const targetY = 0.35 - ease * 0.15;
-  const targetScale = 0.7 + ease * 0.12;
+  const targetY = 0.35 - ease * 0.08;
+  const targetScale = 0.78 + ease * 0.1;
 
   if (screwGroup) {
     screwGroup.rotation.y = targetRotY;
