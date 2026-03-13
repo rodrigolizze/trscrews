@@ -158,7 +158,7 @@ function animate() {
   const targetRotY = 0 + ease * (Math.PI / 2 + logoRotationDeg * (Math.PI / 180));
   const targetRotZ = 0.14 * (1 - ease);
   const targetRotX = -0.04 * (1 - ease) + ease * (Math.PI / 2);
-  const targetY = 0.65 - ease * 0.35;
+  const targetY = 0.35 - ease * 0.15;
   const targetScale = 0.7 + ease * 0.12;
 
   if (screwGroup) {
