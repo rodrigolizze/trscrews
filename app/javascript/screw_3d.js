@@ -1,10 +1,79 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 
 let scene, camera, renderer, screwGroup, animationId;
 let currentProgress = 0;
 let targetProgress = 0;
 const ratios = [0, 0, 0, 0];
+
+function createProceduralEnvMap(renderer) {
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, "#707070");
+  g.addColorStop(0.5, "#e0e0e0");
+  g.addColorStop(1, "#808080");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 512, 256);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  const envMap = pmrem.fromEquirectangular(texture).texture;
+  texture.dispose();
+  pmrem.dispose();
+  return envMap;
+}
+
+function applyMetallicMaterials(model, envMap) {
+  const metalPreset = {
+    metalness: 1,
+    roughness: 0.03,
+    envMapIntensity: 2.2,
+    clearcoat: 0.7,
+    clearcoatRoughness: 0.02,
+    color: 0xe8e9eb
+  };
+  model.traverse((child) => {
+    if (!child.isMesh || !child.material) return;
+    const mats = Array.isArray(child.material) ? child.material : [child.material];
+    for (const mat of mats) {
+      if (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial) {
+        mat.metalness = metalPreset.metalness;
+        mat.roughness = metalPreset.roughness;
+        mat.envMapIntensity = metalPreset.envMapIntensity;
+        mat.envMap = envMap;
+        mat.clearcoat = metalPreset.clearcoat;
+        mat.clearcoatRoughness = metalPreset.clearcoatRoughness;
+        mat.roughnessMap = null;
+        mat.normalMap = null;
+        if (mat.map) {
+          mat.color.setHex(0xffffff);
+        } else {
+          mat.color.setHex(metalPreset.color);
+        }
+      } else {
+        const metal = new THREE.MeshPhysicalMaterial({
+          color: metalPreset.color,
+          metalness: metalPreset.metalness,
+          roughness: metalPreset.roughness,
+          envMap: envMap,
+          envMapIntensity: metalPreset.envMapIntensity,
+          clearcoat: metalPreset.clearcoat,
+          clearcoatRoughness: metalPreset.clearcoatRoughness,
+          map: mat.map || null
+        });
+        if (mat.map) metal.color.setHex(0xffffff);
+        child.material = Array.isArray(child.material)
+          ? mats.map(() => metal.clone())
+          : metal;
+        break;
+      }
+    }
+  });
+}
 
 function addProceduralScrew(group) {
   const metal = new THREE.MeshPhysicalMaterial({
@@ -74,44 +143,69 @@ function initScrew() {
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(width, height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
   root.appendChild(renderer.domElement);
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  pmremGenerator.compileEquirectangularShader();
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
   scene.add(ambientLight);
 
-  const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 3.5);
   dirLight.position.set(5, 8, 6);
   scene.add(dirLight);
 
-  const dirLight2 = new THREE.DirectionalLight(0xe8ecf0, 1.2);
+  const dirLight2 = new THREE.DirectionalLight(0xe8ecf0, 2);
   dirLight2.position.set(-4, 3, -4);
   scene.add(dirLight2);
+
+  const fillLight = new THREE.DirectionalLight(0xffffff, 1);
+  fillLight.position.set(0, 5, 2);
+  scene.add(fillLight);
 
   screwGroup = new THREE.Group();
   screwGroup.position.set(0, 0.65, 0);
   screwGroup.rotation.set(-0.04, -0.3, 0.14);
   scene.add(screwGroup);
 
+  const envUrl = root.dataset.screwEnv || "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_03_1k.hdr";
   const modelUrl = root.dataset.screwModel;
-  if (modelUrl) {
-    const loader = new GLTFLoader();
-    loader.load(
-      modelUrl,
-      (gltf) => {
-        const model = gltf.scene;
-        model.position.set(0, 0, 0);
-        model.rotation.set(0, 0, 0);
-        model.scale.setScalar(1);
-        screwGroup.add(model);
-      },
-      undefined,
-      () => {
-        addProceduralScrew(screwGroup);
-      }
-    );
-  } else {
-    addProceduralScrew(screwGroup);
+
+  function onEnvLoaded(envMap) {
+    scene.environment = envMap;
+    if (modelUrl) {
+      const loader = new GLTFLoader();
+      loader.load(
+        modelUrl,
+        (gltf) => {
+          const model = gltf.scene;
+          model.position.set(0, 0, 0);
+          model.rotation.set(0, 0, 0);
+          model.scale.setScalar(1);
+          applyMetallicMaterials(model, envMap);
+          screwGroup.add(model);
+        },
+        undefined,
+        () => {
+          addProceduralScrew(screwGroup);
+        }
+      );
+    } else {
+      addProceduralScrew(screwGroup);
+    }
   }
+
+  new RGBELoader().load(envUrl, (texture) => {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+    texture.dispose();
+    onEnvLoaded(envMap);
+  }, undefined, () => {
+    const envMap = createProceduralEnvMap(renderer);
+    onEnvLoaded(envMap);
+  });
 
   const cards = [1, 2, 3, 4].map((i) => document.getElementById(`screw-card-${i}`));
   cards.forEach((card, i) => {
