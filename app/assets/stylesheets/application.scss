@@ -46,6 +46,18 @@ body {
     position: relative;
     min-height: 320px;
     height: 420px;
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 55%;
+      background: linear-gradient(to bottom, transparent 0%, rgba(15, 15, 15, 0.5) 50%, #0f0f0f 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
   }
 }
 

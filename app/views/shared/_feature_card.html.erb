@@ -1,7 +1,14 @@
 <div class="col">
-  <div class="bg-light-custom p-4 rounded shadow-sm h-100 card-fixed-height" data-aos="zoom-in" data-aos-delay="200">
-    <i class="bi bi-<%= icon %> display-5 text-success mb-3"></i>
-    <h5 class="fw-bold"><%= title %></h5>
-    <p class="mb-0"><%= text %></p>
-  </div>
+  <% has_image = local_assigns[:image].present? && (asset_path(local_assigns[:image]) rescue nil).present? %>
+  <% if has_image %>
+    <div class="rounded shadow-sm overflow-hidden card-fixed-height">
+      <%= image_tag image, alt: title, class: "w-100 h-100 d-block", style: "object-fit: cover;", loading: "lazy" %>
+    </div>
+  <% else %>
+    <div class="bg-light-custom p-4 rounded shadow-sm h-100 card-fixed-height" data-aos="zoom-in" data-aos-delay="200">
+      <i class="bi bi-<%= icon %> display-5 text-success mb-3"></i>
+      <h5 class="fw-bold"><%= title %></h5>
+      <p class="mb-0"><%= text %></p>
+    </div>
+  <% end %>
 </div>

@@ -68,7 +68,7 @@
   </div>
 </section>
 
-<section class="py-5 bg-gray-custom text-title-custom" id="por-que-tr-autofix">
+<section class="py-5 bg-gradient-dark text-white" id="por-que-tr-autofix">
   <div class="container">
     <h2 class="mb-3 fw-bold text-center">Por que escolher a TR AutoFix?</h2>
     <p class="mb-5 text-center text-title-custom">
@@ -87,7 +87,11 @@
         <div class="d-flex flex-column gap-4">
           <% advertisings.each_with_index do |advertising, index| %>
             <div id="screw-card-<%= index + 1 %>" data-aos="fade-up" data-aos-delay="<%= index * 100 %>">
-              <%= render "shared/feature_card", icon: advertising[:icon], title: advertising[:title], text: advertising[:text] %>
+              <%= render "shared/feature_card",
+                icon: advertising[:icon],
+                title: advertising[:title],
+                text: advertising[:text],
+                image: advertising[:image] %>
             </div>
           <% end %>
         </div>
