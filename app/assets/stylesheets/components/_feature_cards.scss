@@ -1,0 +1,236 @@
+/* =========================================================
+   Card metálico premium
+   ========================================================= */
+
+.tr-feature-card {
+  position: relative;
+  padding: 28px 26px;
+  border-radius: 18px;
+  min-height: 230px;
+  overflow: hidden;
+
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255,255,255,0.55), transparent 18%),
+    radial-gradient(circle at 82% 28%, rgba(255,255,255,0.38), transparent 24%),
+    radial-gradient(circle at 50% 65%, rgba(0,0,0,0.08), transparent 40%),
+    linear-gradient(
+      90deg,
+      #8e8e8e 0%,
+      #dcdcdc 10%,
+      #bdbdbd 18%,
+      #efefef 35%,
+      #b2b2b2 50%,
+      #f3f3f3 65%,
+      #b7b7b7 80%,
+      #d8d8d8 90%,
+      #8f8f8f 100%
+    );
+
+  border: 1px solid rgba(255,255,255,0.35);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    inset 0 -1px 0 rgba(0,0,0,0.18),
+    0 10px 26px rgba(0,0,0,0.18);
+}
+
+// Camada que simula o aço escovado
+.tr-feature-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,0.03) 0px,
+      rgba(255,255,255,0.03) 1px,
+      rgba(0,0,0,0.025) 2px,
+      rgba(0,0,0,0.025) 3px
+    );
+
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+// Moldura interna preta
+.tr-feature-card::after {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  border-radius: 12px;
+  border: 2px solid rgba(20, 20, 20, 0.82);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.16),
+    0 0 0 1px rgba(255,255,255,0.18);
+  pointer-events: none;
+}
+
+/* =========================================================
+   Conteúdo
+   ========================================================= */
+
+.tr-feature-card__content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 26px 22px;
+}
+
+.tr-feature-card__icon {
+  flex: 0 0 78px;
+  width: 78px;
+  height: 78px;
+}
+
+.tr-check__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.25));
+}
+
+.tr-feature-card__body {
+  flex: 1;
+}
+
+.tr-feature-card__title {
+  margin: 0 0 14px 0;
+  font-family: "Arial Black", "Segoe UI", Arial, sans-serif;
+  font-size: 2.1rem;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: #212121;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,0.25),
+    0 1px 2px rgba(0,0,0,0.15);
+}
+
+.tr-feature-card__text {
+  margin: 0;
+  max-width: 26ch;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.35;
+  color: #2a2a2a;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.18);
+}
+
+/* =========================================================
+   Parafusos
+   ========================================================= */
+
+.tr-screw {
+  position: absolute;
+  z-index: 3;
+  width: 64px;
+  height: 64px;
+}
+
+.tr-screw__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.28));
+}
+
+.tr-screw--top-left    { top: 8px;    left: 8px;   }
+.tr-screw--top-right   { top: 8px;    right: 8px;  }
+.tr-screw--bottom-left { bottom: 8px; left: 8px;   }
+.tr-screw--bottom-right{ bottom: 8px; right: 8px;  }
+
+/* =========================================================
+   Grid da seção
+   ========================================================= */
+
+.tr-feature-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* =========================================================
+   Responsividade
+   ========================================================= */
+
+@media (max-width: 992px) {
+  .tr-feature-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .tr-feature-card {
+    min-height: auto;
+    padding: 20px 18px;
+    border-radius: 16px;
+  }
+
+  .tr-feature-card::after {
+    inset: 12px;
+  }
+
+  .tr-feature-card__content {
+    gap: 14px;
+    padding: 22px 18px 24px;
+  }
+
+  .tr-feature-card__icon {
+    flex: 0 0 62px;
+    width: 62px;
+    height: 62px;
+  }
+
+  .tr-feature-card__title {
+    font-size: 1.65rem;
+    margin-bottom: 10px;
+  }
+
+  .tr-feature-card__text {
+    font-size: 0.98rem;
+    max-width: 100%;
+  }
+
+  .tr-screw {
+    width: 54px;
+    height: 54px;
+  }
+}
+
+@media (max-width: 520px) {
+  .tr-feature-card__content {
+    padding: 18px 14px 22px;
+    gap: 12px;
+  }
+
+  .tr-feature-card__icon {
+    flex: 0 0 56px;
+    width: 56px;
+    height: 56px;
+  }
+
+  .tr-feature-card__title {
+    font-size: 1.42rem;
+  }
+
+  .tr-feature-card__text {
+    font-size: 0.92rem;
+    line-height: 1.3;
+  }
+
+  .tr-screw {
+    width: 46px;
+    height: 46px;
+  }
+
+  .tr-screw--top-left,
+  .tr-screw--top-right   { top: 6px;    }
+  .tr-screw--bottom-left,
+  .tr-screw--bottom-right{ bottom: 6px; }
+  .tr-screw--top-left,
+  .tr-screw--bottom-left { left: 6px;   }
+  .tr-screw--top-right,
+  .tr-screw--bottom-right{ right: 6px;  }
+}

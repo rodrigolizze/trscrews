@@ -75,25 +75,29 @@
       Do dia a dia da oficina ao projeto em casa: oferecemos fixadores e autopeças com padrão de qualidade, entrega rápida e atendimento para tirar dúvidas antes e depois da compra.
     </p>
 
-    <% advertisings = [
-      { icon: "check2-square", title: "Qualidade Garantida", text: "Fornecedores confiáveis e dispostos a dar o melhor." },
-      { icon: "check2-square", title: "Entrega Rápida", text: "Entregamos em todo o Brasil com agilidade e segurança." },
-      { icon: "check2-square", title: "Suporte Técnico", text: "Equipe com experiência no setor." },
-      { icon: "check2-square", title: "Produtos diretamente com o fabricante.", text: "Fornecedores dispostos a solucionar o problema." }
-    ] %>
-
     <div class="row align-items-start" id="screw-section-row">
       <div class="col-lg-5 order-2 order-lg-1" id="screw-cards-col">
         <div class="d-flex flex-column gap-4">
-          <% advertisings.each_with_index do |advertising, index| %>
-            <div id="screw-card-<%= index + 1 %>" data-aos="fade-up" data-aos-delay="<%= index * 100 %>">
-              <%= render "shared/feature_card",
-                icon: advertising[:icon],
-                title: advertising[:title],
-                text: advertising[:text],
-                image: advertising[:image] %>
-            </div>
-          <% end %>
+          <div id="screw-card-1">
+            <%= render "shared/feature_card",
+                title: "Qualidade<br>Garantida".html_safe,
+                text: "Fornecedores confiáveis e dispostos a dar o melhor." %>
+          </div>
+          <div id="screw-card-2">
+            <%= render "shared/feature_card",
+                title: "Entrega<br>Rápida".html_safe,
+                text: "Entregamos em todo o Brasil com agilidade e segurança." %>
+          </div>
+          <div id="screw-card-3">
+            <%= render "shared/feature_card",
+                title: "Suporte<br>Técnico".html_safe,
+                text: "Equipe com experiência no setor." %>
+          </div>
+          <div id="screw-card-4">
+            <%= render "shared/feature_card",
+                title: "Produtos diretamente<br>com o fabricante.".html_safe,
+                text: "Fornecedores dispostos a solucionar o problema." %>
+          </div>
         </div>
       </div>
       <div class="col-lg-7 order-1 order-lg-2">
