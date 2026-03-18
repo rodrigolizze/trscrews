@@ -20,6 +20,42 @@
     radial-gradient(ellipse at center, #6b7280 0%, #374151 40%, #1f2937 70%, #0f0f0f 100%) !important;
 }
 
+.section-porque-bg {
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 25%;
+    background: linear-gradient(to bottom, #0f0f0f 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 25%;
+    background: linear-gradient(to top, #0f0f0f 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+  }
+}
+
 // Buttons
 .btn-yellow {
   background-color: $color-primary;
