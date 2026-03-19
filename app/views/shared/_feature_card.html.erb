@@ -6,6 +6,8 @@
 %>
 
 <div class="tr-feature-card">
+  <%# PARAFUSOS DESATIVADOS - para reativar, troque "false" por "true" abaixo e ajuste o TR para igualar ao logo %>
+  <% if false %>
   <!-- Parafusos nos 4 cantos -->
   <div class="tr-screw tr-screw--top-left" aria-hidden="true">
     <svg viewBox="0 0 64 64" class="tr-screw__svg" xmlns="http://www.w3.org/2000/svg">
@@ -16,12 +18,20 @@
           <stop offset="65%" stop-color="#8f8f8f" />
           <stop offset="100%" stop-color="#f3f3f3" />
         </radialGradient>
+        <linearGradient id="screwSlotA" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#3a3a3a" />
+          <stop offset="50%" stop-color="#151515" />
+          <stop offset="100%" stop-color="#2a2a2a" />
+        </linearGradient>
       </defs>
       <circle cx="32" cy="32" r="30" fill="#1c1c1c"/>
       <circle cx="32" cy="32" r="27" fill="url(#screwMetalA)" stroke="#d9d9d9" stroke-width="1.5"/>
       <circle cx="32" cy="32" r="22" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
       <circle cx="32" cy="32" r="18" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1"/>
-      <text x="32" y="38" text-anchor="middle" font-size="20" font-weight="900" fill="#111111" font-family="Arial, Helvetica, sans-serif">TR</text>
+      <g fill="url(#screwSlotA)">
+        <rect x="22" y="29" width="20" height="6" rx="1.5"/>
+        <rect x="29" y="22" width="6" height="20" rx="1.5"/>
+      </g>
     </svg>
   </div>
 
@@ -34,12 +44,20 @@
           <stop offset="65%" stop-color="#8f8f8f" />
           <stop offset="100%" stop-color="#f3f3f3" />
         </radialGradient>
+        <linearGradient id="screwSlotB" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#3a3a3a" />
+          <stop offset="50%" stop-color="#151515" />
+          <stop offset="100%" stop-color="#2a2a2a" />
+        </linearGradient>
       </defs>
       <circle cx="32" cy="32" r="30" fill="#1c1c1c"/>
       <circle cx="32" cy="32" r="27" fill="url(#screwMetalB)" stroke="#d9d9d9" stroke-width="1.5"/>
       <circle cx="32" cy="32" r="22" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
       <circle cx="32" cy="32" r="18" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1"/>
-      <text x="32" y="38" text-anchor="middle" font-size="20" font-weight="900" fill="#111111" font-family="Arial, Helvetica, sans-serif">TR</text>
+      <g fill="url(#screwSlotB)">
+        <rect x="22" y="29" width="20" height="6" rx="1.5"/>
+        <rect x="29" y="22" width="6" height="20" rx="1.5"/>
+      </g>
     </svg>
   </div>
 
@@ -52,12 +70,20 @@
           <stop offset="65%" stop-color="#8f8f8f" />
           <stop offset="100%" stop-color="#f3f3f3" />
         </radialGradient>
+        <linearGradient id="screwSlotC" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#3a3a3a" />
+          <stop offset="50%" stop-color="#151515" />
+          <stop offset="100%" stop-color="#2a2a2a" />
+        </linearGradient>
       </defs>
       <circle cx="32" cy="32" r="30" fill="#1c1c1c"/>
       <circle cx="32" cy="32" r="27" fill="url(#screwMetalC)" stroke="#d9d9d9" stroke-width="1.5"/>
       <circle cx="32" cy="32" r="22" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
       <circle cx="32" cy="32" r="18" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1"/>
-      <text x="32" y="38" text-anchor="middle" font-size="20" font-weight="900" fill="#111111" font-family="Arial, Helvetica, sans-serif">TR</text>
+      <g fill="url(#screwSlotC)">
+        <rect x="22" y="29" width="20" height="6" rx="1.5"/>
+        <rect x="29" y="22" width="6" height="20" rx="1.5"/>
+      </g>
     </svg>
   </div>
 
@@ -70,14 +96,23 @@
           <stop offset="65%" stop-color="#8f8f8f" />
           <stop offset="100%" stop-color="#f3f3f3" />
         </radialGradient>
+        <linearGradient id="screwSlotD" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#3a3a3a" />
+          <stop offset="50%" stop-color="#151515" />
+          <stop offset="100%" stop-color="#2a2a2a" />
+        </linearGradient>
       </defs>
       <circle cx="32" cy="32" r="30" fill="#1c1c1c"/>
       <circle cx="32" cy="32" r="27" fill="url(#screwMetalD)" stroke="#d9d9d9" stroke-width="1.5"/>
       <circle cx="32" cy="32" r="22" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
       <circle cx="32" cy="32" r="18" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1"/>
-      <text x="32" y="38" text-anchor="middle" font-size="20" font-weight="900" fill="#111111" font-family="Arial, Helvetica, sans-serif">TR</text>
+      <g fill="url(#screwSlotD)">
+        <rect x="22" y="29" width="20" height="6" rx="1.5"/>
+        <rect x="29" y="22" width="6" height="20" rx="1.5"/>
+      </g>
     </svg>
   </div>
+  <% end %>
 
   <!-- Conteúdo interno do card -->
   <div class="tr-feature-card__content">

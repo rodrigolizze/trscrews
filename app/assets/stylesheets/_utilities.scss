@@ -22,7 +22,7 @@
 
 .section-porque-bg {
   position: relative;
-  background-size: cover;
+  background-size: 100%; /* padrões menores: aumente (ex: 200%); padrões maiores: diminua (ex: 120%) */
   background-position: center;
   background-repeat: no-repeat;
 
