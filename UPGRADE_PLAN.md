@@ -65,6 +65,8 @@
 
 **Justificativa:** Estamos em produção em versão EOL. O objetivo do upgrade não é só modernizar — é sair de uma versão sem suporte de segurança e chegar em uma versão com janela de suporte real. Fazer isso em passos incrementais (7.2 como detector de problemas, 8.0 como ponte obrigatória, 8.1 como destino) é a abordagem mais segura dado que temos ~1% de cobertura de testes. Cada etapa pode ser validada manualmente e revertida de forma independente.
 
+> **Contexto do projeto (simplifica o plano):** O app está no Heroku mas não tem usuários reais nem compras efetuadas — todos os dados são de teste. Não há domínio próprio. Isso elimina a necessidade de um ambiente de staging separado: o próprio Heroku serve como ambiente de validação pós-deploy. Cada etapa segue o padrão: validar localmente → deploy para Heroku → validar no Heroku → prosseguir quando confirmar estabilidade (sem prazo fixo de horas).
+
 ---
 
 ## 2. Análise de Compatibilidade das Gems
@@ -464,6 +466,20 @@ git commit -m "chore: backup Gemfile.lock before Rails 8.1 upgrade"
 
 O risco mais provável da Etapa E é o novo default `run_after_transaction_callbacks_in_order_defined = true` mudando comportamento de callbacks. Se isso ocorrer: desabilitar explicitamente o novo default via `config.active_record.run_after_transaction_callbacks_in_order_defined = false` em `application.rb` e investigar o comportamento esperado antes de reabilitar.
 
+### Padrão de rollback (todas as etapas)
+
+Se algo crítico quebrar após um deploy:
+
+```bash
+# 1. Reverter o código (requer aprovação explícita)
+git push heroku <branch-anterior>:main --force
+
+# 2. Se havia migrations na etapa: restaurar banco do backup pré-deploy
+heroku pg:backups:restore <backup-id> DATABASE_URL --app trscrews-prod --confirm trscrews-prod
+```
+
+O `<backup-id>` é o ID do backup capturado no início da etapa (ex: `b003`). Consultar com `heroku pg:backups --app trscrews-prod`.
+
 ### Backup antes de cada deploy
 O backup do banco deve ser feito como **primeiro passo de toda etapa que inclui deploy para produção** (B, C, D1, D2, D3, E):
 ```bash
@@ -497,44 +513,14 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
    - Remover `gem "activestorage-cloudinary-service"` do Gemfile.
    - Verificar se o Cloudinary SDK 2.x inclui um `ActiveStorage::Service::CloudinaryService` nativo (confirmar na documentação oficial no momento da execução — o SDK evoluiu nessa direção).
    - Ajustar `config/storage.yml` conforme a nova configuração do SDK.
-   - Testar exaustivamente o Fluxo 9 (imagens) em staging antes de qualquer deploy.
+   - Testar exaustivamente o Fluxo 9 (imagens) localmente antes de qualquer deploy.
    - Verificar que URLs de imagens já existentes no banco (`active_storage_blobs`) continuam funcionando — a chave é que o `key` do blob no Cloudinary não mude.
 
-   **Risco:** Médio. O risco principal é quebrar URLs de imagens de produtos existentes em produção. Mitigação: testar no staging com um restore do banco de produção antes de avançar.
+   **Risco:** Médio. O risco principal é quebrar URLs de imagens de produtos existentes. Mitigação: validar o Fluxo 9 com cuidado localmente antes do deploy; rollback via `heroku pg:backups:restore` se quebrar em produção.
 
    **Decisão de execução:** Se o Plano B for necessário, ele vira uma etapa nova entre A e B, e o cronograma se estende em 2–4h.
 
 3. Limpar branches locais mergeadas (16 branches locais, maioria histórica).
-4. Garantir que o deploy atual está funcionando: `git push heroku master`.
-
----
-
-### Etapa A.5 — Configurar app de staging no Heroku (1–2h) · PRÉ-REQUISITO para B em diante
-
-**Objetivo:** Ter um ambiente espelho da produção onde cada etapa do upgrade é validada antes de ir para produção real.
-
-1. Criar novo app no Heroku:
-   ```bash
-   heroku create trscrews-staging --remote staging
-   heroku addons:create heroku-postgresql:essential-0 --app trscrews-staging
-   ```
-2. Fazer backup do banco de produção e restaurar no staging:
-   ```bash
-   heroku pg:backups:capture --app trscrews-prod
-   heroku pg:backups:restore <backup_url> DATABASE_URL --app trscrews-staging
-   ```
-3. Configurar ENV vars no staging — usar os mesmos valores de produção, **com exceção obrigatória:**
-   - `STRIPE_SECRET_KEY` e `STRIPE_PUBLISHABLE_KEY`: usar chaves **test** do Stripe, não live.
-   - `STRIPE_SIGNING_SECRET`: usar o secret de webhook do ambiente test.
-   - Demais vars (Cloudinary, SMTP, APP_HOST, etc.): configurar equivalentes de staging.
-4. Fazer deploy da branch `master` atual para staging:
-   ```bash
-   git push staging master
-   heroku run bin/rails db:migrate --app trscrews-staging
-   ```
-5. Executar todos os 9 fluxos de validação manual no staging com o estado atual (Rails 7.1) — confirmar que tudo passa antes de começar qualquer upgrade.
-
-**A partir desta etapa:** toda branch de upgrade é deployada primeiro em staging (`git push staging <branch>:main`), validada manualmente com os 9 fluxos, e só depois mergeada em `master` e deployada em produção.
 
 ---
 
@@ -548,9 +534,9 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 4. `bundle install`.
 5. Auditar arquivos SCSS: substituir `@import` por `@use`/`@forward` onde necessário.
 6. Verificar que `bin/rails assets:precompile` passa sem erros.
-7. Deploy para **staging**: `git push staging upgrade/dartsass:main`
-8. Executar Fluxo 2 (catálogo) e Fluxo 8 (admin) no staging — foco visual nos estilos.
-9. Merge para `master`, deploy para produção.
+7. Executar Fluxo 2 (catálogo) e Fluxo 8 (admin) localmente — confirmar que estilos estão corretos.
+8. Merge para `master`, deploy para Heroku.
+9. Verificar Fluxo 2 e Fluxo 8 no Heroku após o deploy.
 
 ---
 
@@ -566,11 +552,11 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 6. Atualizar `config.load_defaults` para `7.2` em `application.rb`.
 7. Rodar `bin/rails server` e observar todos os `DEPRECATION WARNING` no terminal — documentar cada um.
 8. Corrigir os deprecations encontrados.
-9. Executar todos os 9 fluxos do checklist manual **em staging primeiro**.
+9. Executar todos os 9 fluxos do checklist manual localmente.
 10. `bin/rails test` — reportar resultado (esperado: 3 testes passando).
-11. Deploy para staging: `git push staging upgrade/rails-7.2:main` — validar os 9 fluxos.
-12. Merge para `master`, deploy para produção.
-13. Monitorar logs de produção por 24h antes de avançar para a D1.
+11. Merge para `master`, deploy para Heroku.
+12. Verificar os 9 fluxos no Heroku após o deploy.
+13. Prosseguir para D1 quando confirmar estabilidade.
 
 ---
 
@@ -587,18 +573,17 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 7. Atualizar `config.load_defaults` para `8.0`.
 8. Simplificar `cable.yml`: trocar `adapter: redis` em production por `adapter: async`.
 9. Atualizar URL placeholder no `config/initializers/stripe.rb`.
-10. Executar todos os 9 fluxos do checklist manual em desenvolvimento.
+10. Executar todos os 9 fluxos do checklist manual localmente.
 11. `bin/rails test` — reportar resultado.
-12. Deploy para **staging**: `git push staging upgrade/rails-8.0:main`
-13. Executar todos os 9 fluxos no staging — especialmente Fluxos 5 (webhook) e 9 (imagens Cloudinary).
-14. Merge para `master`, deploy para produção.
-15. Monitorar logs de produção por **48h** antes de avançar para D2.
+12. Merge para `master`, deploy para Heroku.
+13. Verificar todos os 9 fluxos no Heroku — especialmente Fluxos 5 (webhook) e 9 (imagens Cloudinary).
+14. Prosseguir para D2 quando confirmar estabilidade.
 
 ---
 
 ### Etapa D2 — Adoção do Solid Queue (2–3h)
 
-**Objetivo:** Resolver o problema de e-mails perdidos em restart do dyno. Executar somente após D1 estável em produção por 48h.
+**Objetivo:** Resolver o problema de e-mails perdidos em restart do dyno. Executar somente após confirmar estabilidade do D1.
 
 1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
 2. `git checkout -b feature/solid-queue`
@@ -608,19 +593,18 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 6. `bin/rails db:migrate`.
 7. Configurar `config/environments/production.rb`: `config.active_job.queue_adapter = :solid_queue`.
 8. Configurar `puma.rb` para rodar o Solid Queue embutido no processo Puma (via plugin `solid_queue`) — sem dyno extra no Heroku.
-9. Verificar em desenvolvimento que `deliver_later` enfileira jobs corretamente.
-10. Deploy para **staging**: `git push staging feature/solid-queue:main` — executar `heroku run bin/rails db:migrate --app trscrews-staging`.
-11. No staging: executar Fluxo 4 (checkout — verificar que e-mail de pedido pendente é gerado) e Fluxo 5 (webhook — verificar que e-mail de pagamento confirmado é gerado).
-12. Confirmar nos logs do staging que o worker Solid Queue está processando os jobs.
-13. `bin/rails test` — reportar resultado.
-14. Merge para `master`, deploy para produção, rodar migrations.
-15. Monitorar logs de produção por 24h — verificar que jobs de e-mail são processados após restart do dyno.
+9. Verificar localmente que `deliver_later` enfileira e processa jobs corretamente.
+10. `bin/rails test` — reportar resultado.
+11. Merge para `master`, deploy para Heroku, rodar migrations: `heroku run bin/rails db:migrate --app trscrews-prod`.
+12. Verificar Fluxo 4 (e-mail de pedido pendente) e Fluxo 5 (e-mail de pagamento confirmado) no Heroku.
+13. Confirmar nos logs do Heroku que o worker Solid Queue está processando jobs.
+14. Prosseguir para D3 quando confirmar que e-mails funcionam corretamente.
 
 ---
 
 ### Etapa D3 — Adoção do Solid Cache (1–2h)
 
-**Objetivo:** Configurar cache persistente no PostgreSQL para uso futuro. Mudança passiva — sem impacto no comportamento atual. Executar somente após D2 estável.
+**Objetivo:** Configurar cache persistente no PostgreSQL para uso futuro. Mudança passiva — sem impacto no comportamento atual. Executar somente após confirmar estabilidade do D2.
 
 1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
 2. `git checkout -b feature/solid-cache`
@@ -629,17 +613,16 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 5. `bin/rails solid_cache:install` — gera migrations e configuração.
 6. `bin/rails db:migrate`.
 7. Configurar `config/environments/production.rb`: `config.cache_store = :solid_cache_store`.
-8. Deploy para **staging**: `git push staging feature/solid-cache:main` — rodar migrations no staging.
-9. Executar Fluxos 2 (catálogo) e 8 (admin) no staging — confirmar que nada quebrou.
-10. `bin/rails test` — reportar resultado.
-11. Merge para `master`, deploy para produção, rodar migrations.
-12. Monitorar logs por **48h** antes de avançar para a Etapa E.
+8. `bin/rails test` — reportar resultado.
+9. Merge para `master`, deploy para Heroku, rodar migrations: `heroku run bin/rails db:migrate --app trscrews-prod`.
+10. Verificar Fluxos 2 (catálogo) e 8 (admin) no Heroku — confirmar que nada quebrou.
+11. Prosseguir para E quando confirmar estabilidade.
 
 ---
 
 ### Etapa E — Upgrade 8.0 → 8.1.3 (2–3h)
 
-**Objetivo:** Chegar à versão alvo final com janela de suporte ativa. Executar somente após D3 estável em produção por ≥48h. **Nenhuma feature nova do 8.1 é ativada aqui** — apenas o upgrade de versão e correção dos novos defaults.
+**Objetivo:** Chegar à versão alvo final com janela de suporte ativa. Executar somente após confirmar estabilidade do D3. **Nenhuma feature nova do 8.1 é ativada aqui** — apenas o upgrade de versão e correção dos novos defaults.
 
 1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
 2. `git checkout -b upgrade/rails-8.1`
@@ -650,12 +633,11 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 7. Verificar comportamento dos novos defaults (ver §3.3):
    - Rodar `bin/rails server` e navegar pelos fluxos principais observando o log para erros de callback ou conversão de tempo.
    - Verificar especificamente: login/logout com `remember_me`, criação de pedido (callbacks de `Order`), criação de endereço (callbacks de `ShippingAddress`).
-8. Executar todos os 9 fluxos do checklist manual em desenvolvimento.
+8. Executar todos os 9 fluxos localmente.
 9. `bin/rails test` — reportar resultado.
-10. Deploy para **staging**: `git push staging upgrade/rails-8.1:main`
-11. Executar todos os 9 fluxos no staging, com atenção ao Fluxo 1 (autenticação Devise), Fluxo 4 (checkout), Fluxo 5 (webhook).
-12. Merge para `master`, deploy para produção.
-13. Monitorar logs de produção por **48h** — verificar ausência de erros de callback, tempo e serialização.
+10. Merge para `master`, deploy para Heroku.
+11. Verificar todos os 9 fluxos no Heroku — atenção ao Fluxo 1 (autenticação Devise), Fluxo 4 (checkout), Fluxo 5 (webhook).
+12. Upgrade completo ✅ — Rails 8.1.3 em produção com suporte até outubro de 2026.
 
 ---
 
@@ -663,41 +645,38 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 ```
 Hoje  [Rails 7.1 EOL — sem suporte de segurança]
+ │    Sem usuários reais · dados de teste · Heroku = ambiente de validação
  │
  ├─ Etapa A: Preparação (1–2h)
  │    Backup BD · verificar activestorage-cloudinary (+ Plano B se necessário)
- │    · limpar branches · confirmar deploy atual funcionando
- │
- ├─ Etapa A.5: Staging no Heroku (1–2h)  ← PRÉ-REQUISITO para B em diante
- │    Criar app staging · restaurar backup de prod · configurar ENVs (Stripe test)
- │    · validar os 9 fluxos no estado atual (Rails 7.1)
+ │    · limpar branches locais mergeadas
  │
  ├─ Etapa B: sassc → dartsass (1–2h)
- │    Backup BD · migrar SCSS · validar no staging · deploy prod
+ │    Backup BD · migrar SCSS · validar local · deploy Heroku · validar Heroku
  │
  ├─ Etapa C: Rails 7.1 → 7.2 (3–4h)
- │    Backup BD · app:update · coletar deprecations · staging · deploy prod
- │    · aguardar 24h estável
+ │    Backup BD · app:update · coletar deprecations · validar local
+ │    · deploy Heroku · validar Heroku · confirmar estável
  │
  ├─ Etapa D1: Rails 7.2 → 8.0 puro (3–4h)
- │    Backup BD · app:update · SEM Solid Queue/Cache · staging · deploy prod
- │    · aguardar 48h estável
+ │    Backup BD · app:update · SEM Solid Queue/Cache · validar local
+ │    · deploy Heroku · validar Heroku · confirmar estável
  │
  ├─ Etapa D2: Solid Queue (2–3h)
- │    Backup BD · instalar · migrations · staging · deploy prod
- │    · aguardar 24h (confirmar e-mails após restart)
+ │    Backup BD · instalar · migrations · validar local
+ │    · deploy Heroku + migrations · confirmar e-mails processados
  │
  ├─ Etapa D3: Solid Cache (1–2h)
- │    Backup BD · instalar · migrations · staging · deploy prod
- │    · aguardar 48h estável
+ │    Backup BD · instalar · migrations · validar local
+ │    · deploy Heroku + migrations · confirmar estável
  │
  └─ Etapa E: Rails 8.0 → 8.1.3 (2–3h)  ← versão alvo final
       Backup BD · app:update · load_defaults 8.1 · verificar callbacks e timezone
-      · staging · deploy prod · aguardar 48h
-      [Rails 8.1 com bug fixes até outubro de 2026]
+      · validar local · deploy Heroku · validar Heroku
+      [Rails 8.1 com bug fixes até outubro de 2026] ✅
 
-Total estimado: 14–20h distribuídas ao longo de ~4 semanas
-(cada etapa separada por período de estabilidade monitorada)
+Total estimado: 12–16h
+(sem prazo fixo entre etapas — prosseguir quando confirmar estabilidade)
 ```
 
 ---
@@ -709,7 +688,7 @@ Estas são as situações que, se encontradas durante o upgrade, exigem parada e
 | Situação | Etapa | O que fazer |
 |---|---|---|
 | `activestorage-cloudinary-service` não funciona com Rails 8 | D1 | Parar. Executar Plano B (substituição pelo SDK nativo) antes de continuar. |
-| Stripe webhook retorna 500 após qualquer upgrade | qualquer | Reverter imediatamente. Investigar em staging. |
+| Stripe webhook retorna 500 após qualquer upgrade | qualquer | Reverter imediatamente (`git push heroku <branch-anterior>:main --force`). Investigar localmente. |
 | Imagens de produtos quebram em produção | qualquer | Reverter o deploy. Investigar Active Storage. |
 | Checkout não completa pedido | qualquer | Reverter. Investigar `OrdersController#create`. |
 | Devise não autentica usuários existentes | qualquer | Reverter. Checar se mudança de `config.load_defaults` alterou hash de senha ou serialização de sessão. |
