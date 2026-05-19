@@ -467,7 +467,7 @@ O risco mais provável da Etapa E é o novo default `run_after_transaction_callb
 ### Backup antes de cada deploy
 O backup do banco deve ser feito como **primeiro passo de toda etapa que inclui deploy para produção** (B, C, D1, D2, D3, E):
 ```bash
-heroku pg:backups:capture --app trscrews-prod-4185ac87e394
+heroku pg:backups:capture --app trscrews-prod
 ```
 
 ---
@@ -520,7 +520,7 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
    ```
 2. Fazer backup do banco de produção e restaurar no staging:
    ```bash
-   heroku pg:backups:capture --app trscrews-prod-4185ac87e394
+   heroku pg:backups:capture --app trscrews-prod
    heroku pg:backups:restore <backup_url> DATABASE_URL --app trscrews-staging
    ```
 3. Configurar ENV vars no staging — usar os mesmos valores de produção, **com exceção obrigatória:**
@@ -542,7 +542,7 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 **Objetivo:** Eliminar dependência deprecated antes de subir de versão do Rails.
 
-1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod-4185ac87e394`
+1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
 2. `git checkout -b upgrade/dartsass`
 3. Substituir `gem "sassc-rails"` por `gem "dartsass-rails"` no Gemfile.
 4. `bundle install`.
@@ -558,7 +558,7 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 **Objetivo:** Primeiro salto de versão com coleta de deprecation warnings.
 
-1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod-4185ac87e394`
+1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
 2. `git checkout -b upgrade/rails-7.2`
 3. Atualizar `rails` para `~> 7.2` no Gemfile.
 4. `bundle update rails` — resolver conflitos de versão de gems dependentes.
@@ -578,7 +578,7 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 **Objetivo:** Validar APENAS o upgrade do Rails. Sem Solid Queue, sem Solid Cache — jobs continuam `:async`, cache continua `:memory_store`.
 
-1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod-4185ac87e394`
+1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
 2. `git checkout -b upgrade/rails-8.0`
 3. Atualizar `rails` para `~> 8.0` no Gemfile.
 4. Remover linha comentada do `gem "redis"` (limpeza).
@@ -600,7 +600,7 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 **Objetivo:** Resolver o problema de e-mails perdidos em restart do dyno. Executar somente após D1 estável em produção por 48h.
 
-1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod-4185ac87e394`
+1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
 2. `git checkout -b feature/solid-queue`
 3. Adicionar `gem "solid_queue"` ao Gemfile.
 4. `bundle install`.
@@ -622,7 +622,7 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 **Objetivo:** Configurar cache persistente no PostgreSQL para uso futuro. Mudança passiva — sem impacto no comportamento atual. Executar somente após D2 estável.
 
-1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod-4185ac87e394`
+1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
 2. `git checkout -b feature/solid-cache`
 3. Adicionar `gem "solid_cache"` ao Gemfile.
 4. `bundle install`.
@@ -641,7 +641,7 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 **Objetivo:** Chegar à versão alvo final com janela de suporte ativa. Executar somente após D3 estável em produção por ≥48h. **Nenhuma feature nova do 8.1 é ativada aqui** — apenas o upgrade de versão e correção dos novos defaults.
 
-1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod-4185ac87e394`
+1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
 2. `git checkout -b upgrade/rails-8.1`
 3. Atualizar `rails` para `~> 8.1` no Gemfile (ou `">= 8.1.3"`).
 4. `bundle update rails` — gems do ecossistema Rails (solid_queue, solid_cache, importmap-rails, turbo-rails, stimulus-rails) recebem atualização junto.

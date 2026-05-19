@@ -39,7 +39,7 @@
 - **SEMPRE** rodar a suíte de testes (`bin/rails test`) após mudanças significativas e reportar o resultado.
 - **SEMPRE** criar ou atualizar testes quando corrigir um bug — o teste deve falhar antes do fix e passar depois.
 - Em caso de dúvida sobre intenção do usuário: **PERGUNTAR**, não assumir.
-- Nunca fazer `git push` (especialmente para heroku) sem aprovação explícita.
+- **NUNCA** executar `git commit`, `git push`, `git reset`, `git rebase`, `git merge`, `git checkout` em branches diferentes, ou qualquer operação que modifique o histórico ou estado do repositório sem aprovação explícita do usuário antes de cada operação. Operações de leitura (`git status`, `git log`, `git diff`, `git branch -v`) podem ser executadas livremente.
 
 ## Padrões de código
 
