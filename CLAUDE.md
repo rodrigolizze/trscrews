@@ -41,6 +41,14 @@
 - Em caso de dúvida sobre intenção do usuário: **PERGUNTAR**, não assumir.
 - **NUNCA** executar `git commit`, `git push`, `git reset`, `git rebase`, `git merge`, `git checkout` em branches diferentes, ou qualquer operação que modifique o histórico ou estado do repositório sem aprovação explícita do usuário antes de cada operação. Operações de leitura (`git status`, `git log`, `git diff`, `git branch -v`) podem ser executadas livremente.
 
+### Sobre cumprir instruções literalmente
+
+- Quando o usuário pede **mudanças numeradas ou em lista**, aplicar **todas**, na ordem dada. Não pular. Não consolidar. Não reinterpretar.
+- Antes de finalizar a resposta, fazer checklist mental: cada item pedido foi aplicado? Se algum não foi, listar **explicitamente** quais e por quê (ex: "não apliquei (c) porque tal arquivo não existe — preciso de orientação").
+- **NUNCA** terminar com "aguardando aprovação" se algum item da lista não foi aplicado.
+- Se um item da lista não fizer sentido técnico, parar e **PERGUNTAR** antes de pular — não decidir sozinho.
+- "Mostrar o conteúdo completo" significa **completo**, não resumo. Se a saída for longa, é longa. Não condensar para parecer mais limpo.
+
 ## Padrões de código
 
 ### Backend em inglês (sempre):
