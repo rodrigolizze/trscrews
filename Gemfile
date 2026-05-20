@@ -76,5 +76,4 @@ gem "friendly_id", "~> 5.5"
 gem "stripe", "~> 11.0"
 # Cloudinary + Active Storage adapter
 gem "cloudinary"                              # // Cloudinary Ruby SDK
-gem "activestorage-cloudinary-service"        # // plugs Cloudinary into Active Storage
 gem "devise"
