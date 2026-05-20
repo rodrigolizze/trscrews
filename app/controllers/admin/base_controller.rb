@@ -5,7 +5,7 @@ class Admin::BaseController < ApplicationController
 
   def require_admin_basic_auth
     user = ENV.fetch("ADMIN_USER", "admin")
-    pass = ENV.fetch("ADMIN_PASS", "admin")
+    pass = ENV.fetch("ADMIN_PASSWORD", "admin")
 
     authenticate_or_request_with_http_basic("Trscrews Admin") do |u, p|
       ActiveSupport::SecurityUtils.secure_compare(u.to_s, user.to_s) &&
