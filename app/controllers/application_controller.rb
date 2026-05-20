@@ -59,18 +59,6 @@ class ApplicationController < ActionController::Base
 
   protected
 
-  # // Basic Auth for /admin/* - usado por Admin::BaseController
-  # // Mantido aqui para compatibilidade; Admin::BaseController usa sua própria implementação (defaults unificados)
-  def require_admin_basic_auth
-    user = ENV.fetch("ADMIN_USER", "admin")
-    pass = ENV.fetch("ADMIN_PASS", "admin")
-
-    authenticate_or_request_with_http_basic("Trscrews Admin") do |u, p|
-      ActiveSupport::SecurityUtils.secure_compare(u.to_s, user.to_s) &&
-        ActiveSupport::SecurityUtils.secure_compare(p.to_s, pass.to_s)
-    end
-  end
-
   # // Devise strong params
   def configure_permitted_parameters
     # // sign up form
