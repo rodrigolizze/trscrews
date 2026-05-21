@@ -417,3 +417,23 @@ heroku pg:backups:restore <backup-id> DATABASE_URL --app trscrews-prod --confirm
 | **Total com ajuste de views** | | **~4–5h** |
 
 O tempo do "ajuste de views" depende do resultado do cenário c (test do variant). Se o SDK nativo se comportar corretamente com `.variant()`, essa fase não existe.
+
+
+## Validação em produção — 2026-05-21
+
+Todos os cenários validados em produção (Heroku):
+
+- ✅ Cenário 0: SDK nativo registrado como service do Active Storage
+- ✅ Cenário a: 133 imagens existentes carregam
+- ✅ Cenário b: upload novo vai para Cloudinary
+- ✅ Cenário c: variants aplicam transformações (verificado 
+  Content-Length 7643 bytes, dimensões 133x200 em thumbnail)
+- ✅ Cenário d: delete remove do banco e do Cloudinary
+- ✅ Cenário e: re-upload funciona e imagem aparece no catálogo público
+
+Risco 2 (variants — incerto inicialmente) resolvido: SDK nativo aplica 
+transformações via upload eager. URL não tem parâmetros c_limit visíveis 
+porque a variante já está armazenada como asset separado no Cloudinary.
+
+Migração concluída. Próxima etapa: UPGRADE_PLAN.md Etapa B 
+(sassc-rails → dartsass-rails).
