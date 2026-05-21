@@ -1,5 +1,11 @@
 # Auditoria Técnica — TR Screws
 
+> **⚠️ SNAPSHOT HISTÓRICO:** Este relatório reflete o estado técnico em 2026-05-14.
+> Mudanças posteriores (migração Cloudinary nativa, rename ADMIN_PASS→ADMIN_PASSWORD,
+> limpeza de Zone.Identifier, etc.) não estão refletidas aqui — consultar `git log` e
+> `TODO.md` para histórico recente. Próxima auditoria após conclusão do upgrade para
+> Rails 8.1.3.
+
 **Data:** 2026-05-14  
 **Auditor:** Claude Sonnet 4.6  
 **Branch:** master  
