@@ -1,5 +1,5 @@
-@import "../variables";
-@import "../utilities";
+@use "sass:color";
+@use "../variables" as *;
 
 .navbar {
   background-color: $color-owhite;
@@ -38,7 +38,7 @@
     color: white;
 
     &:hover {
-      background-color: darken($color-secondary, 10%);
+      background-color: color.adjust($color-secondary, $lightness: -10%);
     }
   }
 }
