@@ -79,3 +79,22 @@ params, chamar o service e redirecionar. PRÉ-REQUISITO: ter testes
 de integração cobrindo o fluxo de pedido atual ANTES de refatorar.
 Sem testes, qualquer refator é arriscado. Ordem correta: completar
 upgrade Rails → escrever testes → refatorar.
+
+## Modernizar asset pipeline (futuro, pós Rails 8.1.3)
+
+Migrar Sprockets → Propshaft + dartsass-sprockets → dartsass-rails.
+Alinha o projeto com o default do Rails 8. Exige auditar referências
+de asset_path/image_tag/stylesheet_link_tag em views e helpers.
+Trabalho estimado: 4-6h. NÃO faz parte do upgrade Rails 8 em si.
+
+## Redesign do site (futuro, pós upgrade Rails 8.1.3)
+
+O design atual é funcional mas simples (tipografia padrão Bootstrap,
+cores limitadas, hierarquia visual fraca em algumas páginas). Após
+conclusão do upgrade Rails 8.1.3, revisar:
+- Sistema de design coerente (paleta expandida, tipografia, espaçamentos)
+- Hierarquia visual nas páginas de produto e catálogo
+- Mobile-first review (testar em telas pequenas)
+- Animações e transições sutis para sensação de qualidade
+
+Tarefa independente, fora do escopo do upgrade Rails.

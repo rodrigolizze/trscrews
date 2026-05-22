@@ -13,11 +13,12 @@
  *= require_tree .
  *= require_self
  */
-@import "variables";
-@import "components/navbar";
-@import "components/feature_cards";
-@import "utilities";
-// @import "carousel";
+@use "sass:color";
+@use "variables" as *;
+@use "utilities";
+@use "components/navbar";
+@use "components/feature_cards";
+// @use "carousel";
 
 
 body {
@@ -117,7 +118,7 @@ body {
   color: #1F2937;
 
   &:hover {
-    background-color: darken($color-primary, 8%);
+    background-color: color.adjust($color-primary, $lightness: -8%);
     color: white;
   }
 }
