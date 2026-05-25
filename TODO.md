@@ -1,3 +1,41 @@
+## URGENTE — Auditoria completa do fluxo Stripe (descoberto 2026-05-25)
+
+Durante o deploy da Etapa C do upgrade (Rails 7.2), descobriu-se que
+a migration CreateStripeWebhookEvents (timestamp 20250311120000)
+nunca havia rodado em produção. Consequências auditadas:
+
+1. **Webhooks Stripe nunca foram processados em produção** desde
+   março de 2025. O controller stripe_webhooks_controller.rb falhava
+   silenciosamente com PG::UndefinedTable, retornando HTTP 500.
+
+2. **Idempotência de webhooks foi inoperante** durante 14+ meses.
+   StripeWebhookEvent.count em produção = 0 antes do db:migrate de
+   2026-05-25.
+
+3. **15 pedidos existem em produção** com status "paid". Como foram
+   marcados como pagos sem o webhook chegar? Precisa investigar:
+   - Existe controller de success redirect do Stripe Checkout?
+   - O mecanismo de marcação como paid tem idempotência própria?
+   - Pode ter ocorrido marcação duplicada via dupla visita ao
+     success URL?
+
+4. **Após o deploy de hoje, a tabela existe e novos webhooks SERÃO
+   gravados.** Mas o passado não pode ser reconstruído.
+
+### Ações pendentes (ordem):
+
+- [ ] Auditar app/controllers/ procurando por StripeController,
+      OrdersController#success, ou similar
+- [ ] Identificar o método que marca order.payment_status = "paid"
+- [ ] Adicionar idempotência se não tiver (verificar status atual
+      antes de atualizar)
+- [ ] Testar webhook com Stripe CLI localmente para confirmar que
+      a tabela está sendo usada agora
+- [ ] BLOQUEADOR de go-live em produção real
+
+Esta tarefa BLOQUEIA mudança para Stripe live mode (já listado em
+TODO existente "Stripe go-live checklist").
+
 ## Habilitar pagamentos reais (BLOQUEADOR PARA LANÇAMENTO)
 
 Atualmente Stripe está em test mode. Antes de aceitar pagamentos
