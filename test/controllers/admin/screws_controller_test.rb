@@ -3,7 +3,7 @@ require "test_helper"
 class Admin::ScrewsControllerTest < ActionDispatch::IntegrationTest
   def admin_auth_headers
     user = ENV.fetch("ADMIN_USER", "admin")
-    pass = ENV.fetch("ADMIN_PASS", "admin")
+    pass = ENV.fetch("ADMIN_PASSWORD", "admin")
     { "HTTP_AUTHORIZATION" => ActionController::HttpAuthentication::Basic.encode_credentials(user, pass) }
   end
 

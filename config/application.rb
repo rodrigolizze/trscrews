@@ -9,7 +9,7 @@ Bundler.require(*Rails.groups)
 module Trscrews
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 7.1
+    config.load_defaults 7.2
 
     # // Idioma padrão da aplicação → português do Brasil
     config.i18n.default_locale = :"pt-BR"
