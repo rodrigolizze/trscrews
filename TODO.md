@@ -98,3 +98,15 @@ conclusão do upgrade Rails 8.1.3, revisar:
 - Animações e transições sutis para sensação de qualidade
 
 Tarefa independente, fora do escopo do upgrade Rails.
+
+## Habilitar YJIT em produção (pós Rails 7.2 estável)
+
+YJIT foi desabilitado preventivamente no upgrade 7.2 para isolar variáveis.
+Após confirmar que Rails 7.2 está estável em produção por ~1 semana:
+
+- [ ] Remover `Rails.application.config.yjit = false` de
+      `config/initializers/new_framework_defaults_7_2.rb`
+- [ ] Deploy em release separada
+- [ ] Monitorar `heroku logs` e `heroku ps` por R14 (memory exceeded)
+- [ ] Se R14 aparecer: adicionar `RUBY_YJIT_ENABLE=0` nas config vars do Heroku
+      e não reabilitar até upgrade de dyno tier

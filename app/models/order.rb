@@ -2,10 +2,10 @@ class Order < ApplicationRecord
   has_many :order_items, dependent: :destroy
   belongs_to :user, optional: true
 
-  enum status: { draft: 0, placed: 1, cancelled: 2, shipped: 3 }
+  enum :status, { draft: 0, placed: 1, cancelled: 2, shipped: 3 }
 
   # // 0=pending, 1=paid, 2=failed
-  enum payment_status: { pending: 0, paid: 1, failed: 2 }, _default: :pending
+  enum :payment_status, { pending: 0, paid: 1, failed: 2 }, default: :pending
 
   before_validation :normalize_state
 
