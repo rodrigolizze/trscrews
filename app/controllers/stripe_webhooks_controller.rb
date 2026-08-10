@@ -89,16 +89,23 @@ class StripeWebhooksController < ApplicationController
       return
     end
 
-    # Se já está pago (usa o helper do modelo, que olha payment_status/paid_at)
-    if order.paid?
-      Rails.logger.info "[Stripe] #{source}: Order #{order.id} already paid – skipping"
-      return
+    # Check-and-act atômico: o lock serializa entregas concorrentes de eventos
+    # distintos do mesmo pedido (checkout.session.completed + payment_intent.succeeded),
+    # evitando e-mail de confirmação duplicado.
+    newly_paid = false
+    order.with_lock do
+      if order.paid?
+        Rails.logger.info "[Stripe] #{source}: Order #{order.id} already paid – skipping"
+      else
+        # mark_paid! continua sendo o ÚNICO ponto de escrita de payment_status=paid
+        order.mark_paid!(method: "stripe", reference: payment_reference)
+        newly_paid = true
+        Rails.logger.info "[Stripe] #{source}: Order #{order.id} marcado como PAID, ref=#{payment_reference}"
+      end
     end
 
-    # Usa o helper do modelo Order (já existe em app/models/order.rb)
-    order.mark_paid!(method: "stripe", reference: payment_reference)
-
-    Rails.logger.info "[Stripe] #{source}: Order #{order.id} marcado como PAID, ref=#{payment_reference}"
+    # Só envia e-mail se ESTE handler efetivou o pagamento (fora do lock)
+    return unless newly_paid
 
     # Envia o e-mail de confirmação de pagamento
     begin
