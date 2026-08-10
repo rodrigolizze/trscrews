@@ -4,37 +4,73 @@ Durante o deploy da Etapa C do upgrade (Rails 7.2), descobriu-se que
 a migration CreateStripeWebhookEvents (timestamp 20250311120000)
 nunca havia rodado em produção. Consequências auditadas:
 
-1. **Webhooks Stripe nunca foram processados em produção** desde
-   março de 2025. O controller stripe_webhooks_controller.rb falhava
-   silenciosamente com PG::UndefinedTable, retornando HTTP 500.
+1. **Webhooks Stripe ficaram ~2,5 meses sem ser processados em
+   produção** (2026-03-11 → 2026-05-25). O controller
+   stripe_webhooks_controller.rb falhava silenciosamente com
+   PG::UndefinedTable, retornando HTTP 500. O ano "2025" no nome da
+   migration é typo: o commit real (8f1710e) é de 2026-03-11.
 
-2. **Idempotência de webhooks foi inoperante** durante 14+ meses.
+2. **Idempotência por tabela foi inoperante nesses ~2,5 meses.**
    StripeWebhookEvent.count em produção = 0 antes do db:migrate de
-   2026-05-25.
+   2026-05-25. Antes disso o webhook estava **operante**
+   (2025-10-08 → 2026-03-11): a 1ª versão do controller marcava paid
+   direto, sem depender da tabela — ver STRIPE_AUDIT.md §4.5 e §4.6.
 
-3. **7 pedidos pagos (de 15 no total)** com status "paid". Como foram
-   marcados como pagos sem o webhook chegar? Precisa investigar:
-   - Existe controller de success redirect do Stripe Checkout?
-   - O mecanismo de marcação como paid tem idempotência própria?
-   - Pode ter ocorrido marcação duplicada via dupla visita ao
-     success URL?
+3. **7 pedidos pagos (de 15 no total: 7 paid + 8 pending) — RESOLVIDO**
+   (STRIPE_AUDIT.md §4.8). Não há mistério: foram marcados pelo
+   **próprio webhook**, operante na época (out/2025 → mar/2026),
+   quando a 1ª versão do controller marcava paid direto, sem depender
+   da tabela. Evidência de produção: os 7 têm payment_reference no
+   formato `pi_...` (payment_intent.succeeded) e paid_at em
+   dezembro/2025, dentro da janela do webhook funcionando — marcação
+   manual descartada por dados, não por dedução. O redirect de
+   sucesso (orders#thank_you) tem corpo vazio e não escreve no banco
+   (§2.3), então dupla visita ao success URL não marca nada.
 
-4. **Após o deploy de hoje, a tabela existe e novos webhooks SERÃO
-   gravados.** Mas o passado não pode ser reconstruído.
+4. **Desde o deploy de 2026-05-25 a tabela existe** e novos webhooks
+   devem passar a ser gravados — mas isso **ainda não foi comprovado
+   em produção**: StripeWebhookEvent.count continua 0 (nenhum
+   pagamento novo desde então). O passado não pode ser reconstruído.
 
 ### Ações pendentes (ordem):
 
-- [ ] Auditar app/controllers/ procurando por StripeController,
-      OrdersController#success, ou similar
-- [ ] Identificar o método que marca order.payment_status = "paid"
-- [ ] Adicionar idempotência se não tiver (verificar status atual
-      antes de atualizar)
+- [x] Auditar app/controllers/ procurando por StripeController,
+      OrdersController#success, ou similar — Fase 1
+      (STRIPE_AUDIT.md §1): existe um caminho único de escrita.
+- [x] Identificar o método que marca order.payment_status = "paid"
+      — `Order#mark_paid!` (app/models/order.rb:70), chamado apenas
+      por StripeWebhooksController#mark_order_paid.
+- [x] Adicionar idempotência — hoje em três níveis: por evento
+      (stripe_webhook_events + índice único), guard `paid?` por
+      pedido, e row lock `with_lock` contra a corrida entre dois
+      eventos distintos do mesmo pedido (commit 2b21373).
+- [x] Corrigir bug do checkout.session.completed — Stripe::StripeObject
+      não implementa #dig, então todo evento desse tipo levantava
+      NoMethodError e retornava HTTP 500 (commit 416554f, com os
+      primeiros testes do webhook).
+- [x] Corrigir o endpoint citado neste TODO — é /stripe/webhooks,
+      não /webhooks/stripe (config/routes.rb:63).
 - [ ] Testar webhook com Stripe CLI localmente para confirmar que
-      a tabela está sendo usada agora
+      a tabela está sendo usada agora — **EM ANDAMENTO (2026-08-10)**.
+      StripeWebhookEvent.count em produção segue 0: o fluxo atual,
+      dependente da tabela, nunca foi exercitado ponta a ponta
+      (STRIPE_AUDIT.md §4.8).
 - [ ] BLOQUEADOR de go-live em produção real
 
 Esta tarefa BLOQUEIA mudança para Stripe live mode (já listado em
 TODO existente "Stripe go-live checklist").
+
+## Investigar recalc_totals! — totais possivelmente zerados (descoberto 2026-08-10)
+
+- [ ] Investigar recalc_totals! — order_items.sum(:line_total) pode
+      gravar subtotal/total zerados quando chamado antes do save
+      (associação não persistida). Views/email escapam por usarem
+      soma em memória (items_subtotal/total_amount). Verificar se as
+      colunas subtotal/total em produção estão corretas.
+
+Contexto: `app/models/order.rb:32-41` (recalc_totals!) é chamado em
+`app/controllers/orders_controller.rb:109`, antes do `@order.save`.
+Descoberto durante a Fase 3 do fix do Stripe; NÃO corrigido ainda.
 
 ## Habilitar pagamentos reais (BLOQUEADOR PARA LANÇAMENTO)
 
@@ -57,6 +93,14 @@ reais, executar nesta ordem:
       apontando para https://<domínio>/stripe/webhooks
 - [ ] Confirmar que stripe initializer aceita ambas as chaves sem
       mudança de código
+- [ ] Webhook não valida valor nem moeda: o handler marca paid
+      confiando só em metadata.order_id, sem conferir se amount/currency
+      do payment_intent batem com o total do pedido. Descoberto no teste
+      E2E (2026-08-10): um evento de USD 20,00 marcou pago um pedido de
+      R$ 59,80. Com assinatura verificada não é buraco de segurança
+      direto, mas metadata errada ou evento de outro fluxo marcaria
+      pedido com valor divergente sem alarme. Adicionar verificação
+      amount/currency antes do go-live live mode.
 
 ### Decisão de arquitetura (futuro, se relevante)
 - [ ] Manter Stripe Checkout hospedado (atual — mais simples, menos
