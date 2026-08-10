@@ -1,15 +1,16 @@
 # STRIPE_AUDIT.md — Auditoria do fluxo Stripe (Fases 1 e 2)
 
-**Data:** 2026-08-10 (revisão 2 — timeline corrigida com evidência de git)
+**Data:** 2026-08-10 (revisão 3 — contagem de pedidos corrigida com dados de produção; revisão 2 corrigiu a timeline com git)
 **Autor:** investigação assistida (Claude Code)
 **Escopo:** Fase 1 (auditoria de código) + Fase 2 (fluxo real que marca `payment_status = "paid"`).
 **Status:** investigação apenas — **nenhum código de fix escrito.** Fase 3 (implementação) pendente de aprovação.
 **Relacionado:** `TODO.md` (seção URGENTE), `AUDIT.md`.
 
-> ⚠️ **Esta é a revisão 2.** A revisão 1 (2026-07-15) continha duas conclusões erradas
-> ("15 pedidos = marcação manual via console" e "webhook quebrado desde março/2025").
-> Ambas foram refutadas com evidência de git. Ver seção **"Histórico de correções desta
-> investigação"** ao final.
+> ⚠️ **Esta é a revisão 3.** A revisão 1 (2026-07-15) continha duas conclusões erradas
+> ("15 pedidos = marcação manual via console" e "webhook quebrado desde março/2025"), refutadas
+> com evidência de git na revisão 2. A revisão 3 (2026-08-10) corrigiu ainda a **contagem de pedidos
+> pagos (7, não 15)** com dados de produção. Ver seção **"Histórico de correções desta investigação"**
+> ao final.
 
 ---
 
@@ -21,12 +22,12 @@
   a ação tem corpo vazio. O parâmetro `?paid=1` do `success_url` só controla um banner na view.
 - Portanto, **revisitar o success URL é inócuo** (nenhuma escrita). A hipótese do TODO §3 de
   "marcação duplicada via dupla visita ao success URL" **está descartada pelo código**.
-- **Origem dos 15 pedidos "paid":** foram **provavelmente pagos pelo webhook funcionando** entre
+- **Origem dos 7 pedidos pagos (de 15 pedidos no total):** foram **pagos pelo webhook funcionando** entre
   **2025-10-08 e 2026-03-11**, período em que o webhook marcava `paid` **direto**, sem depender da
   tabela `stripe_webhook_events`. A dependência dessa tabela só foi introduzida em 2026-03-11
   (commit `8f1710e`); a tabela só passou a existir em produção em 2026-05-25. Logo, o webhook
-  **estava operante** durante out/2025 → mar/2026 e é a explicação natural dos 15 pedidos —
-  **não** houve necessidade de marcação manual via console (ver §4.5).
+  **estava operante** durante out/2025 → mar/2026 e é a explicação natural dos 7 pedidos pagos —
+  **não** houve marcação manual via console. **Confirmado com dados de produção em 2026-08-10** (ver §4.8).
 - **Janela real de webhook quebrado:** ~2,5 meses (**2026-03-11 a 2026-05-25**), entre a introdução
   da dependência da tabela e o `db:migrate` que a criou em produção. **Não** os 14+ meses afirmados
   no TODO.
@@ -137,13 +138,15 @@ mark_order_paid (stripe_webhooks_controller.rb:79)
    **Não.** O success URL é somente-leitura. Revisitá-lo não altera `payment_status`.
 
 4. **"15 pedidos existem em produção com status 'paid'. Como foram marcados sem o webhook chegar?"**
+   **Premissa corrigida:** não são 15 pedidos pagos — são **7 pedidos pagos (de 15 pedidos no total:
+   7 `paid` + 8 `pending`)**. O "15" do TODO era o total, não o total de pagos (ver §4.8).
    O webhook **não** esteve quebrado durante todo o período — apenas entre **2026-03-11 e 2026-05-25**
    (~2,5 meses). Entre **2025-10-08 e 2026-03-11** a 1ª versão do webhook marcava `paid` **direto**,
    **sem** depender da tabela `stripe_webhook_events` (essa dependência só foi introduzida em
-   `8f1710e`, 2026-03-11). Portanto os 15 pedidos foram **provavelmente marcados pelo próprio webhook
+   `8f1710e`, 2026-03-11). Portanto os 7 pedidos pagos foram **marcados pelo próprio webhook
    funcionando** nesse período — explicação consistente com o histórico git (§4.5) e que **descarta**
-   a hipótese anterior de marcação manual via console. Confirmação definitiva ainda requer inspeção
-   dos dados de produção (`payment_reference` deve ser `cs_...`/`pi_...` se veio do webhook — ver §5).
+   a hipótese anterior de marcação manual via console. **Confirmado com dados de produção em 2026-08-10**:
+   os 7 pedidos têm `payment_reference` = `pi_...` e `paid_at` em dez/2025 (ver §4.8).
 
 ---
 
@@ -188,7 +191,7 @@ deveria ter sido sinal de inconsistência. A **data real do commit** que criou a
 
 Isso **não altera** o mecanismo do bug de mar/2026 → mai/2026 (tabela ausente em produção → webhook
 falha → `mark_paid!` inalcançável), mas **corrige a linha do tempo** e **inverte** a conclusão sobre
-a origem dos 15 pedidos (webhook operante, não marcação manual).
+a origem dos 7 pedidos pagos, de 15 no total (webhook operante, não marcação manual).
 
 ### 4.5 Timeline confirmada por git
 
@@ -240,6 +243,39 @@ retry do Stripe:
   a entrega segundo sua política de backoff. Foi essa mudança que tornou o bug de tabela-ausente
   **visível** (webhooks acumulando 500 no Dashboard) durante mar/2026 → mai/2026.
 
+### 4.8 Confirmação com dados de produção (2026-08-10)
+
+Queries **read-only** em produção (`heroku run rails runner ...`, sem modificar dados) fecham a
+última incerteza da Fase 2 e **corrigem a premissa numérica do TODO**:
+
+- **São 7 pedidos pagos, não 15.** A contagem por status em produção é `{"paid"=>7, "pending"=>8}` —
+  15 pedidos **no total**, dos quais só 7 estão `paid`. O "15 pedidos paid" do TODO confundiu o total
+  de pedidos com o total de pagos.
+- **Todos os 7 pedidos pagos têm `payment_reference` no formato `pi_...`** (`payment_intent.succeeded`),
+  nenhum `nil` nem formato estranho. **Marcação manual DEFINITIVAMENTE descartada** — agora por
+  **evidência de dados**, não por dedução.
+- **Todos foram pagos em dezembro/2025**, dentro da janela do webhook funcionando (out/2025 → mar/2026).
+  Saída bruta (id | method | reference | paid_at):
+
+  ```
+  36  | stripe | pi_3SZcr | 2025-12-01
+  100 | stripe | pi_3Sc7C | 2025-12-08
+  133 | stripe | pi_3SdC6 | 2025-12-11
+  166 | stripe | pi_3SdX7 | 2025-12-12
+  167 | stripe | pi_3SdX8 | 2025-12-12
+  169 | stripe | pi_3SdXQ | 2025-12-12
+  170 | stripe | pi_3SdXf | 2025-12-12
+  ```
+
+- **Pedidos `166/167/169/170` foram pagos no mesmo dia (2025-12-12)** com references `pi_` **sequenciais
+  mas distintas** — pagamentos reais distintos, **não** duplicação.
+- **`StripeWebhookEvent.count = 0`.** A tabela existe em produção desde 2026-05-25, mas **nunca
+  registrou um único evento**. Consequência: o fluxo **atual** do webhook (pós-mar/2026, que depende da
+  tabela) **nunca foi exercitado em produção** — **não há prova de funcionamento ponta a ponta pós-mar/2026**.
+  Consistente com o fato de que os 7 pagamentos são todos de dez/2025 (antes da tabela) e não houve
+  novo pagamento desde o deploy de 2026-05-25. **Item aberto para a Fase 3:** testar o webhook com
+  Stripe CLI para exercitar o caminho da tabela antes do go-live.
+
 ---
 
 ## 5. Próximos passos sugeridos (para a Fase 3, mediante aprovação)
@@ -270,9 +306,13 @@ retry do Stripe:
 - **Revisão 2 — 2026-08-10:** ambas as conclusões **refutadas com evidência de git**
   (commits `adc63ac` de 2025-10-07, `7e88f32` de 2025-10-08, `8f1710e` de 2026-03-11):
   1. o webhook **funcionava** entre 2025-10-08 e 2026-03-11, marcando `paid` **sem** depender da
-     tabela `stripe_webhook_events` — logo os 15 pedidos vieram do **webhook operante**, não de
-     marcação manual;
+     tabela `stripe_webhook_events` — logo os 15 pedidos [nota: número corrigido para 7 na Revisão 3]
+     vieram do **webhook operante**, não de marcação manual;
   2. a janela real de webhook quebrado é de **~2,5 meses** (2026-03-11 → 2026-05-25).
+- **Revisão 3 — 2026-08-10:** corrigido **"15 pedidos paid" → "7 pedidos pagos (de 15 no total)"**,
+  após queries read-only em produção (`{"paid"=>7, "pending"=>8}`; ver §4.8). O erro numérico
+  originou-se no **TODO**, que confundiu o **total de pedidos** (15) com o **total de pedidos pagos**
+  (7); a confusão propagou-se para as revisões 1 e 2 deste audit.
 - **Causa raiz do engano:** o **ano errado no nome do arquivo de migration**
   (`20250311120000` em vez de `20260311...`) sugeria março de **2025**. A revisão 1 tomou o nome do
   arquivo como data real, em vez de checar a data do **commit** (2026-03-11). 

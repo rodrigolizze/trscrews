@@ -12,7 +12,7 @@ nunca havia rodado em produção. Consequências auditadas:
    StripeWebhookEvent.count em produção = 0 antes do db:migrate de
    2026-05-25.
 
-3. **15 pedidos existem em produção** com status "paid". Como foram
+3. **7 pedidos pagos (de 15 no total)** com status "paid". Como foram
    marcados como pagos sem o webhook chegar? Precisa investigar:
    - Existe controller de success redirect do Stripe Checkout?
    - O mecanismo de marcação como paid tem idempotência própria?
