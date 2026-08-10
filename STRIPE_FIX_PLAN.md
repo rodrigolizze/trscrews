@@ -498,6 +498,15 @@ ao final.
 
 Placar do log inteiro: **1** e-mail enviado, **0** ocorrências de `Internal Server Error`/`NoMethodError`.
 
+> ⚠️ **O E2E NÃO foi limpo — ele contaminou produção.** O placar acima vale para o ambiente **local**.
+> O que este relato omitia: `stripe trigger` cria o evento na **conta** Stripe, e a conta tinha um
+> endpoint ativo apontando para **produção**. Os mesmos eventos chegaram lá e, com o código antigo,
+> marcaram o `Order#1` de produção (pedido de teste, `admin@teste.com`) como `paid`, disparando
+> e-mail de confirmação. Um único pedido afetado; revertido no mesmo dia via `update_columns`;
+> contagem de volta a 7 paid / 8 pending. As 2 linhas gravadas em `StripeWebhookEvent` de produção
+> foram mantidas de propósito — são a primeira prova em produção do fluxo da tabela funcionando.
+> Relato completo em `STRIPE_AUDIT.md §4.9`; a lição operacional está em `LESSONS.md`.
+
 ### 9.4 Quatro achados laterais (nenhum corrigido nesta fase)
 
 1. **`recalc_totals!` grava totais zerados** — `order_items.sum(:line_total)` é soma em **SQL**; num

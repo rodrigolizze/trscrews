@@ -89,10 +89,25 @@ reais, executar nesta ordem:
 - [ ] Setar STRIPE_SECRET_KEY no Heroku com chave sk_live_ (não sk_test_)
 - [ ] Setar STRIPE_SIGNING_SECRET no Heroku com webhook secret de
       produção (diferente do de teste — gerar no dashboard Stripe modo Live)
-- [ ] Configurar webhook endpoint no dashboard Stripe modo Live
-      apontando para https://<domínio>/stripe/webhooks
+- [ ] Criar o webhook endpoint no dashboard Stripe modo LIVE apontando
+      para https://<domínio>/stripe/webhooks, com signing secret de Live.
+      O endpoint de TEST mode já existe e sempre esteve com a rota
+      CORRETA: "Heroku TRScrews (test)" →
+      trscrews-prod-4185ac87e394.herokuapp.com/stripe/webhooks,
+      escutando 2 eventos (payment_intent.succeeded e
+      checkout.session.completed), API 2025-09-30.clover. Use-o como
+      molde. Live e Test têm listas de endpoints SEPARADAS no Dashboard;
+      a de Live ainda está vazia.
+      NOTA: o endpoint test-mode foi DESABILITADO em 2026-08-10 durante
+      o desenvolvimento, para que `stripe trigger` local não atinja
+      produção (ver STRIPE_AUDIT.md §4.9). Reabilitar quando voltar a
+      testar contra produção em test mode, ou recriar em Live no go-live.
 - [ ] Confirmar que stripe initializer aceita ambas as chaves sem
       mudança de código
+- [ ] Rotacionar a STRIPE_SECRET_KEY de teste (sk_test_) — exposta em
+      screenshot em 2026-08-10. Resolvido naturalmente ao migrar para
+      sk_live_ no go-live; não exige rotação isolada antes disso, já que
+      é chave de test mode e não movimenta dinheiro real.
 - [ ] Webhook não valida valor nem moeda: o handler marca paid
       confiando só em metadata.order_id, sem conferir se amount/currency
       do payment_intent batem com o total do pedido. Descoberto no teste

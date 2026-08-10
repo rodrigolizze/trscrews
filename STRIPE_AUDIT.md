@@ -276,6 +276,81 @@ Queries **read-only** em produção (`heroku run rails runner ...`, sem modifica
   novo pagamento desde o deploy de 2026-05-25. **Item aberto para a Fase 3:** testar o webhook com
   Stripe CLI para exercitar o caminho da tabela antes do go-live.
 
+> ✅ **Item FECHADO em 2026-08-10** — a prova existe, obtida acidentalmente. Ver §4.9.
+
+---
+
+### 4.9 Incidente 2026-08-10: teste local contaminou produção
+
+**O que aconteceu.** Durante o teste E2E da Fase 3, `stripe trigger` foi executado na máquina local
+com `stripe listen` ativo. Os eventos **não** ficaram restritos ao listener: `stripe trigger` cria o
+evento na **conta** Stripe, e a Stripe o entrega a **todos** os endpoints ativos daquela conta. A
+conta de teste tinha (e sempre teve) um endpoint ativo apontando para **produção** — "Heroku TRScrews
+(test)" → `.../stripe/webhooks`. Os eventos chegaram nos dois destinos.
+
+**Dano.** O `payment_intent.succeeded` do trigger trazia `metadata.order_id=1`. Em dev, esse era o
+pedido sintético do teste; em produção, é o `Order#1` real (`SC-2511-000001`, criado em 2025-11-05,
+cliente "Admin Teste" / `admin@teste.com` — pedido de teste do próprio dono, **não** um cliente
+final). Consequências em produção às 18:10 UTC:
+
+- `Order#1` marcado `paid` indevidamente, com `payment_reference = pi_3U2xeCRH31OaqHfq1bkHeq4C`
+  (o payment intent gerado pelo trigger) e `paid_at = 2026-08-10 18:10:07 UTC`.
+- E-mail `OrderMailer#payment_confirmed` **enviado** para `admin@teste.com` — irreversível, mas sem
+  impacto: endereço de teste, não cliente real.
+- Contagem de pedidos foi de 7 paid / 8 pending para 8 paid / 7 pending.
+
+**Escopo confirmado (read-only).** Apenas **um** pedido afetado: `Order.where("paid_at >= ?",
+"2026-08-10 18:00 UTC")` devolveu somente o `Order#1`. Os 7 pagamentos legítimos (todos de dez/2025)
+ficaram intactos.
+
+**Correção aplicada.** Reversão pontual via `update_columns` (pula validações e callbacks — é reparo
+de dado, não transição de negócio):
+
+```ruby
+Order.find(1).update_columns(payment_status: "pending", paid_at: nil,
+                             payment_method: nil, payment_reference: nil)
+```
+
+Estado após a reversão: `{"paid"=>7, "pending"=>8}` — idêntico ao pré-incidente. Os valores
+originais de `payment_method`/`payment_reference` eram `nil` por definição (pedido nunca pago).
+
+**As 2 linhas de `StripeWebhookEvent` foram MANTIDAS** (decisão explícita):
+
+```
+1 | evt_3U2xeCRH31OaqHfq1W96JB66 | 2026-08-10 18:10:08   (marcou o pedido)
+2 | evt_3U2xzpRH31OaqHfq1uJn1KTK | 2026-08-10 18:32:28   (missing order_id)
+```
+
+São as **duas primeiras linhas da história da tabela em produção** e fecham o item aberto da §4.8:
+provam que o fluxo dependente da tabela **funciona ponta a ponta em produção** — evento recebido,
+assinatura verificada, pedido marcado, idempotência gravada. Apagá-las destruiria essa evidência e
+removeria a proteção contra reentrega (a Stripe retenta eventos que falharam).
+
+**Causa raiz.** Rodar `stripe trigger` sem antes verificar quais endpoints ativos a conta possui no
+Dashboard. O erro conceitual foi tratar `stripe listen` como canal privado — ele é apenas mais um
+destino, ao lado dos endpoints configurados.
+
+**Mitigação adotada.** O endpoint test-mode foi **desabilitado** (não deletado) no Dashboard em
+2026-08-10, já que o desenvolvimento seguirá por semanas antes do go-live. Deve ser reabilitado — ou
+recriado em Live mode — no go-live.
+
+**Alcance maior do que o `trigger`.** Qualquer evento gerado na conta é entregue a todos os endpoints:
+um checkout **real** feito no app local também chegaria à produção. Como `metadata.order_id` carrega
+IDs baixos em dev (1, 2, 3…), a colisão com pedidos reais de produção é provável. A solução
+estrutural é um **Sandbox Stripe separado** para desenvolvimento local, não apenas evitar `trigger`.
+
+**Descoberta colateral valiosa.** O endpoint acusava **60% de taxa de erro** — assinatura do bug do
+`#dig` (todo `checkout.session.completed` devolvia 500). Isso corrige uma premissa implícita deste
+audit: produção **recebia** webhooks o tempo todo e **falhava**, em vez de não recebê-los.
+
+**Pendência teórica (risco próximo de zero).** Em tese, durante a janela quebrada (2026-03-11 →
+2026-05-25) um pagamento teria dado 500 e o pedido continuaria `pending` no banco. Na prática o risco
+é desprezível: a conta opera em **test mode** (`STRIPE_SECRET_KEY` de produção começa com `sk_test_`,
+confirmado em 2026-08-10) e o modo Live nunca foi habilitado — é justamente o bloqueador registrado no
+`TODO.md`. Sem Live, **não há pagamento real possível** naquela janela: nenhum cliente foi cobrado,
+nenhum dinheiro ficou pendente. A confirmação é uma olhada rápida no Dashboard (histórico de
+tentativas do endpoint, ou Payments no período) e **fica para a próxima sessão**.
+
 ---
 
 ## 5. Próximos passos sugeridos (para a Fase 3, mediante aprovação)
