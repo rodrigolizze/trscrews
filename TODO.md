@@ -54,7 +54,7 @@ reais, executar nesta ordem:
 - [ ] Setar STRIPE_SIGNING_SECRET no Heroku com webhook secret de
       produção (diferente do de teste — gerar no dashboard Stripe modo Live)
 - [ ] Configurar webhook endpoint no dashboard Stripe modo Live
-      apontando para https://<domínio>/webhooks/stripe
+      apontando para https://<domínio>/stripe/webhooks
 - [ ] Confirmar que stripe initializer aceita ambas as chaves sem
       mudança de código
 

@@ -55,7 +55,8 @@ class StripeWebhooksController < ApplicationController
   # ---------- Event handlers ----------------------------------------------
 
   def handle_checkout_session_completed(session)
-    order_id = session.dig("metadata", "order_id")
+    metadata = session["metadata"] || {}
+    order_id = metadata["order_id"]
     Rails.logger.info "[Stripe] checkout.session.completed order_id=#{order_id} session_id=#{session['id']}"
 
     mark_order_paid(order_id,
