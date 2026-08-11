@@ -30,8 +30,9 @@ class Order < ApplicationRecord
 
   # // Recalculate totals based on order_items
   def recalc_totals!
-    # soma dos itens
-    self.subtotal = order_items.sum(:line_total)
+    # // Soma em memória: recalc_totals! roda antes do save, e um SUM() em SQL
+    # // sobre associação não persistida devolve 0. Mesmo critério de items_subtotal.
+    self.subtotal = order_items.sum { |i| i.line_total.to_d }
 
     # mantém `shipping` em sincronia com `shipping_fee`
     self.shipping = (shipping_fee || shipping || 0).to_d
