@@ -50,27 +50,41 @@ nunca havia rodado em produção. Consequências auditadas:
       primeiros testes do webhook).
 - [x] Corrigir o endpoint citado neste TODO — é /stripe/webhooks,
       não /webhooks/stripe (config/routes.rb:63).
-- [ ] Testar webhook com Stripe CLI localmente para confirmar que
-      a tabela está sendo usada agora — **EM ANDAMENTO (2026-08-10)**.
-      StripeWebhookEvent.count em produção segue 0: o fluxo atual,
-      dependente da tabela, nunca foi exercitado ponta a ponta
-      (STRIPE_AUDIT.md §4.8).
+- [x] Testar webhook com Stripe CLI localmente para confirmar que
+      a tabela está sendo usada agora — **RESOLVIDO (2026-08-10)**.
+      O fluxo dependente da tabela foi exercitado ponta a ponta, e há
+      prova em **produção**: StripeWebhookEvent tem 2 linhas gravadas
+      (evt_3U2xeC... e evt_3U2xzp...) — evento recebido, assinatura
+      verificada, pedido marcado, idempotência registrada. A prova veio
+      de forma acidental, pelo incidente do `stripe trigger` que atingiu
+      produção (STRIPE_AUDIT.md §4.9; lição em LESSONS.md).
 - [ ] BLOQUEADOR de go-live em produção real
 
 Esta tarefa BLOQUEIA mudança para Stripe live mode (já listado em
 TODO existente "Stripe go-live checklist").
 
-## Investigar recalc_totals! — totais possivelmente zerados (descoberto 2026-08-10)
+## ~~Investigar recalc_totals! — totais zerados~~ — RESOLVIDO em 2026-08-11
 
-- [ ] Investigar recalc_totals! — order_items.sum(:line_total) pode
-      gravar subtotal/total zerados quando chamado antes do save
-      (associação não persistida). Views/email escapam por usarem
-      soma em memória (items_subtotal/total_amount). Verificar se as
-      colunas subtotal/total em produção estão corretas.
+- [x] Confirmado em produção: **15 de 15** pedidos com `subtotal = 0` e
+      `total = frete`. `order_items.sum(:line_total)` é um `SUM()` em SQL
+      sobre associação ainda não persistida (`recalc_totals!` roda antes
+      do `save`) e devolvia 0. Bug presente desde `ae52c30` (2025-09-12);
+      a linha nunca havia sido modificada.
+- [x] **Fix** (`b1f09ed`, release v52): soma em memória
+      `order_items.sum { |i| i.line_total.to_d }`, mesmo critério de
+      `items_subtotal`. Teste de regressão pelo fluxo real em
+      `test/controllers/orders_controller_test.rb` (nasceu RED).
+- [x] **Dados:** os 15 pedidos eram todos sintéticos — deletados em
+      produção (`Order.destroy_all`, backup `b005` antes). Backfill
+      descartado por não haver dado real a preservar.
 
-Contexto: `app/models/order.rb:32-41` (recalc_totals!) é chamado em
-`app/controllers/orders_controller.rb:109`, antes do `@order.save`.
-Descoberto durante a Fase 3 do fix do Stripe; NÃO corrigido ainda.
+Detalhamento completo em `RECALC_TOTALS_FIX.md`.
+
+**Sobra desse trabalho (não bloqueante):** `ShippingAddress` (10) e
+`User` (15) de teste seguem em produção, assim como os screws 34
+("Produto Teste") e 35 ("Vai seus bundão"). Limpeza de catálogo e
+usuários é decisão separada. O estoque decrementado pelos pedidos
+apagados (31 unidades em 7 parafusos) não foi restaurado.
 
 ## Habilitar pagamentos reais (BLOQUEADOR PARA LANÇAMENTO)
 
