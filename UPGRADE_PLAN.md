@@ -8,7 +8,9 @@
 >
 > Rails 7.1 está **end-of-life desde outubro de 2025**. Não recebe mais bug fixes nem security patches. Estamos rodando produção em versão sem suporte de segurança — este upgrade não é melhoria estrutural opcional, é **correção de dívida de segurança ativa**.
 >
-> A versão alvo é **Rails 8.1.3** (lançado em março de 2026), que está em produção em Shopify e HEY há mais de 7 meses e recebe bug fixes até outubro de 2026. Parar em Rails 8.0 seria insuficiente: a série 8.0 entra em modo "só security patches" em maio de 2026 — chegando lá quase no fim da janela de bug fixes.
+> A versão alvo é **Rails 8.1.3** (lançado em março de 2026), que está em produção em Shopify e HEY há mais de 7 meses e recebe bug fixes até outubro de 2026. Parar em Rails 8.0 seria insuficiente: a série 8.0 foi lançada em **novembro de 2024**, encerrou a janela de bug fixes por volta de **novembro de 2025** e **já está em modo security-only**, com o suporte de segurança terminando por volta de **novembro de 2026**.
+>
+> **[CORRIGIDO 2026-08-12]** O texto original dizia que a série 8.0 "entra em modo só security patches em maio de 2026". Está errado — ela já entrou. Ver `RAILS_80_MIGRATION.md` §0, correção 3. A consequência prática é que **a Etapa E deixou de ser opcional**: ao concluir a D1 estamos numa série com ~3 meses de janela restante.
 
 ---
 
@@ -39,7 +41,7 @@
 - Rails 7.2 emite `DEPRECATION WARNING` para tudo que vai quebrar no 8.0, surfaceando problemas antes de chegar lá.
 - Menor blast radius por etapa do que a Opção A.
 
-**Problema:** Para em Rails 8.0, que entra em modo "só security patches" em maio de 2026. Adotar 8.0 como destino final significa chegar à versão quase no fim da janela de bug fixes — e precisar de um novo upgrade em breve de qualquer jeito.
+**Problema:** Para em Rails 8.0, que **já está em modo "só security patches"** desde ~novembro de 2025 (série lançada em nov/2024). Adotar 8.0 como destino final significa chegar a uma versão já fora da janela de bug fixes — e precisar de um novo upgrade em breve de qualquer jeito. *(Data corrigida em 2026-08-12; ver `RAILS_80_MIGRATION.md` §0.)*
 
 **Tempo estimado:** ~7–8h.  
 **Regressão esperada:** Baixa por etapa.
@@ -53,7 +55,7 @@
 **Por que 8.1 é o destino correto:**
 - Rails 8.1.3 foi lançado em março de 2026 e está em produção em Shopify e HEY há mais de 7 meses — o ecossistema está maduro.
 - A série 8.1 recebe bug fixes até outubro de 2026, dando margem real de suporte.
-- Rails 8.0 entra em modo "só security patches" em maio de 2026: parar nele é quase equivalente a não sair do 7.1 em termos de suporte ativo.
+- Rails 8.0 **já está** em modo "só security patches" (bug fixes encerrados ~nov/2025, segurança até ~nov/2026): parar nele é quase equivalente a não sair do 7.1 em termos de suporte ativo. *(Data corrigida em 2026-08-12.)*
 - Cada salto incremental expõe um conjunto menor de mudanças — o 7.2 detecta deprecations do 8.0, o 8.0 detecta deprecations do 8.1.
 
 **Tempo estimado:** ~12–17h distribuídas em ~3 semanas (inclui D1/D2/D3 para Solid Queue/Cache).  
@@ -99,20 +101,27 @@
 | pagy | 9.4.0 | ✅ | ✅ ativamente mantida | Baixo | Manter |
 | faker | 3.5.1 | ✅ | ✅ | Baixo | Manter |
 
-**Nota Rails 8.1 — Devise:** Rails 8.1 introduz `config.active_support.to_time_preserves_timezone = :zone` como novo default. Isso afeta a forma como timestamps são serializados na sessão. O Devise 4.9.x já trata esse caso, mas vale verificar o comportamento de `remember_me` e `sign_in` após o upgrade para 8.1.
+**Nota — Devise e `to_time_preserves_timezone`:** `config.active_support.to_time_preserves_timezone = :zone` é novo default do **Rails 8.0**, não do 8.1. *(Corrigido em 2026-08-12; ver `RAILS_80_MIGRATION.md` §0, correção 2.)* **Impacto real medido neste projeto: zero** — `grep -rn "\.to_time\b" app/ config/ lib/` não retorna nenhuma ocorrência. Ativado na D1 junto com `load_defaults 8.0`, sem regressão observada.
+
+**Nota Rails 8.0 — Devise 4.9.4 (risco superestimado):** o plano original classificava o Devise como risco alto da D1, por causa do lazy route loading do Rails 8.0. Na execução (2026-08-12) o bug foi **reproduzido** (`Devise::Mapping.find_scope!` levanta `Could not find a valid mapping`), mas a suíte passou 17/17 sem contorno — nenhum teste chama `sign_in`, que é o único caminho que alcança o bug. O contorno foi aplicado mesmo assim, como proteção. Ver Etapa F e `RAILS_80_MIGRATION.md` §4.2.
 
 ### Gems de imagem e storage — ATENÇÃO
 
 | Gem | Atual | Rails 8.0 compat | Rails 8.1 compat | Risco | Ação |
 |---|---|---|---|---|---|
 | cloudinary | 2.4.0 | ✅ SDK não depende de versão Rails | ✅ | Baixo | Manter |
-| **activestorage-cloudinary-service** | **0.2.3** | ⚠️ **Incerto** | ⚠️ **Incerto** | **Alto** | **Verificar na Etapa A** |
+| ~~activestorage-cloudinary-service~~ | ~~0.2.3~~ | — | — | — | **REMOVIDA DO PROJETO** |
 
-**`activestorage-cloudinary-service` é o maior risco do upgrade, para 8.0 e 8.1.** É uma gem de comunidade (não oficial Cloudinary) sem versão nova em muito tempo. Ela se pluga diretamente nas entranhas do Active Storage. Se o Active Storage mudar internals em qualquer versão, esta gem pode silenciosamente parar de funcionar.
-
-O risco para 8.1 é análogo ao de 8.0: se sobreviver ao 8.0 (ou se o Plano B tiver sido executado), o comportamento no 8.1 deve ser estável — o Active Storage não tem breaking changes significativos entre 8.0 e 8.1. Mas a incerteza só é resolvida pelo teste real no staging.
-
-**Ação antes de qualquer upgrade:** Abrir o repositório da gem no GitHub, verificar se há issues ou PRs abertos reportando incompatibilidade com Rails 8.0 ou 8.1. Se não houver manutenção ativa, executar o Plano B (ver Etapa A).
+> **[CORRIGIDO 2026-08-12] O maior risco declarado deste plano não existe mais.** A gem
+> `activestorage-cloudinary-service` **não está no `Gemfile` nem no `Gemfile.lock`** — foi removida do
+> projeto em algum momento entre a elaboração do plano (maio/2026) e a execução da D1. O serviço de
+> Active Storage vem do próprio SDK `cloudinary` 2.4.0, configurado em `config/storage.yml` com
+> `service: Cloudinary`. Ver `RAILS_80_MIGRATION.md` §0, correção 1.
+>
+> **Consequência:** o "Plano B" da Etapa A é desnecessário e o risco de imagens no upgrade cai de
+> **Alto** para **Baixo**. Na D1 (executada em 2026-08-12) nenhum ajuste de Active Storage foi
+> necessário. A validação do Fluxo 9 (imagens) segue no checklist, mas como verificação de rotina,
+> não como mitigação de risco alto.
 
 ### Gems de assets — ATENÇÃO
 
@@ -178,9 +187,14 @@ O risco para 8.1 é análogo ao de 8.0: se sobreviver ao 8.0 (ou se o Plano B ti
 
 #### `config/application.rb`
 - `config.load_defaults` atualizar para `8.0`
-- Novos defaults com 8.0:
-  - `config.action_dispatch.show_exceptions = :rescuable` — comportamento de exibição de erros muda. Verificar se páginas de erro customizadas continuam funcionando.
-  - `config.active_record.query_log_tags_enabled` — pode ativar por default. Impacto em performance mínimo.
+- **[CORRIGIDO 2026-08-12]** Os defaults listados originalmente aqui (`show_exceptions = :rescuable` e `query_log_tags_enabled`) **não são defaults do 8.0**. O `show_exceptions` Boolean→Symbol foi tratado na Etapa C, e o `query_log_tags_enabled` é uma linha do template de `development.rb`, não um default do framework. Ver `RAILS_80_MIGRATION.md` §0, correção 4.
+- Os defaults do 8.0 são **exatamente três** (confirmado na fonte do `railties`, onde `load_defaults "8.0"` é `load_defaults "7.2"` mais estas três linhas):
+
+  | Config | O que faz | Impacto medido na D1 |
+  |---|---|---|
+  | `active_support.to_time_preserves_timezone = :zone` | `to_time` preserva o timezone do receptor | **Zero** — nenhum `.to_time` no código |
+  | `action_dispatch.strict_freshness = true` | com `If-Modified-Since` + `If-None-Match`, considera só o segundo (RFC 7232 §6) | **Zero** — nenhum `fresh_when`/`stale?` |
+  | `Regexp.timeout = 1` | defesa contra ReDoS | Único com superfície real; nossas regexes são triviais, risco está em gems de terceiros — **monitorar log em produção** |
 
 #### `config/environments/production.rb`
 - `config.assume_ssl = true` — descomenta a linha comentada existente. Necessário e correto para Heroku.
@@ -191,11 +205,21 @@ Atualmente referencia Redis (que não está no Gemfile). Na Etapa D1, simplifica
 
 #### Novos arquivos que `rails app:update` vai criar (Etapa D1 — Rails puro)
 
-| Arquivo | Propósito | Ação na D1 |
+**[ATUALIZADO 2026-08-12 — o que foi de fato decidido e executado na D1.]** A tabela original mandava
+"aceitar" `queue.yml` e `cache.yml` na D1; na execução optou-se por **rejeitar** os dois, para que a D1
+não deixasse nenhum artefato de Solid no repo. Nada de Solid entrou.
+
+| Arquivo | Propósito | Ação executada na D1 |
 |---|---|---|
-| `config/queue.yml` | Configuração do Solid Queue | Aceitar o arquivo, mas NÃO configurar o adapter em production.rb ainda (D2) |
-| `config/cache.yml` | Configuração do Solid Cache | Aceitar o arquivo, mas NÃO configurar cache_store ainda (D3) |
-| `bin/jobs` | Worker do Solid Queue | Criar apenas na D2 |
+| `config/initializers/new_framework_defaults_8_0.rb` | Mecanismo do upgrade (3 flags) | **Aceito** — criado com tudo comentado |
+| `public/400.html` | Página de erro 400 (nova no 8.0) | **Aceito** — criado |
+| `config/queue.yml` | Configuração do Solid Queue | **Rejeitado** — pertence à D2 |
+| `config/cache.yml` | Configuração do Solid Cache | **Rejeitado** — pertence à D3 |
+| `bin/jobs` | Worker do Solid Queue | **Rejeitado** — pertence à D2 |
+| `bin/dev` | Foreman/Solid | **Rejeitado** — não usamos |
+| `config/puma.rb` | Template novo do 8.0 | **Rejeitado** — o template traz `plugin :solid_queue`, remove o `worker_timeout` de dev e derruba o suporte a `RAILS_MIN_THREADS`. Sem ganho funcional |
+| `production.rb`, `assets.rb`, `robots.txt`, `application.rb` | Customizados à mão | **Rejeitados** — alterados manualmente depois, linha a linha |
+| Docker, Kamal, CI, devcontainer, PWA, Gemfile (rubocop/brakeman) | — | **Rejeitados** — precedente da Etapa C |
 | `db/queue_schema.rb` | Schema do Solid Queue | Criar apenas na D2 |
 | `db/cache_schema.rb` | Schema do Solid Cache | Criar apenas na D3 |
 
@@ -209,7 +233,7 @@ Os initializers existentes (`stripe.rb`, `devise.rb`, `shipping.rb`, etc.) não 
 #### `config/application.rb`
 - `config.load_defaults` atualizar para `8.1`
 - Novos defaults ativos com 8.1:
-  - `config.active_support.to_time_preserves_timezone = :zone` — altera como timestamps são convertidos. Onde o código usa `.to_time` em objetos `ActiveSupport::TimeWithZone`, o resultado passa a preservar o timezone original em vez de converter para UTC. Verificar em: lógica de datas em `Order` (campo `placed_at`), qualquer comparação de tempo em callbacks.
+  - ~~`config.active_support.to_time_preserves_timezone = :zone`~~ — **[CORRIGIDO 2026-08-12] não é default do 8.1: é do 8.0**, e já foi ativado na D1 sem impacto (nenhum `.to_time` no código). Removido da lista de verificações da Etapa E. Ver `RAILS_80_MIGRATION.md` §0, correção 2.
   - `config.active_record.run_after_transaction_callbacks_in_order_defined = true` — callbacks `after_commit` passam a executar na ordem em que foram definidos no modelo, em vez de em ordem inversa. Verificar nos modelos `Order` e `ShippingAddress`, que têm múltiplos callbacks.
   - `config.active_record.use_yaml_unsafe_load = false` — melhoria de segurança na desserialização YAML. Sem impacto direto neste projeto (não usa `serialize` com tipos customizados).
 
@@ -408,16 +432,21 @@ Sem migrations. Rollback é simples.
 
 **Antes de começar:**
 ```bash
-git checkout -b upgrade/rails-8.0
-cp Gemfile.lock Gemfile.lock.7.2-backup
-git add Gemfile.lock.7.2-backup
-git commit -m "chore: backup Gemfile.lock before Rails 8.0 upgrade"
+git checkout -b refactor/rails-80-upgrade
+cp Gemfile.lock Gemfile.lock.7.2-backup   # snapshot LOCAL, não versionado
 ```
 
+> **[CORRIGIDO 2026-08-12]** O texto original mandava `git add Gemfile.lock.7.2-backup` e commitar o
+> snapshot. Isso contradizia a regra `Gemfile.lock.*-backup` do `.gitignore` e versionaria um artefato
+> descartável. **O backup é local e ignorado pelo git** — o histórico já guarda o lock anterior, e o
+> conteúdo é recuperável a qualquer momento com `git show <sha-anterior>:Gemfile.lock`. Apagar o
+> snapshot só depois do deploy da etapa ser validado em produção.
+
 **Se algo crítico quebrar em produção:**
-1. Reverter o deploy: `git push heroku upgrade/rails-7.2:main --force`
+1. Reverter o deploy: `git push heroku <sha-anterior>:master`
    - **Requer aprovação explícita antes de executar.**
 2. D1 não adiciona migrations — rollback de deploy é suficiente, sem necessidade de `db:rollback`.
+3. Para voltar as dependências em local: `git show <sha-anterior>:Gemfile.lock > Gemfile.lock && bundle install`.
 
 ### Etapa D2: Adoção do Solid Queue
 
@@ -499,11 +528,12 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 **Objetivo:** Resolver pendências antes de tocar no Rails.
 
 1. Fazer backup do banco de produção via Heroku PG.
-2. Verificar compatibilidade da `activestorage-cloudinary-service` 0.2.3 com Rails 8: abrir o repositório da gem no GitHub, checar issues abertas, último commit, PRs pendentes, e se há menção explícita de compatibilidade com Rails 8.
-   - **Se houver suporte confirmado:** seguir o plano normal.
-   - **Se não houver:** executar o Plano B abaixo antes de avançar para a Etapa C.
+2. ~~Verificar compatibilidade da `activestorage-cloudinary-service` 0.2.3 com Rails 8.~~
+   **[OBSOLETO 2026-08-12 — PASSO CANCELADO.]** A gem não está mais no projeto (ver §2). Não há o que
+   verificar e o **Plano B abaixo é desnecessário**. Mantido no documento apenas como registro
+   histórico da análise original; **não executar**.
 
-   #### Plano B — Substituição de `activestorage-cloudinary-service` pelo SDK nativo
+   #### ~~Plano B~~ — Substituição de `activestorage-cloudinary-service` pelo SDK nativo *(cancelado — a gem já saiu do projeto)*
 
    A alternativa é configurar o Active Storage para usar o Cloudinary SDK diretamente, sem depender da gem de comunidade. O SDK oficial (`cloudinary` 2.x) já expõe um serviço compatível com Active Storage via `Cloudinary::CarrierWave` ou via configuração do `storage.yml` com o serviço `Cloudinary`.
 
@@ -560,24 +590,47 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 ---
 
-### Etapa D1 — Upgrade 7.2 → 8.0 puro (3–4h)
+### Etapa D1 — Upgrade 7.2 → 8.0 puro (3–4h) · ✅ **EXECUTADA EM LOCAL (2026-08-12) — DEPLOY PENDENTE**
+
+> **Status:** código aplicado e validado localmente na branch `refactor/rails-80-upgrade`.
+> **Rails 8.0.5.1 · `load_defaults 8.0` · suíte 17 runs / 47 assertions / 0 falhas · boot sem uma única
+> `DEPRECATION WARNING`.** Falta: `cable.yml`, `friendly_id`, `assets:precompile`, os 9 fluxos manuais,
+> merge e deploy. Detalhamento completo em `RAILS_80_MIGRATION.md`.
+>
+> **O risco real da etapa não foi o previsto.** O plano apontava o Devise como risco central
+> (probabilidade "Alta"); na prática o bug foi reproduzido mas **não é alcançado por nenhum teste**, e a
+> suíte passou sem contorno. Quem derrubou a suíte inteira foi o **minitest 6** — listado como risco #6
+> genérico, de impacto "Baixo". Ver Etapa G.
 
 **Objetivo:** Validar APENAS o upgrade do Rails. Sem Solid Queue, sem Solid Cache — jobs continuam `:async`, cache continua `:memory_store`.
 
-1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
-2. `git checkout -b upgrade/rails-8.0`
-3. Atualizar `rails` para `~> 8.0` no Gemfile.
-4. Remover linha comentada do `gem "redis"` (limpeza).
-5. `bundle update rails` — resolver conflitos.
-6. `bin/rails app:update` — aceitar mudanças de config com atenção. **Não** ativar Solid Queue ou Solid Cache mesmo que o gerador sugira.
-7. Atualizar `config.load_defaults` para `8.0`.
-8. Simplificar `cable.yml`: trocar `adapter: redis` em production por `adapter: async`.
-9. Atualizar URL placeholder no `config/initializers/stripe.rb`.
-10. Executar todos os 9 fluxos do checklist manual localmente.
-11. `bin/rails test` — reportar resultado.
-12. Merge para `master`, deploy para Heroku.
-13. Verificar todos os 9 fluxos no Heroku — especialmente Fluxos 5 (webhook) e 9 (imagens Cloudinary).
-14. Prosseguir para D2 quando confirmar estabilidade.
+> **Devise fica em 4.9.4 nesta etapa (decidido 2026-08-11).** O Rails 8.0 desenha rotas de forma lazy
+> e o Devise 4.9.4 é anterior a isso, o que quebra os test helpers (não afeta produção, que roda
+> `eager_load = true`). O contorno é uma linha em `test/test_helper.rb`. O upgrade para Devise 5.0 é
+> a **Etapa F**, isolada. Detalhamento em `RAILS_80_MIGRATION.md` §4.1 e §4.2.
+
+1. ✅ **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
+2. ✅ Branch criada — na prática `refactor/rails-80-upgrade` (não `upgrade/rails-8.0`).
+3. ✅ `rails` → `"~> 8.0.5", ">= 8.0.5.1"` no Gemfile.
+4. ⬜ Remover linha comentada do `gem "redis"` (limpeza) — **não feito**, a linha segue no Gemfile.
+5. ✅ `bundle update rails` — subiu todo o stack para 8.0.5.1.
+6. ✅ `app:update` aplicado por template, arquivo a arquivo — 2 aceitos, todo o resto rejeitado (ver §3.2). **Nenhum artefato de Solid entrou.**
+7. ✅ `config.load_defaults 8.0` — as 3 flags confirmadas ativas em runtime.
+8. ⬜ Simplificar `cable.yml` para `adapter: async` — **não feito**, ainda em `adapter: redis`.
+9. ⬜ Atualizar URL placeholder no `config/initializers/stripe.rb` — **não feito**.
+10. ⬜ Executar os 9 fluxos manuais localmente — **não feito** (banco de development vazio: 0 screws, 0 orders, 0 users; catálogo e página de produto não são validáveis sem popular).
+11. ✅ `bin/rails test` — **17 runs, 47 assertions, 0 failures, 0 errors, 0 skips**.
+12. ⬜ Merge para `master`, deploy para Heroku.
+13. ⬜ Verificar os 9 fluxos no Heroku — especialmente 5 (webhook) e 9 (imagens Cloudinary).
+14. ⬜ Prosseguir para D2 quando confirmar estabilidade.
+
+**Passos extras, não previstos no plano, executados na D1:**
+
+- ✅ `config.assume_ssl = true` em `production.rb` (previsto em §3.2, aplicado à mão).
+- ✅ Contorno do Devise em `test/test_helper.rb`, marcado como `WORKAROUND TEMPORÁRIO` — some na Etapa F.
+- ✅ **Pin `gem "minitest", "~> 5.27"`** — obrigatório para a suíte carregar. Ver Etapa G.
+- ✅ `filter_parameter_logging.rb`: `+:cvv, +:cvc` (do template 8.0 — relevante para LGPD/pagamentos).
+- ✅ `development.rb`: `query_log_tags_enabled = true` (única config nova do template 8.0 nesse arquivo).
 
 ---
 
@@ -641,6 +694,83 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 ---
 
+### Etapa F — Devise 4.9.4 → 5.0.x (1–2h) · INDEPENDENTE da cadeia Rails
+
+**Objetivo:** eliminar a dívida assumida na D1 — sair de uma gem de abr/2024 rodando sobre Rails 8.x,
+combinação não suportada pelo autor, e remover o contorno de `test/test_helper.rb`.
+
+**Quando:** a qualquer momento **depois** da D1 estar estável. Não bloqueia D2, D3 nem E, e não é
+bloqueada por elas. Fazer isoladamente é o ponto — foi para isso que ficou de fora da D1.
+
+**Contexto:** o Rails 8.0 passou a desenhar rotas sob demanda (rails/rails#52353). O Devise resolve
+`Devise.mappings` durante o carregamento das rotas, então os test helpers falham com
+`Could not find a valid mapping`. Não existe `devise 4.9.5` — a série 4 terminou na 4.9.4. A correção
+entrou no Devise 5.0.0.rc (heartcombo/devise#5695).
+
+**Breaking changes do Devise 5.0 já conferidos contra o nosso código** (`RAILS_80_MIGRATION.md` §4.1):
+derruba Ruby < 2.7 / Rails < 7.0 (ok); `secret_key` passa a vir sempre de `secret_key_base` (o nosso
+já está comentado); HTML dos forms muda de `<br>` para `<p>` (não nos afeta — temos views próprias em
+`app/views/devise/`); remove métodos de sign-in deprecados (usamos só `devise_parameter_sanitizer`,
+que não é deprecado).
+
+1. **Backup do banco:** `heroku pg:backups:capture --app trscrews-prod`
+2. `git checkout -b upgrade/devise-5`
+3. Gemfile: `gem "devise"` → `gem "devise", "~> 5.0"`; `bundle update devise`
+4. **Remover** a linha `Rails.application.routes_reloader.try(:execute_unless_loaded)` de
+   `test/test_helper.rb` — o Devise 5 faz isso internamente. A suíte deve continuar verde **sem** ela.
+5. Revisar `config/initializers/devise.rb` contra o template da 5.0 (opções renomeadas/removidas).
+6. `bin/rails test` — reportar resultado.
+7. Executar o **Fluxo 1 inteiro** (cadastro, confirmação por e-mail, login, edição de perfil, logout,
+   reset de senha, acesso negado a `/orders/mine` sem login) localmente.
+8. Merge para `master`, deploy para Heroku.
+9. **Repetir o Fluxo 1 inteiro no Heroku** — autenticação é o caminho crítico desta etapa.
+
+**Rollback:** sem migrations. `git checkout` do `Gemfile`/`Gemfile.lock`, ou
+`git push heroku <sha-anterior>:master`. Se usuários existentes não autenticarem após o deploy,
+reverter imediatamente e investigar serialização de sessão / `secret_key_base`.
+
+---
+
+### Etapa G — minitest 5.27 → 6.x (1–2h) · INDEPENDENTE da cadeia Rails
+
+**Objetivo:** pagar a dívida assumida na D1 — sair do pin `~> 5.27` e voltar a acompanhar o minitest.
+
+**Origem (2026-08-12).** O `activesupport` 7.2.3.1 declarava `minitest (>= 5.1, < 6)`. O 8.0.5.1 **removeu
+esse teto** (`minitest (>= 5.1)`), então o `bundle update rails` da D1 puxou o **minitest 6.0.6** — que
+**derrubou a suíte inteira**, não por falha de teste, mas por `LoadError` no carregamento:
+
+```
+cannot load such file -- minitest/mock (LoadError)
+  from test/controllers/stripe_webhooks_controller_test.rb:2
+```
+
+O minitest 6.0.0 (dez/2025) *"Dropped minitest/mock.rb. This has been extracted to the minitest-mock
+gem"*, e o nosso teste do webhook do Stripe usa `Stripe::Webhook.stub(...)`. **Zero testes rodavam.**
+Resolvido com o pin `gem "minitest", "~> 5.27"` no grupo `:test`, para manter a D1 restrita ao Rails.
+
+**Superfície verificada na nossa suíte** (as outras 7 rupturas do 6.0.0 **não** nos atingem):
+
+| Ruptura do minitest 6 | Nossa suíte |
+|---|---|
+| `minitest/mock` extraído | ⚠️ **1 arquivo** — `stripe_webhooks_controller_test.rb:2,21` |
+| `assert_equal(nil, ...)` proibido | ✅ nenhum |
+| `assert_send` removido | ✅ nenhum |
+| namespace `MiniTest` deletado | ✅ nenhum |
+| expectations `must_`/`wont_` no Object | ✅ nenhum |
+| `assert_same(nil, ...)` proibido | ✅ nenhum |
+| plugin loading passa a ser opt-in | ⚠️ verificar plugins do Rails ao migrar |
+
+1. `git checkout -b upgrade/minitest-6`
+2. Remover o pin `gem "minitest", "~> 5.27"` do Gemfile; `bundle update minitest`.
+3. Adicionar `gem "minitest-mock"` no grupo `:test` **ou** reescrever `deliver_webhook` sem `Object#stub`.
+4. Conferir o item "plugin loading opt-in" — pode exigir `require` explícito no `test_helper.rb`.
+5. `bin/rails test` — baseline atual a bater: **17 runs / 47 assertions / 0 falhas**.
+
+**Sem impacto em produção:** o minitest não é carregado fora do ambiente de teste. Esta etapa não
+precisa de backup de banco nem de deploy.
+
+---
+
 ### Resumo visual
 
 ```
@@ -648,7 +778,7 @@ Hoje  [Rails 7.1 EOL — sem suporte de segurança]
  │    Sem usuários reais · dados de teste · Heroku = ambiente de validação
  │
  ├─ Etapa A: Preparação (1–2h)
- │    Backup BD · verificar activestorage-cloudinary (+ Plano B se necessário)
+ │    Backup BD · [passo activestorage-cloudinary CANCELADO — gem saiu do projeto]
  │    · limpar branches locais mergeadas
  │
  ├─ Etapa B: sassc → dartsass (1–2h)
@@ -658,9 +788,10 @@ Hoje  [Rails 7.1 EOL — sem suporte de segurança]
  │    Backup BD · app:update · coletar deprecations · validar local
  │    · deploy Heroku · validar Heroku · confirmar estável
  │
- ├─ Etapa D1: Rails 7.2 → 8.0 puro (3–4h)
- │    Backup BD · app:update · SEM Solid Queue/Cache · validar local
- │    · deploy Heroku · validar Heroku · confirmar estável
+ ├─ Etapa D1: Rails 7.2 → 8.0 puro (3–4h)  ✅ EXECUTADA EM LOCAL (2026-08-12)
+ │    Backup BD · app:update · SEM Solid Queue/Cache · validar local ✅ (17/17)
+ │    · [PENDENTE] cable.yml · friendly_id · precompile · 9 fluxos
+ │    · [PENDENTE] deploy Heroku · validar Heroku · confirmar estável
  │
  ├─ Etapa D2: Solid Queue (2–3h)
  │    Backup BD · instalar · migrations · validar local
@@ -670,12 +801,20 @@ Hoje  [Rails 7.1 EOL — sem suporte de segurança]
  │    Backup BD · instalar · migrations · validar local
  │    · deploy Heroku + migrations · confirmar estável
  │
- └─ Etapa E: Rails 8.0 → 8.1.3 (2–3h)  ← versão alvo final
-      Backup BD · app:update · load_defaults 8.1 · verificar callbacks e timezone
-      · validar local · deploy Heroku · validar Heroku
-      [Rails 8.1 com bug fixes até outubro de 2026] ✅
+ ├─ Etapa E: Rails 8.0 → 8.1.3 (2–3h)  ← versão alvo final
+ │    Backup BD · app:update · load_defaults 8.1 · verificar callbacks e timezone
+ │    · validar local · deploy Heroku · validar Heroku
+ │    [Rails 8.1 com bug fixes até outubro de 2026] ✅
+ │
+ ├─ Etapa F: Devise 4.9.4 → 5.0.x (1–2h)  ← independente; a qualquer momento pós-D1
+ │    Backup BD · bundle update devise · REMOVER contorno de test_helper.rb
+ │    · Fluxo 1 completo local · deploy Heroku · Fluxo 1 completo no Heroku
+ │
+ └─ Etapa G: minitest 5.27 → 6.x (1–2h)  ← independente; sem deploy, sem banco
+      Remover pin do Gemfile · minitest-mock (ou reescrever o stub do webhook)
+      · conferir plugin loading opt-in · bin/rails test
 
-Total estimado: 12–16h
+Total estimado: 14–20h  (12–16h da cadeia Rails + 1–2h da F + 1–2h da G)
 (sem prazo fixo entre etapas — prosseguir quando confirmar estabilidade)
 ```
 
@@ -687,10 +826,11 @@ Estas são as situações que, se encontradas durante o upgrade, exigem parada e
 
 | Situação | Etapa | O que fazer |
 |---|---|---|
-| `activestorage-cloudinary-service` não funciona com Rails 8 | D1 | Parar. Executar Plano B (substituição pelo SDK nativo) antes de continuar. |
+| ~~`activestorage-cloudinary-service` não funciona com Rails 8~~ | ~~D1~~ | **Flag removida em 2026-08-12** — a gem não está mais no projeto. A D1 rodou sem nenhum ajuste de Active Storage. |
 | Stripe webhook retorna 500 após qualquer upgrade | qualquer | Reverter imediatamente (`git push heroku <branch-anterior>:main --force`). Investigar localmente. |
 | Imagens de produtos quebram em produção | qualquer | Reverter o deploy. Investigar Active Storage. |
 | Checkout não completa pedido | qualquer | Reverter. Investigar `OrdersController#create`. |
 | Devise não autentica usuários existentes | qualquer | Reverter. Checar se mudança de `config.load_defaults` alterou hash de senha ou serialização de sessão. |
 | Callbacks de `Order` ou `ShippingAddress` executam em ordem diferente | E | Não reverter imediatamente — desabilitar o novo default via `config.active_record.run_after_transaction_callbacks_in_order_defined = false` e investigar o comportamento esperado. |
-| Timestamps em pedidos aparecem com timezone errado | E | Provavelmente causado pelo novo default `to_time_preserves_timezone = :zone`. Verificar exibição de datas nas views e nos e-mails. Reverter o default se necessário. |
+| Timestamps em pedidos aparecem com timezone errado | **D1** (não E) | Causado pelo default `to_time_preserves_timezone = :zone`, que é do **8.0**. Verificar exibição de datas nas views e nos e-mails. Reverter com `config.active_support.to_time_preserves_timezone = :offset` (ou `false`). *(Etapa corrigida em 2026-08-12.)* |
+| Requisição falha com `Regexp::TimeoutError` | **D1** | Novo default `Regexp.timeout = 1` do Rails 8.0. Nossas regexes são triviais; a causa provável é uma gem de terceiro sob input adversário. Mitigação imediata: `Regexp.timeout = nil` num initializer. Monitorar `heroku logs` após o deploy da D1. |
