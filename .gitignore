@@ -37,3 +37,7 @@
 
 # Windows/WSL Zone.Identifier metadata files
 *:Zone.Identifier
+
+# Snapshots do Gemfile.lock tirados antes de upgrades de Rails (ponto de retorno
+# local, não faz parte do histórico). Ver UPGRADE_PLAN.md §6.
+Gemfile.lock.*-backup
