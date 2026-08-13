@@ -191,37 +191,46 @@ de integração cobrindo o fluxo de pedido atual ANTES de refatorar.
 Sem testes, qualquer refator é arriscado. Ordem correta: completar
 upgrade Rails → escrever testes → refatorar.
 
-## Paginação do catálogo — dois ajustes de initializer (baixa urgência)
+## ~~Paginação do catálogo — dois ajustes de initializer~~ — RESOLVIDO em 2026-08-13
 
 Descobertos em 2026-08-13, ao popular o banco de development com 22
-produtos para validar o catálogo sob Rails 8.0. Nenhum dos dois é
+produtos para validar o catálogo sob Rails 8.0. Nenhum dos dois era
 regressão do upgrade. O 500 do `pagy_bootstrap_nav` que apareceu na
-mesma investigação **já foi corrigido** (regressão de `ae52c30`; lição
-em `LESSONS.md`); estes dois sobraram porque mexem em
-`config/initializers/pagy.rb` e merecem consideração própria.
+mesma investigação já havia sido corrigido antes (regressão de
+`ae52c30`; lição em `LESSONS.md`); estes dois sobraram porque mexem em
+`config/initializers/pagy.rb` e mereciam consideração própria.
 
-- [ ] **`?page=99` levanta `Pagy::OverflowError` → HTTP 500.** Página
-      fora do intervalo derruba a requisição:
+Ambos fechados no commit "Cleanup: close D1 loose ends — Stripe
+app_info, Redis phantom, pagy overflow".
+
+- [x] **`?page=99` levantava `Pagy::OverflowError` → HTTP 500** —
+      **CORRIGIDO.** Página fora do intervalo derrubava a requisição:
       `Pagy::OverflowError: expected :page in 1..2; got 99`. Alcançável
-      por qualquer um que edite a URL, ou por crawler seguindo link de
-      paginação obsoleto depois de o catálogo encolher. Sem urgência
-      hoje — não há tráfego nem crawler real.
-      **Correção sugerida:** em `config/initializers/pagy.rb`,
-      `require "pagy/extras/overflow"` + `Pagy::DEFAULT[:overflow] = :last_page`
-      (alternativas: `:empty_page`, que devolve página vazia, ou
-      `:exception`, o atual). Cobrir com teste pedindo `?page=999`.
+      por qualquer um que editasse a URL, ou por crawler seguindo link
+      de paginação obsoleto depois de o catálogo encolher.
+      **Fix aplicado:** `require "pagy/extras/overflow"` +
+      `Pagy::DEFAULT[:overflow] = :last_page` — página fora do intervalo
+      passa a servir a **última página** em vez de levantar.
+      **Teste de regressão** em `test/controllers/screws_controller_test.rb`
+      ("serves the last page instead of raising when the requested page
+      overflows"), nascido RED com o `Pagy::OverflowError` real. A
+      asserção em `li.page-item.active` distingue "serviu a última
+      página" de apenas "não deu 500" — sem ela o teste passaria também
+      com `:empty_page`. Validado local contra os 22 screws do seed:
+      `?page=99` e `?page=999` → HTTP 200, página ativa 2, 2 cards.
 
-- [ ] **`Pagy::DEFAULT[:items] = 12` é letra morta — o catálogo pagina
-      de 20 em 20.** O pagy 9 renomeou a variável `:items` para
-      `:limit` e não mantém compatibilidade: `Pagy::DEFAULT` traz
-      `{items: 12, limit: 20}` e o valor honrado é o `:limit`. Ou seja,
-      a intenção original (12 por página) está silenciosamente perdida
+- [x] **`Pagy::DEFAULT[:items] = 12` era letra morta** — **REMOVIDO,
+      sem mudança de comportamento.** O pagy 9 renomeou a variável
+      `:items` para `:limit` sem compatibilidade: `Pagy::DEFAULT` trazia
+      `{items: 12, limit: 20}` e o valor honrado era o `:limit`. A
+      intenção original (12 por página) estava silenciosamente perdida
       desde o salto do pagy para a série 9.
-      **Correção sugerida:** trocar por `Pagy::DEFAULT[:limit] = 12` se
-      12 ainda for o desejado, ou remover a linha se 20 estiver bom —
-      **decidir antes é o ponto**, porque muda o layout do catálogo em
-      produção. Os testes de paginação já leem `Pagy::DEFAULT[:limit]`
-      e acompanham a mudança sozinhos.
+      **Decisão (2026-08-13): manter 20 por página.** Ninguém decidiu
+      ativamente por 12 — era resíduo, não escolha. Removida a linha
+      morta em vez de "restaurar" um layout que nunca esteve em vigor;
+      o catálogo em produção não muda. O initializer ganhou um
+      comentário explicando a ausência, para impedir que a linha seja
+      re-adicionada por engano.
 
 ## Modernizar asset pipeline (futuro, pós Rails 8.1.3)
 

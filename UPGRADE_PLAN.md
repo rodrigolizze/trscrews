@@ -590,12 +590,18 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 ---
 
-### Etapa D1 — Upgrade 7.2 → 8.0 puro (3–4h) · ✅ **EXECUTADA EM LOCAL (2026-08-12) — DEPLOY PENDENTE**
+### Etapa D1 — Upgrade 7.2 → 8.0 puro (3–4h) · ✅ **DEPLOYADA (v53/v54, Rails 8.0.5.1 em produção); fluxos de compra completos pendentes de verificação manual**
 
-> **Status:** código aplicado e validado localmente na branch `refactor/rails-80-upgrade`.
-> **Rails 8.0.5.1 · `load_defaults 8.0` · suíte 17 runs / 47 assertions / 0 falhas · boot sem uma única
-> `DEPRECATION WARNING`.** Falta: `cable.yml`, `friendly_id`, `assets:precompile`, os 9 fluxos manuais,
-> merge e deploy. Detalhamento completo em `RAILS_80_MIGRATION.md`.
+> **Status:** executada localmente em 2026-08-12 na branch `refactor/rails-80-upgrade`, mergeada
+> (`--no-ff`, `eb59a6f`) e deployada em 2026-08-13 — **v53** (Rails 8.0.5.1) e **v54** (fix do
+> `pagy_bootstrap_nav`). **`load_defaults 8.0` · suíte 17 runs / 47 assertions / 0 falhas na época ·
+> boot sem uma única `DEPRECATION WARNING`.** Detalhamento completo em `RAILS_80_MIGRATION.md`.
+>
+> **O que falta:** os fluxos de compra completos (carrinho → checkout → webhook) não foram
+> percorridos em produção depois do deploy — produção tem 0 pedidos, então o caminho de compra não
+> foi exercitado. Ver passo 13. As demais pendências listadas antes já foram fechadas: `cable.yml`
+> em 2026-08-13 (passo 8), `friendly_id` continua em aberto como tarefa própria (upgrade 5.5 → 5.7,
+> melhoria e não bug).
 >
 > **O risco real da etapa não foi o previsto.** O plano apontava o Devise como risco central
 > (probabilidade "Alta"); na prática o bug foi reproduzido mas **não é alcançado por nenhum teste**, e a
@@ -612,16 +618,40 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 1. ✅ **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
 2. ✅ Branch criada — na prática `refactor/rails-80-upgrade` (não `upgrade/rails-8.0`).
 3. ✅ `rails` → `"~> 8.0.5", ">= 8.0.5.1"` no Gemfile.
-4. ⬜ Remover linha comentada do `gem "redis"` (limpeza) — **não feito**, a linha segue no Gemfile.
+4. ✅ Remover linha comentada do `gem "redis"` (limpeza) — **feito em 2026-08-13**, junto com a linha
+   órfã do `# gem "kredis"`, resíduo do mesmo template. `Gemfile.lock` inalterado (comentários não
+   entram na resolução de dependências — verificado por checksum após `bundle install`).
 5. ✅ `bundle update rails` — subiu todo o stack para 8.0.5.1.
 6. ✅ `app:update` aplicado por template, arquivo a arquivo — 2 aceitos, todo o resto rejeitado (ver §3.2). **Nenhum artefato de Solid entrou.**
 7. ✅ `config.load_defaults 8.0` — as 3 flags confirmadas ativas em runtime.
-8. ⬜ Simplificar `cable.yml` para `adapter: async` — **não feito**, ainda em `adapter: redis`.
-9. ⬜ Atualizar URL placeholder no `config/initializers/stripe.rb` — **não feito**.
-10. ⬜ Executar os 9 fluxos manuais localmente — **não feito** (banco de development vazio: 0 screws, 0 orders, 0 users; catálogo e página de produto não são validáveis sem popular).
+8. ✅ Simplificar `cable.yml` para `adapter: async` — **feito em 2026-08-13**, no bloco `production`.
+   O bloco `test` foi mantido em `adapter: test` (desvio deliberado da letra da Decisão 3, que dizia
+   "async em todos os ambientes"): `test` é o adapter oficial de teste do Rails, que captura
+   broadcasts para `assert_broadcasts`, não resíduo. Confirmado que a config de produção apontava
+   para um Redis inexistente — não há addon nem `REDIS_URL` no Heroku, então o `ENV.fetch` caía
+   sempre no default `redis://localhost:6379/1`, com a gem `redis` sequer instalada.
+9. ✅ Atualizar URL placeholder no `config/initializers/stripe.rb` — **feito em 2026-08-13**, por
+   remoção. O bloco `Stripe.set_app_info` inteiro saiu: é recurso para autores de plugin se
+   identificarem à Stripe (anexa `name/version (url)` ao User-Agent de cada request), sem função
+   para uma loja first-party. Não havia URL correta a colocar no lugar — não existe domínio próprio,
+   e um hostname de Heroku ficaria obsoleto no go-live.
+10. ⬜ Executar os 9 fluxos manuais localmente — **não feito**. O bloqueio original (banco de
+    development vazio) caiu em 2026-08-13: o dev agora tem **22 screws de teste (seed), 0 orders,
+    0 users**, então catálogo e página de produto passaram a ser validáveis — e foram, no fix do
+    `pagy_bootstrap_nav` e no do overflow. Os fluxos que dependem de pedido e de usuário seguem sem
+    execução.
 11. ✅ `bin/rails test` — **17 runs, 47 assertions, 0 failures, 0 errors, 0 skips**.
-12. ⬜ Merge para `master`, deploy para Heroku.
-13. ⬜ Verificar os 9 fluxos no Heroku — especialmente 5 (webhook) e 9 (imagens Cloudinary).
+12. ✅ Merge para `master`, deploy para Heroku — **feito em 2026-08-13**. Merge `--no-ff` em
+    `eb59a6f`, deploy **v53** (Rails 8.0.5.1); **v54** em seguida, com o fix do `pagy_bootstrap_nav`.
+13. 🔶 Verificar os 9 fluxos no Heroku — **PARCIAL**. Endpoints principais validados; fluxos de
+    compra completos pendentes de verificação manual em produção.
+    - **Validado em produção:** `/up` 200, `/` 200, `/screws` 200 (via `curl`), `Rails.version`
+      8.0.5.1, boot limpo, e `assume_ssl = true` sem quebrar roteamento.
+    - **Não validado:** os fluxos de compra ponta a ponta (carrinho → checkout → webhook → e-mail)
+      não foram percorridos um a um depois do deploy. Produção tem 0 pedidos, então o caminho de
+      compra não foi exercitado pós-upgrade. Vale em especial para o Fluxo 5 (webhook — e o endpoint
+      test-mode segue **desabilitado** no Dashboard desde 2026-08-10) e o Fluxo 9 (imagens
+      Cloudinary).
 14. ⬜ Prosseguir para D2 quando confirmar estabilidade.
 
 **Passos extras, não previstos no plano, executados na D1:**
@@ -788,10 +818,11 @@ Hoje  [Rails 7.1 EOL — sem suporte de segurança]
  │    Backup BD · app:update · coletar deprecations · validar local
  │    · deploy Heroku · validar Heroku · confirmar estável
  │
- ├─ Etapa D1: Rails 7.2 → 8.0 puro (3–4h)  ✅ EXECUTADA EM LOCAL (2026-08-12)
- │    Backup BD · app:update · SEM Solid Queue/Cache · validar local ✅ (17/17)
- │    · [PENDENTE] cable.yml · friendly_id · precompile · 9 fluxos
- │    · [PENDENTE] deploy Heroku · validar Heroku · confirmar estável
+ ├─ Etapa D1: Rails 7.2 → 8.0 puro (3–4h)  ✅ DEPLOYADA (v53/v54, 2026-08-13)
+ │    Backup BD · app:update · SEM Solid Queue/Cache · validar local ✅ (17 runs/47 asserts)
+ │    · cable.yml ✅ (2026-08-13) · [PENDENTE] friendly_id 5.5→5.7
+ │    · deploy Heroku ✅ v53/v54 · endpoints validados ✅
+ │    · [PENDENTE] fluxos de compra completos em produção
  │
  ├─ Etapa D2: Solid Queue (2–3h)
  │    Backup BD · instalar · migrations · validar local

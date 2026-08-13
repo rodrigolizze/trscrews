@@ -34,6 +34,21 @@ class ScrewsControllerTest < ActionDispatch::IntegrationTest
     assert_select "ul.pagination"
   end
 
+  # Regression guard: a `?page=` beyond the last page raised Pagy::OverflowError, and
+  # Rails turns that into a 500. Reachable by anyone editing the URL, or by a crawler
+  # following a stale pagination link after the catalog shrinks. The overflow extra
+  # (:last_page) makes Pagy serve the last page instead of raising.
+  test "serves the last page instead of raising when the requested page overflows" do
+    fill_catalog_past_one_page
+    last_page = (Screw.count / Pagy::DEFAULT[:limit].to_f).ceil
+
+    get screws_url(page: 999)
+
+    assert_response :success
+    assert_select "ul.pagination"
+    assert_select "li.page-item.active", text: last_page.to_s
+  end
+
   private
 
   # Reads the limit from Pagy so the test keeps working if the page size changes.

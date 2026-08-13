@@ -11,13 +11,6 @@ Stripe.api_key = ENV.fetch("STRIPE_SECRET_KEY", nil)
 # // Optional but recommended: pin API version for consistent behavior
 Stripe.api_version = "2024-06-20"  # // pick a recent, stable version
 
-# // Identify your app in Stripe logs
-Stripe.set_app_info(
-  "TR AutoParts",
-  version: "1.0.0",
-  url: "https://example.com" # // update when you deploy
-)
-
 # // Convenience accessor so you can use it in views (if ever needed)
 Rails.application.config.x.stripe_publishable_key = ENV["STRIPE_PUBLISHABLE_KEY"]
 
