@@ -350,6 +350,35 @@ ruído com regressão, e para não tratar o diff como suspeito.
 `db/schema.rb` é arquivo sensível por `CLAUDE.md` (só via migrations) — este reordenamento é
 exatamente isso, um efeito de `db:migrate`, não uma edição manual.
 
+### 3.8 — Deprecations observadas na execução (2026-08-13)
+
+Sob Rails 8.1, o boot/suíte emite **4 `DEPRECATION WARNING`**, todas de `config/routes.rb:2`
+(`devise_for :users`), originadas no **Devise 4.9.4** (`resource` com hash em vez de keywords;
+`devise/rails/routes.rb:416`). Removidas no **Rails 8.2**.
+
+```
+DEPRECATION WARNING: resource received a hash argument only.       ... removed in Rails 8.2
+DEPRECATION WARNING: resource received a hash argument path.       ... removed in Rails 8.2
+DEPRECATION WARNING: resource received a hash argument path_names. ... removed in Rails 8.2
+DEPRECATION WARNING: resource received a hash argument controller. ... removed in Rails 8.2
+```
+
+**NÃO são do nosso código** — nossas rotas não emitem. As 4 mensagens citam a linha 2 sem exceção; a
+linha 7 (`resources :shipping_addresses, only: [...]`) e todas as demais rotas próprias ficam
+silenciosas. A origem confirmada na fonte da gem:
+
+```ruby
+# devise/lib/devise/rails/routes.rb
+378:  resource :session, only: [], controller: controllers[:sessions], path: "" do
+416:  resource :registration, options do        # ← hash explícito
+```
+
+**Correção = Etapa F (Devise 5.0.4)** — este é o **segundo motivo** para a F, além do lazy route
+loading que motivou o contorno do `test_helper.rb`.
+
+**A afirmação "zero deprecations" da D1 não vale mais sob 8.1.** A D1 fechou com boot sem uma única
+`DEPRECATION WARNING`; a partir da E o piso é 4, todas de terceiro e com prazo até o 8.2.
+
 ---
 
 ## 4. Compatibilidade das gems com Rails 8.1
