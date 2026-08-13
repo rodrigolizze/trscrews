@@ -1,16 +1,24 @@
-# Plano de Upgrade: Rails 7.1.5.1 → Rails 8.1.3
+# Plano de Upgrade: Rails 7.1.5.1 → Rails 8.1.3.1
 
 **Elaborado em:** 2026-05-19 · **Revisado em:** 2026-05-19  
-**Estado atual:** Rails 7.1.5.1 · Ruby 3.3.5 · em produção no Heroku  
-**Objetivo:** Migrar para Rails 8.1.3 com zero downtime e zero regressões em produção  
+**Estado atual:** Rails 8.0.5.1 · Ruby 3.3.5 · em produção no Heroku (v55)  
+**Objetivo:** Migrar para Rails 8.1.3.1 com zero downtime e zero regressões em produção  
 
 > **⚠️ CONTEXTO DE SEGURANÇA — LEIA ANTES DE QUALQUER COISA**
 >
-> Rails 7.1 está **end-of-life desde outubro de 2025**. Não recebe mais bug fixes nem security patches. Estamos rodando produção em versão sem suporte de segurança — este upgrade não é melhoria estrutural opcional, é **correção de dívida de segurança ativa**.
+> Rails 7.1 está **end-of-life desde outubro de 2025**. Não recebe mais bug fixes nem security patches. Estamos rodando produção em versão sem suporte de segurança — este upgrade não é melhoria estrutural opcional, é **correção de dívida de segurança ativa**. *(Resolvido em parte: a D1 tirou a produção do 7.1 e a levou ao 8.0.5.1 em 2026-08-13.)*
 >
-> A versão alvo é **Rails 8.1.3** (lançado em março de 2026), que está em produção em Shopify e HEY há mais de 7 meses e recebe bug fixes até outubro de 2026. Parar em Rails 8.0 seria insuficiente: a série 8.0 foi lançada em **novembro de 2024**, encerrou a janela de bug fixes por volta de **novembro de 2025** e **já está em modo security-only**, com o suporte de segurança terminando por volta de **novembro de 2026**.
+> A versão alvo é **Rails 8.1.3.1**. Parar em Rails 8.0 seria insuficiente: a série 8.0 foi lançada em **novembro de 2024**, encerrou a janela de bug fixes por volta de **novembro de 2025** e **já está em modo security-only**, com o suporte de segurança terminando por volta de **novembro de 2026**.
 >
 > **[CORRIGIDO 2026-08-12]** O texto original dizia que a série 8.0 "entra em modo só security patches em maio de 2026". Está errado — ela já entrou. Ver `RAILS_80_MIGRATION.md` §0, correção 3. A consequência prática é que **a Etapa E deixou de ser opcional**: ao concluir a D1 estamos numa série com ~3 meses de janela restante.
+>
+> **[CORRIGIDO 2026-08-13 — data e versão da série 8.1]** O texto original dizia que a versão alvo era o "**Rails 8.1.3** (lançado em março de 2026), que está em produção em Shopify e HEY há mais de 7 meses e recebe bug fixes até outubro de 2026". Havia dois erros e uma contradição interna (não se está em produção há 7 meses uma versão lançada há 5):
+>
+> - **A série 8.1.0 foi lançada em 2025-10-22**, não em março de 2026. Março de 2026 (dia 24) é a data do **patch** 8.1.3, não da série. A alegação dos "7+ meses em produção" bate com a data da série.
+> - **A última da série é a 8.1.3.1** (2026-07-29), não a 8.1.3. Detalhe útil: **8.1.3.1 e 8.0.5.1 saíram no mesmo dia** — são o par de releases da mesma correção de segurança, e nós já absorvemos esse patch no ramo 8.0.
+> - **A janela de bug fixes é mais curta do que o texto sugeria.** Pela política oficial (1 ano de bug fixes e 2 de segurança, contados da **primeira** release da série), o 8.1 tem bug fixes até ~**2026-10-22** e segurança até ~**2027-10-22**. "Até outubro de 2026" estava certo por acidente, derivado da data errada.
+>
+> **A conclusão não muda — subir continua claramente certo** (segurança do 8.0 acaba ~nov/2026; a do 8.1 vai até ~out/2027), e **não existe Rails 8.2**: a última release de qualquer série é a 8.1.3.1. O que muda é o tom: a Etapa E compra **paridade com a série corrente**, não um ano tranquilo. Ver `RAILS_81_MIGRATION.md` §0, correções 1–3.
 
 ---
 
@@ -53,8 +61,8 @@
 **Como funciona:** Três saltos incrementais. Cada um deployado e validado antes de avançar. A guideline oficial do Rails recomenda explicitamente passar por 8.0 antes de 8.1.
 
 **Por que 8.1 é o destino correto:**
-- Rails 8.1.3 foi lançado em março de 2026 e está em produção em Shopify e HEY há mais de 7 meses — o ecossistema está maduro.
-- A série 8.1 recebe bug fixes até outubro de 2026, dando margem real de suporte.
+- A série 8.1 foi lançada em **outubro de 2025** e está em produção em Shopify e HEY desde então — o ecossistema está maduro. *(Data corrigida em 2026-08-13; o original dizia "8.1.3 foi lançado em março de 2026", confundindo a data do patch com a da série.)*
+- A série 8.1 recebe bug fixes até ~**outubro de 2026** e security fixes até ~**outubro de 2027**. É a série corrente do framework — não existe 8.2. *(Janela de segurança acrescentada em 2026-08-13: é ela, e não a de bug fixes, que sustenta a decisão.)*
 - Rails 8.0 **já está** em modo "só security patches" (bug fixes encerrados ~nov/2025, segurança até ~nov/2026): parar nele é quase equivalente a não sair do 7.1 em termos de suporte ativo. *(Data corrigida em 2026-08-12.)*
 - Cada salto incremental expõe um conjunto menor de mudanças — o 7.2 detecta deprecations do 8.0, o 8.0 detecta deprecations do 8.1.
 
@@ -232,10 +240,40 @@ Os initializers existentes (`stripe.rb`, `devise.rb`, `shipping.rb`, etc.) não 
 
 #### `config/application.rb`
 - `config.load_defaults` atualizar para `8.1`
-- Novos defaults ativos com 8.1:
-  - ~~`config.active_support.to_time_preserves_timezone = :zone`~~ — **[CORRIGIDO 2026-08-12] não é default do 8.1: é do 8.0**, e já foi ativado na D1 sem impacto (nenhum `.to_time` no código). Removido da lista de verificações da Etapa E. Ver `RAILS_80_MIGRATION.md` §0, correção 2.
-  - `config.active_record.run_after_transaction_callbacks_in_order_defined = true` — callbacks `after_commit` passam a executar na ordem em que foram definidos no modelo, em vez de em ordem inversa. Verificar nos modelos `Order` e `ShippingAddress`, que têm múltiplos callbacks.
-  - `config.active_record.use_yaml_unsafe_load = false` — melhoria de segurança na desserialização YAML. Sem impacto direto neste projeto (não usa `serialize` com tipos customizados).
+
+> **[CORRIGIDO 2026-08-13 — esta seção listava os defaults errados.]** O texto original afirmava que
+> os novos defaults do 8.1 eram `run_after_transaction_callbacks_in_order_defined = true` e
+> `use_yaml_unsafe_load = false`. **Nenhum dos dois é default do 8.1.** Verificado em duas frentes
+> independentes (`RAILS_81_MIGRATION.md` §0, correção 4):
+>
+> - **Na fonte:** o `load_defaults "8.1"` do branch `8-1-stable` não menciona nem callbacks de
+>   transação nem YAML.
+> - **Em runtime, no nosso app, sob `load_defaults 8.0`:** `run_after_transaction_callbacks_in_order_defined`
+>   já é `true` e `use_yaml_unsafe_load` já é `false`. O primeiro é default do **Rails 7.1** —
+>   entrou neste projeto na **Etapa C**, não vai entrar na E.
+>
+> **Consequência: o "risco de ordem de callbacks" da Etapa E NÃO existe.** Os callbacks de `Order`
+> (`after_create_commit :assign_order_number!`) e de `ShippingAddress` já rodam na ordem definida
+> desde a Etapa C, em produção, sem incidente. Toda orientação deste plano baseada nesse flag —
+> o passo 7 do cronograma da E, a linha do Apêndice de riscos e o conselho de rollback da §6 — está
+> corrigida nos respectivos lugares.
+>
+> - ~~`config.active_support.to_time_preserves_timezone = :zone`~~ — **[CORRIGIDO 2026-08-12] não é default do 8.1: é do 8.0**, e já foi ativado na D1 sem impacto (nenhum `.to_time` no código). **[Nota de 2026-08-13]** No `8-1-stable`, o `load_defaults "8.0"` encadeado **não seta mais** esse flag: o suporte a `to_time` preservando hora local do sistema foi removido e o próprio flag foi deprecado no 8.1. Impacto aqui segue **zero** — `grep` por `.to_time` continua devolvendo zero ocorrências.
+
+**Os 7 defaults REAIS do `load_defaults 8.1`**, com o impacto medido neste projeto em 2026-08-13
+(detalhamento e evidência de cada um em `RAILS_81_MIGRATION.md` §3):
+
+| # | Config | O que faz | Impacto medido aqui |
+|---|---|---|---|
+| 1 | `config.yjit = !Rails.env.local?` | Liga YJIT fora de dev/test | **Neutralizado** — nosso `new_framework_defaults_7_2.rb` seta `yjit = false`, e o `initializer :enable_yjit` (índice 377) roda **depois** do `load_config_initializers` (257). Único flag com superfície real |
+| 2 | `action_controller.escape_json_responses = false` | Para de escapar entidades HTML em respostas JSON | **Zero** — único `render json:` é o `CepController`, consumido por Stimulus via `fetch` e atribuído a `.value` de inputs, nunca a `innerHTML` |
+| 3 | `action_controller.action_on_path_relative_redirect = :raise` | Levanta em `redirect_to` com URL relativa sem barra inicial | **Zero** — auditadas as 37 chamadas de `redirect_to`: todas por helper de rota ou objeto de modelo; zero string literal |
+| 4 | `active_record.raise_on_missing_required_finder_order_columns = true` | Levanta `MissingRequiredOrderError` em `#first`/`#last` sem ordem quando o modelo não tem coluna de ordenação | **Zero** — nenhuma tabela `id: false` no schema, nenhum override de `implicit_order_column`/`query_constraints`/`primary_key` |
+| 5 | `active_support.escape_js_separators_in_json = false` | Para de escapar U+2028/U+2029 em JSON | **Zero** — mesma superfície do #2 |
+| 6 | `action_view.render_tracker = :ruby` | Rastreia dependências entre templates com parser Ruby em vez de regex | **Zero** — não usamos fragment caching (zero `<% cache %>` nas views) |
+| 7 | `action_view.remove_hidden_field_autocomplete = true` | Omite `autocomplete="off"` de inputs hidden | **Zero** — cosmético |
+
+**Seis dos sete têm impacto zero medido; o sétimo está neutralizado por configuração que já existe.**
 
 #### `config/environments/production.rb`
 - Sem mudanças obrigatórias em relação ao 8.0. O `rails app:update` pode sugerir ajustes de logging ou de exception handling — avaliar antes de aceitar.
@@ -493,7 +531,31 @@ git commit -m "chore: backup Gemfile.lock before Rails 8.1 upgrade"
    - **Requer aprovação explícita antes de executar.**
 2. Etapa E não adiciona migrations — rollback de deploy é suficiente.
 
-O risco mais provável da Etapa E é o novo default `run_after_transaction_callbacks_in_order_defined = true` mudando comportamento de callbacks. Se isso ocorrer: desabilitar explicitamente o novo default via `config.active_record.run_after_transaction_callbacks_in_order_defined = false` em `application.rb` e investigar o comportamento esperado antes de reabilitar.
+> **[CORRIGIDO 2026-08-13]** O texto original dizia: *"O risco mais provável da Etapa E é o novo
+> default `run_after_transaction_callbacks_in_order_defined = true` mudando comportamento de
+> callbacks. Se isso ocorrer: desabilitar explicitamente o novo default..."*. **Esse flag não é
+> default do 8.1** — já está `true` desde a Etapa C (é default do 7.1). O conselho de rollback era
+> para um risco inexistente. Ver §3.3 e `RAILS_81_MIGRATION.md` §0, correção 4.
+
+Os dois riscos mais prováveis da Etapa E são de **processo**, não de framework:
+
+1. **Aceitar o `config/cable.yml` do template do 8.1**, que propõe `adapter: solid_cable` em
+   produção. Isso reintroduziria uma dependência de Solid que decidimos não adotar (Decisão 3) e
+   **desfaria o fix deployado na v55**, que trocou o Redis fantasma por `adapter: async`. Este
+   arquivo mudou de categoria desde a D1: lá era pendência a resolver, aqui é conteúdo nosso a
+   preservar — e por isso é o mais fácil de aceitar por distração.
+   **Mitigação:** `git diff config/cable.yml` obrigatório antes de qualquer commit da etapa.
+2. **Rodar `bundle update` sem argumento.** O `Gemfile` traz `gem "pagy"` **sem constraint**, e o
+   pagy saltou da série 9 para a **43.x**. Um update amplo levaria o pagy junto e quebraria a
+   paginação do catálogo (`pagy/extras/bootstrap`, `pagy/extras/overflow`, `Pagy::DEFAULT[:overflow]`,
+   `Pagy::DEFAULT[:limit]`) e os 3 testes que a cobrem.
+   **Mitigação:** apenas `bundle update rails`, e revisar o diff do `Gemfile.lock` antes de seguir —
+   qualquer mexida em `pagy`, `stripe`, `devise`, `minitest` ou `cloudinary` é sinal de desvio.
+
+Um terceiro, de menor probabilidade mas dano real: **remover o pin `gem "minitest", "~> 5.27"`**
+aproveitando o embalo do upgrade. O `activesupport` 8.1.3.1 **continua sem teto** para o minitest
+(`>= 5.1`), então isso repetiria a quebra da D1 — suíte inteira deixando de carregar por `LoadError`
+em `minitest/mock`. O pin fica; migrar é a Etapa G.
 
 ### Padrão de rollback (todas as etapas)
 
@@ -703,24 +765,39 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 ---
 
-### Etapa E — Upgrade 8.0 → 8.1.3 (2–3h)
+### Etapa E — Upgrade 8.0 → 8.1.3.1 (3–4h15)
 
-**Objetivo:** Chegar à versão alvo final com janela de suporte ativa. Executar somente após confirmar estabilidade do D3. **Nenhuma feature nova do 8.1 é ativada aqui** — apenas o upgrade de versão e correção dos novos defaults.
+**Objetivo:** Chegar à versão alvo final com janela de suporte ativa. **Nenhuma feature nova do 8.1 é ativada aqui** — apenas o upgrade de versão e correção dos novos defaults.
+
+> **[ATUALIZADO 2026-08-13]** Investigação completa em **`RAILS_81_MIGRATION.md`**, que corrige quatro
+> fatos deste plano (defaults do 8.1, data da série, versão alvo e teto do minitest) e traz o plano de
+> execução detalhado com pontos de parada. A ordem original mandava executar a E "somente após
+> confirmar estabilidade do D3" — mas D2 e D3 não foram executadas, e **a E não depende delas**:
+> nada de Solid entra na E, exatamente como não entrou na D1.
+>
+> **Estimativa revista: 3h–4h15** (original: 2–3h). A diferença é o ritual da D1 — `app:update`
+> arquivo a arquivo e verificação de flags em runtime — que foi o que fez a D1 chegar em produção sem
+> regressão.
 
 1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
 2. `git checkout -b upgrade/rails-8.1`
-3. Atualizar `rails` para `~> 8.1` no Gemfile (ou `">= 8.1.3"`).
-4. `bundle update rails` — gems do ecossistema Rails (solid_queue, solid_cache, importmap-rails, turbo-rails, stimulus-rails) recebem atualização junto.
-5. `bin/rails app:update` — aceitar mudanças com atenção. Ao oferecer `config/ci.rb`: aceitar o arquivo, mas não configurar conteúdo agora.
+3. Atualizar `rails` para `"~> 8.1.3", ">= 8.1.3.1"` no Gemfile — mesmo formato da D1, que fixa a série e garante o patch de segurança. **Não tocar** no pin do minitest, no pagy nem no stripe.
+4. `bundle update rails` — **só `rails`**, nunca `bundle update` pelado (ver §6). Esperado: stack Rails para 8.1.3.1, mais `turbo-rails` (2.0.16→2.0.23) e `importmap-rails` (2.2.0→2.2.3). **Solid Queue/Cache não entram** — não estão no Gemfile e não são dependência do `railties`.
+   ⏸ **Parada:** revisar o diff do `Gemfile.lock` antes de seguir.
+5. `bin/rails app:update` — aplicar **arquivo a arquivo**. **Rejeitar `config/cable.yml`** (o template do 8.1 propõe `adapter: solid_cable` e desfaria o fix da v55), além dos de sempre: `production.rb` (Cloudinary/SMTP/`assume_ssl`), `assets.rb` (`screw.glb`), `robots.txt` (SEO), `puma.rb`, `storage.yml`, `application.rb`, Docker/Kamal/CI/PWA. Ao oferecer `config/ci.rb`: aceitar o arquivo, mas não configurar conteúdo agora — **não confirmado** que o gerador do 8.1 de fato o oferece (`RAILS_81_MIGRATION.md` §0, correção 7).
+   ⏸ **Parada:** listar explicitamente o que foi aceito e o que foi rejeitado.
 6. Atualizar `config.load_defaults` para `8.1` em `application.rb`.
-7. Verificar comportamento dos novos defaults (ver §3.3):
-   - Rodar `bin/rails server` e navegar pelos fluxos principais observando o log para erros de callback ou conversão de tempo.
-   - Verificar especificamente: login/logout com `remember_me`, criação de pedido (callbacks de `Order`), criação de endereço (callbacks de `ShippingAddress`).
-8. Executar todos os 9 fluxos localmente.
-9. `bin/rails test` — reportar resultado.
-10. Merge para `master`, deploy para Heroku.
-11. Verificar todos os 9 fluxos no Heroku — atenção ao Fluxo 1 (autenticação Devise), Fluxo 4 (checkout), Fluxo 5 (webhook).
-12. Upgrade completo ✅ — Rails 8.1.3 em produção com suporte até outubro de 2026.
+7. Verificar em runtime os **7 defaults reais** do 8.1 (tabela na §3.3), com `bin/rails runner`.
+   Confirmar em especial que `config.yjit` continua `false` e que o `initializer :enable_yjit` segue
+   rodando **depois** do `load_config_initializers`.
+   *Não há o que verificar sobre ordem de callbacks — ver §3.3.*
+8. Executar os fluxos validáveis localmente com os 22 screws do seed: catálogo, paginação (`?page=999`), página de produto (slug friendly_id), home, carrinho. Os fluxos que dependem de pedido e usuário seguem sem dado local.
+9. `bin/rails test` — **baseline a bater: 20 runs / 54 assertions / 0 falhas**.
+10. Boot em development **e** em production, procurando qualquer `DEPRECATION WARNING`. A D1 terminou com zero; a meta é a mesma.
+    ⏸ **Parada:** relatório completo antes de qualquer merge.
+11. Merge para `master`, deploy para Heroku — **só com aprovação explícita**.
+12. Pós-deploy: `heroku logs` procurando `Regexp::TimeoutError`, `R14` (memória/YJIT) e 500s. Validar `/up`, `/`, `/screws`, `/screws?page=999`, página de produto.
+13. Upgrade completo ✅ — Rails 8.1.3.1 em produção, com bug fixes até ~out/2026 e segurança até ~out/2027.
 
 ---
 
@@ -832,10 +909,12 @@ Hoje  [Rails 7.1 EOL — sem suporte de segurança]
  │    Backup BD · instalar · migrations · validar local
  │    · deploy Heroku + migrations · confirmar estável
  │
- ├─ Etapa E: Rails 8.0 → 8.1.3 (2–3h)  ← versão alvo final
- │    Backup BD · app:update · load_defaults 8.1 · verificar callbacks e timezone
+ ├─ Etapa E: Rails 8.0 → 8.1.3.1 (3–4h15)  ← versão alvo final
+ │    Backup BD · SÓ `bundle update rails` · app:update (REJEITAR cable.yml)
+ │    · load_defaults 8.1 · verificar os 7 flags reais em runtime
  │    · validar local · deploy Heroku · validar Heroku
- │    [Rails 8.1 com bug fixes até outubro de 2026] ✅
+ │    [bug fixes até ~out/2026 · segurança até ~out/2027] ✅
+ │    Investigação completa: RAILS_81_MIGRATION.md
  │
  ├─ Etapa F: Devise 4.9.4 → 5.0.x (1–2h)  ← independente; a qualquer momento pós-D1
  │    Backup BD · bundle update devise · REMOVER contorno de test_helper.rb
@@ -862,6 +941,8 @@ Estas são as situações que, se encontradas durante o upgrade, exigem parada e
 | Imagens de produtos quebram em produção | qualquer | Reverter o deploy. Investigar Active Storage. |
 | Checkout não completa pedido | qualquer | Reverter. Investigar `OrdersController#create`. |
 | Devise não autentica usuários existentes | qualquer | Reverter. Checar se mudança de `config.load_defaults` alterou hash de senha ou serialização de sessão. |
-| Callbacks de `Order` ou `ShippingAddress` executam em ordem diferente | E | Não reverter imediatamente — desabilitar o novo default via `config.active_record.run_after_transaction_callbacks_in_order_defined = false` e investigar o comportamento esperado. |
+| ~~Callbacks de `Order` ou `ShippingAddress` executam em ordem diferente~~ | ~~E~~ | **Flag removida em 2026-08-13** — `run_after_transaction_callbacks_in_order_defined` **não é default do 8.1**: é do 7.1, e já está `true` desde a Etapa C, em produção, sem incidente. Não há mudança de ordem de callbacks na Etapa E. Ver `RAILS_81_MIGRATION.md` §0, correção 4. |
+| `config/cable.yml` do template do 8.1 aceito por engano, reintroduzindo `adapter: solid_cable` | **E** | Rejeitar no `app:update`. Preservar o `adapter: async` deployado na v55. `git diff config/cable.yml` antes do commit. |
+| `bundle update` sem argumento levando o pagy da série 9 para a 43.x | **E** | Só `bundle update rails`. Se acontecer: `git checkout Gemfile.lock` e refazer. Sintoma: paginação do catálogo quebrada e 3 testes vermelhos. |
 | Timestamps em pedidos aparecem com timezone errado | **D1** (não E) | Causado pelo default `to_time_preserves_timezone = :zone`, que é do **8.0**. Verificar exibição de datas nas views e nos e-mails. Reverter com `config.active_support.to_time_preserves_timezone = :offset` (ou `false`). *(Etapa corrigida em 2026-08-12.)* |
 | Requisição falha com `Regexp::TimeoutError` | **D1** | Novo default `Regexp.timeout = 1` do Rails 8.0. Nossas regexes são triviais; a causa provável é uma gem de terceiro sob input adversário. Mitigação imediata: `Regexp.timeout = nil` num initializer. Monitorar `heroku logs` após o deploy da D1. |
