@@ -191,6 +191,38 @@ de integração cobrindo o fluxo de pedido atual ANTES de refatorar.
 Sem testes, qualquer refator é arriscado. Ordem correta: completar
 upgrade Rails → escrever testes → refatorar.
 
+## Paginação do catálogo — dois ajustes de initializer (baixa urgência)
+
+Descobertos em 2026-08-13, ao popular o banco de development com 22
+produtos para validar o catálogo sob Rails 8.0. Nenhum dos dois é
+regressão do upgrade. O 500 do `pagy_bootstrap_nav` que apareceu na
+mesma investigação **já foi corrigido** (regressão de `ae52c30`; lição
+em `LESSONS.md`); estes dois sobraram porque mexem em
+`config/initializers/pagy.rb` e merecem consideração própria.
+
+- [ ] **`?page=99` levanta `Pagy::OverflowError` → HTTP 500.** Página
+      fora do intervalo derruba a requisição:
+      `Pagy::OverflowError: expected :page in 1..2; got 99`. Alcançável
+      por qualquer um que edite a URL, ou por crawler seguindo link de
+      paginação obsoleto depois de o catálogo encolher. Sem urgência
+      hoje — não há tráfego nem crawler real.
+      **Correção sugerida:** em `config/initializers/pagy.rb`,
+      `require "pagy/extras/overflow"` + `Pagy::DEFAULT[:overflow] = :last_page`
+      (alternativas: `:empty_page`, que devolve página vazia, ou
+      `:exception`, o atual). Cobrir com teste pedindo `?page=999`.
+
+- [ ] **`Pagy::DEFAULT[:items] = 12` é letra morta — o catálogo pagina
+      de 20 em 20.** O pagy 9 renomeou a variável `:items` para
+      `:limit` e não mantém compatibilidade: `Pagy::DEFAULT` traz
+      `{items: 12, limit: 20}` e o valor honrado é o `:limit`. Ou seja,
+      a intenção original (12 por página) está silenciosamente perdida
+      desde o salto do pagy para a série 9.
+      **Correção sugerida:** trocar por `Pagy::DEFAULT[:limit] = 12` se
+      12 ainda for o desejado, ou remover a linha se 20 estiver bom —
+      **decidir antes é o ponto**, porque muda o layout do catálogo em
+      produção. Os testes de paginação já leem `Pagy::DEFAULT[:limit]`
+      e acompanham a mudança sozinhos.
+
 ## Modernizar asset pipeline (futuro, pós Rails 8.1.3)
 
 Migrar Sprockets → Propshaft + dartsass-sprockets → dartsass-rails.
