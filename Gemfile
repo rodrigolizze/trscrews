@@ -3,7 +3,7 @@ source "https://rubygems.org"
 ruby "3.3.5"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.2.3", ">= 7.2.3.1"
+gem "rails", "~> 8.0.5", ">= 8.0.5.1"
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
@@ -65,6 +65,12 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+
+  # O minitest 6 extraiu minitest/mock para uma gem separada e traz 8 remoções de
+  # API. O teto "< 6" do Active Support caiu no Rails 8.0, então o bundle update
+  # puxou a 6.0.6 e derrubou a suíte inteira. Fixado na série 5 para manter a D1
+  # restrita ao upgrade do Rails — migrar para o minitest 6 é tarefa própria.
+  gem "minitest", "~> 5.27"
 end
 
 
