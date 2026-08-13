@@ -765,7 +765,27 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 ---
 
-### Etapa E — Upgrade 8.0 → 8.1.3.1 (3–4h15)
+### Etapa E — Upgrade 8.0 → 8.1.3.1 (3–4h15) · ✅ **EXECUTADA EM LOCAL (2026-08-13) — DEPLOY PENDENTE**
+
+> **Status:** código aplicado e validado localmente na branch `upgrade/rails-8.1`.
+> **Rails 8.1.3.1 · `load_defaults 8.1` · os 7 flags do 8.1 confirmados em runtime · suíte
+> 20 runs / 54 assertions / 0 falhas · `assets:precompile` exit 0 em 2s com o `screw.glb` no manifest ·
+> `config.yjit = false` em produção (nosso override venceu o default `yjit = !Rails.env.local?`) ·
+> nenhuma migration.** Falta: merge, deploy e validação no Heroku.
+>
+> **A afirmação "zero deprecations" da D1 não vale mais sob 8.1.** O boot com rotas desenhadas e a
+> suíte emitem **4 `DEPRECATION WARNING`**, todas de `config/routes.rb:2` (`devise_for :users`),
+> originadas no **Devise 4.9.4** (`resource` recebendo hash em vez de keywords) e removidas no Rails
+> 8.2. **Não são do nosso código** — nossas rotas não emitem. Resolvidas na **Etapa F** (Devise
+> 5.0.4), que agora tem dois motivos: estas deprecations e o lazy route loading. Detalhamento em
+> `RAILS_81_MIGRATION.md` §3.8.
+>
+> **O risco previsto não se materializou.** O plano apontava o `config/cable.yml` como risco nº 1 da
+> etapa (template do 8.1 propondo `solid_cable`). Na execução, **o `app:update` do 8.1 não toca o
+> `cable.yml`** — não há o que rejeitar. A precaução era barata e a decisão segue válida, mas o risco
+> era menor do que o registrado. Quem exigiu atenção de verdade foram `development.rb` e `test.rb`,
+> classificados como "cosméticos" e que na leitura do diff se revelaram portadores de customização
+> real (letter_opener, `queue_adapter :inline`, `assets.quiet`, cache condicional).
 
 **Objetivo:** Chegar à versão alvo final com janela de suporte ativa. **Nenhuma feature nova do 8.1 é ativada aqui** — apenas o upgrade de versão e correção dos novos defaults.
 
@@ -779,25 +799,25 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 > arquivo a arquivo e verificação de flags em runtime — que foi o que fez a D1 chegar em produção sem
 > regressão.
 
-1. **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod`
-2. `git checkout -b upgrade/rails-8.1`
-3. Atualizar `rails` para `"~> 8.1.3", ">= 8.1.3.1"` no Gemfile — mesmo formato da D1, que fixa a série e garante o patch de segurança. **Não tocar** no pin do minitest, no pagy nem no stripe.
-4. `bundle update rails` — **só `rails`**, nunca `bundle update` pelado (ver §6). Esperado: stack Rails para 8.1.3.1, mais `turbo-rails` (2.0.16→2.0.23) e `importmap-rails` (2.2.0→2.2.3). **Solid Queue/Cache não entram** — não estão no Gemfile e não são dependência do `railties`.
-   ⏸ **Parada:** revisar o diff do `Gemfile.lock` antes de seguir.
-5. `bin/rails app:update` — aplicar **arquivo a arquivo**. **Rejeitar `config/cable.yml`** (o template do 8.1 propõe `adapter: solid_cable` e desfaria o fix da v55), além dos de sempre: `production.rb` (Cloudinary/SMTP/`assume_ssl`), `assets.rb` (`screw.glb`), `robots.txt` (SEO), `puma.rb`, `storage.yml`, `application.rb`, Docker/Kamal/CI/PWA. Ao oferecer `config/ci.rb`: aceitar o arquivo, mas não configurar conteúdo agora — **não confirmado** que o gerador do 8.1 de fato o oferece (`RAILS_81_MIGRATION.md` §0, correção 7).
-   ⏸ **Parada:** listar explicitamente o que foi aceito e o que foi rejeitado.
-6. Atualizar `config.load_defaults` para `8.1` em `application.rb`.
-7. Verificar em runtime os **7 defaults reais** do 8.1 (tabela na §3.3), com `bin/rails runner`.
-   Confirmar em especial que `config.yjit` continua `false` e que o `initializer :enable_yjit` segue
-   rodando **depois** do `load_config_initializers`.
-   *Não há o que verificar sobre ordem de callbacks — ver §3.3.*
-8. Executar os fluxos validáveis localmente com os 22 screws do seed: catálogo, paginação (`?page=999`), página de produto (slug friendly_id), home, carrinho. Os fluxos que dependem de pedido e usuário seguem sem dado local.
-9. `bin/rails test` — **baseline a bater: 20 runs / 54 assertions / 0 falhas**.
-10. Boot em development **e** em production, procurando qualquer `DEPRECATION WARNING`. A D1 terminou com zero; a meta é a mesma.
-    ⏸ **Parada:** relatório completo antes de qualquer merge.
-11. Merge para `master`, deploy para Heroku — **só com aprovação explícita**.
-12. Pós-deploy: `heroku logs` procurando `Regexp::TimeoutError`, `R14` (memória/YJIT) e 500s. Validar `/up`, `/`, `/screws`, `/screws?page=999`, página de produto.
-13. Upgrade completo ✅ — Rails 8.1.3.1 em produção, com bug fixes até ~out/2026 e segurança até ~out/2027.
+1. ⬜ **Backup do banco de produção:** `heroku pg:backups:capture --app trscrews-prod` — **adiado para a hora do deploy** (2026-08-13). A E não adiciona migration (confirmado: `app:update` só mexe em `config/`, e o `active_storage:update` que ele dispara não gerou migration), então o backup é hábito de deploy, não pré-requisito do trabalho local.
+2. ✅ `git checkout -b upgrade/rails-8.1` — criada a partir de `84c58ef`. Snapshot local `Gemfile.lock.8.0-backup` (ignorado pelo git, conforme a correção da D1).
+3. ✅ `rails` → `"~> 8.1.3", ">= 8.1.3.1"` no Gemfile. Pin do minitest, pagy e stripe intocados.
+4. ✅ `bundle update rails` — **só `rails`**. As 13 gems do stack foram para 8.1.3.1. **Nenhuma gem de terceiro se moveu** (devise 4.9.4, stripe 11.7.0, cloudinary 2.4.0, friendly_id 5.5.1, **pagy 9.4.0**, **minitest 5.27.0**, dartsass-sprockets 3.2.1, sprockets-rails 3.5.2). Quatro transitivas do próprio framework: `action_text-trix` 2.1.19 adicionada (o `actiontext` 8.1 extraiu o Trix), `benchmark` removida, `rack` 3.2.6→3.2.7, `uri` 1.0.4→1.1.1.
+   **Previsão errada do plano:** `turbo-rails` e `importmap-rails` **não** subiram — as versões atuais já satisfazem `railties >= 7.1.0`, então o bundler não teve razão para mexer. Menos variáveis, não mais.
+5. ✅ `app:update` aplicado por probe descartável + `--force` no repo real com reversão seletiva. **20 arquivos propostos: 9 aceitos, 11 rejeitados.**
+   - **Aceitos:** `new_framework_defaults_8_1.rb` (novo, 6 flags comentadas), `content_security_policy.rb` (+4 linhas comentadas), as 5 páginas de erro (`400`/`404`/`406`/`422`/`500`, com dark mode) e `public/icon.png` + `icon.svg`.
+   - **Rejeitados:** `application.rb` (i18n pt-BR), `assets.rb` (`screw.glb`), `robots.txt` (SEO), `production.rb` (Cloudinary/SMTP/`assume_ssl`), `puma.rb` (`plugin :solid_queue`), `development.rb` e `test.rb` (customização real — ver nota do cabeçalho), `bin/setup` (acoplado ao `bin/dev`), `bin/dev`, `config/ci.rb` e `bin/ci` (CI é assunto próprio, fora da E).
+   - **`config/ci.rb` existe** — resolve a correção 7 do `RAILS_81_MIGRATION.md`, que o marcava como não confirmado. Vem acompanhado de `bin/ci`; um sem o outro não funciona.
+   - **Nenhum artefato de Solid criado** e **`config/cable.yml` não foi proposto**.
+6. ✅ `config.load_defaults 8.0` → `8.1` em `application.rb` — uma linha, i18n preservado.
+7. ✅ Os **7 defaults do 8.1** confirmados em runtime: `yjit=false` (override nosso), `escape_json_responses=false`, `action_on_path_relative_redirect=:raise`, `raise_on_missing_required_finder_order_columns=true`, `escape_js_separators_in_json=false`, `render_tracker=:ruby`, `remove_hidden_field_autocomplete=true`. Herdados conferidos: `strict_freshness=true`, `Regexp.timeout=1.0`, `run_after_transaction_callbacks_in_order_defined=true` (o risco-fantasma, `true` antes e depois).
+8. ✅ Fluxos validáveis localmente, com servidor Puma real: `/up`, `/`, `/screws`, `?page=2`, `?page=999`, `/screws/<slug>` (friendly_id) e `/cart` — **todos 200**. Conteúdo conferido: 20 cards na p.1, e o overflow do pagy servindo a última página (2 cards, marcador ativo na p.2). Fluxos que dependem de pedido e usuário seguem sem dado local.
+9. ✅ `bin/rails test` — **20 runs, 54 assertions, 0 failures, 0 errors, 0 skips**. Baseline mantida. O pin do minitest segurou (a suíte carregou) e o contorno do Devise foi verificado ativamente: `execute_unless_loaded` existe no 8.1, e `Devise.mappings` vai de `[]` para `[:user]` depois dele.
+10. ✅ Boots em development e production (`eager_load=true`) — **nenhuma deprecation ou warning além dos conhecidos**: as 4 do Devise e o warn de `libvips` (artefato do host WSL sem a biblioteca; comportamento novo do Active Storage 8.1, que resolve o `variant_transformer` no boot em vez de sob demanda — não deve aparecer no Heroku, que serve variantes hoje).
+11. ✅ **Extra, não previsto na numeração:** `RAILS_ENV=production assets:precompile` — **exit 0 em 2s**, 65 assets, `screw.glb` no manifest do Sprockets (prova de que a rejeição do `assets.rb` funcionou), `application.css` compilado pelo dartsass sem warning de Sass. `assets:clobber` depois — nada de `public/assets` no commit.
+12. ⬜ Merge para `master`, deploy para Heroku — **só com aprovação explícita**.
+13. ⬜ Pós-deploy: `heroku logs` procurando `Regexp::TimeoutError`, `R14` (memória/YJIT), o warn de `libvips` e 500s. Validar `/up`, `/`, `/screws`, `/screws?page=999`, página de produto.
+14. ⬜ Upgrade completo — Rails 8.1.3.1 em produção, com bug fixes até ~out/2026 e segurança até ~out/2027.
 
 ---
 
@@ -909,12 +929,14 @@ Hoje  [Rails 7.1 EOL — sem suporte de segurança]
  │    Backup BD · instalar · migrations · validar local
  │    · deploy Heroku + migrations · confirmar estável
  │
- ├─ Etapa E: Rails 8.0 → 8.1.3.1 (3–4h15)  ← versão alvo final
- │    Backup BD · SÓ `bundle update rails` · app:update (REJEITAR cable.yml)
- │    · load_defaults 8.1 · verificar os 7 flags reais em runtime
- │    · validar local · deploy Heroku · validar Heroku
- │    [bug fixes até ~out/2026 · segurança até ~out/2027] ✅
- │    Investigação completa: RAILS_81_MIGRATION.md
+ ├─ Etapa E: Rails 8.0 → 8.1.3.1 (3–4h15)  ✅ EXECUTADA EM LOCAL (2026-08-13)
+ │    SÓ `bundle update rails` ✅ · app:update 9 aceitos/11 rejeitados ✅
+ │    · load_defaults 8.1 ✅ · 7 flags conferidos em runtime ✅ · yjit=false ✅
+ │    · suíte 20 runs/54 asserts ✅ · precompile exit 0 (screw.glb ok) ✅
+ │    · [PENDENTE] backup BD · merge · deploy Heroku · validar Heroku
+ │    [bug fixes até ~out/2026 · segurança até ~out/2027]
+ │    Investigação e execução: RAILS_81_MIGRATION.md
+ │    NOTA: 4 deprecations do Devise 4.9.4 sob 8.1 → resolvidas na Etapa F
  │
  ├─ Etapa F: Devise 4.9.4 → 5.0.x (1–2h)  ← independente; a qualquer momento pós-D1
  │    Backup BD · bundle update devise · REMOVER contorno de test_helper.rb
