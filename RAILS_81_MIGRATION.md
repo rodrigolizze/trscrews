@@ -1,11 +1,56 @@
-# Etapa E — Rails 8.0.5.1 → 8.1.x
+# Etapa E — Rails 8.0.5.1 → 8.1.3.1
 
-**Documento de investigação.** Elaborado em 2026-08-13. **Nenhuma mudança aplicada** — nada de
-`bundle update`, nada de `rails app:update`, nenhum arquivo do projeto alterado além da criação
-deste.
+**Status: ✅ EXECUTADO E DEPLOYADO** — Rails 8.1.3.1 em produção desde **2026-08-13** (release
+**v56**, merge `88755c7`).
 
-Estado de partida: Rails 8.0.5.1 · Ruby 3.3.5 · produção no Heroku em **v55** · suíte
-**20 runs / 54 assertions / 0 falhas** · `master` em `4c826dc`.
+Nasceu como documento de investigação (elaborado em 2026-08-13, antes de qualquer mudança) e virou o
+registro da execução. As seções §0–§5 e §7–§8 preservam a análise **como foi escrita antes de
+executar**, para que o que ela acertou e o que errou fique auditável; a §3.8 e o registro abaixo são
+posteriores.
+
+**Estado de partida:** Rails 8.0.5.1 · Ruby 3.3.5 · produção no Heroku em v55 · suíte
+20 runs / 54 assertions / 0 falhas · `master` em `4c826dc`.
+
+**Estado final:** Rails 8.1.3.1 · Ruby 3.3.5 (inalterado) · produção no Heroku em **v56** · suíte
+**20 runs / 54 assertions / 0 falhas** · `master` em `88755c7`.
+
+### Registro da execução
+
+| Etapa | Resultado |
+|---|---|
+| Backup do banco | **b009** (`Completed`, 51.83KB) antes do merge |
+| Branch | `upgrade/rails-8.1`, commit `4c74cba`, publicada no `origin` como ponto de recuperação |
+| Bundle | `bundle update rails` — 13 gems do stack para 8.1.3.1; **nenhuma gem de terceiro se moveu** |
+| `app:update` | 20 arquivos propostos: **9 aceitos, 11 rejeitados** |
+| `load_defaults` | `8.0` → `8.1`; os **7 flags** confirmados em runtime |
+| YJIT em produção | **`false`** — override preservado (`enable_yjit` 377 > `load_config_initializers` 257) |
+| Suíte | 20 runs / 54 assertions / **0 falhas** |
+| `assets:precompile` | exit **0** em 2s, 65 assets, `screw.glb` no manifest |
+| Migrations | **nenhuma** |
+| Deploy | merge `--no-ff` `88755c7` → **v56** |
+| Validação em produção | `/up`, `/`, `/screws`, `?page=999` → **200**; `Rails.version` 8.1.3.1; logs **sem** `R14`, `Regexp::TimeoutError` ou warn de `libvips` |
+| Não validado | Fluxos de compra completos (carrinho → checkout → webhook → e-mail), Fluxo 1 (Devise) e Fluxo 9 (upload Cloudinary) — produção sem pedidos, mesmo caso da D1 |
+
+### O que a investigação acertou e o que errou
+
+**Acertou:** os 7 defaults reais do 8.1 (contra os 2 falsos do plano); o risco-fantasma dos callbacks;
+a ordem dos initializers que neutraliza o YJIT; impacto zero dos 6 flags restantes; o teto ausente do
+minitest; a natureza das constraints "de desenvolvimento" do Cloudinary.
+
+**Errou em dois pontos, ambos benignos:**
+
+1. **`config/cable.yml`** foi registrado como risco nº 1 (template do 8.1 propondo `solid_cable`).
+   **O `app:update` do 8.1 não toca esse arquivo** — não havia o que rejeitar. Precaução barata,
+   risco inexistente.
+2. **`turbo-rails` e `importmap-rails`** foram previstos como "devem subir junto". **Não subiram** —
+   as versões instaladas já satisfazem `railties >= 7.1.0`. Menos variáveis do que o previsto.
+
+**O que a investigação não previu e apareceu na execução:** `development.rb` e `test.rb` carregando
+customização real (letter_opener, `queue_adapter :inline`, `assets.quiet`, cache condicional) —
+foram classificados como "cosméticos" e só o diff revelou o contrário; o `config/ci.rb` **existe**
+(correção 7 estava marcada como não confirmada) e vem acompanhado de `bin/ci`; e o warn de `libvips`
+no boot, comportamento novo do Active Storage 8.1, que resolve o `variant_transformer` no boot em vez
+de sob demanda — **não apareceu no Heroku**, confirmando que era artefato do host de desenvolvimento.
 
 ---
 

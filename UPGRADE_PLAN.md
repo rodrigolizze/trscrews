@@ -1,8 +1,15 @@
 # Plano de Upgrade: Rails 7.1.5.1 → Rails 8.1.3.1
 
-**Elaborado em:** 2026-05-19 · **Revisado em:** 2026-05-19  
-**Estado atual:** Rails 8.0.5.1 · Ruby 3.3.5 · em produção no Heroku (v55)  
-**Objetivo:** Migrar para Rails 8.1.3.1 com zero downtime e zero regressões em produção  
+**Elaborado em:** 2026-05-19 · **Revisado em:** 2026-08-13  
+**Estado atual:** ✅ **Rails 8.1.3.1 · Ruby 3.3.5 · em produção no Heroku (v56, `88755c7`) desde 2026-08-13**  
+**Objetivo:** ~~Migrar para Rails 8.1.3.1 com zero downtime e zero regressões em produção~~ — **ALCANÇADO**  
+
+> **🏁 CADEIA DE UPGRADE CONCLUÍDA (2026-08-13).** Rails 7.1.5.1 → 7.2.3.1 (Etapa C) → 8.0.5.1 (D1) →
+> **8.1.3.1 (E)**. Zero downtime, zero regressão observada em produção, zero migration nas etapas D1 e E.
+> A dívida de segurança que motivou este plano está paga: saímos de uma série EOL (7.1, sem patches
+> desde out/2025) para a série corrente do framework, com segurança até ~out/2027.
+>
+> **O que resta neste documento é melhoria, não urgência.** Ver §8 — "O que resta depois da Etapa E".
 
 > **⚠️ CONTEXTO DE SEGURANÇA — LEIA ANTES DE QUALQUER COISA**
 >
@@ -765,13 +772,15 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 ---
 
-### Etapa E — Upgrade 8.0 → 8.1.3.1 (3–4h15) · ✅ **EXECUTADA EM LOCAL (2026-08-13) — DEPLOY PENDENTE**
+### Etapa E — Upgrade 8.0 → 8.1.3.1 (3–4h15) · ✅ **DEPLOYADA (v56, `88755c7`, Rails 8.1.3.1 em produção); fluxos de compra completos pendentes de verificação manual**
 
-> **Status:** código aplicado e validado localmente na branch `upgrade/rails-8.1`.
+> **Status:** executada e deployada em 2026-08-13. Branch `upgrade/rails-8.1` (commit `4c74cba`,
+> publicada no `origin` como ponto de recuperação), mergeada `--no-ff` em **`88755c7`** e deployada
+> como **v56**. Backup do banco **b009** capturado antes do merge.
 > **Rails 8.1.3.1 · `load_defaults 8.1` · os 7 flags do 8.1 confirmados em runtime · suíte
 > 20 runs / 54 assertions / 0 falhas · `assets:precompile` exit 0 em 2s com o `screw.glb` no manifest ·
 > `config.yjit = false` em produção (nosso override venceu o default `yjit = !Rails.env.local?`) ·
-> nenhuma migration.** Falta: merge, deploy e validação no Heroku.
+> nenhuma migration.**
 >
 > **A afirmação "zero deprecations" da D1 não vale mais sob 8.1.** O boot com rotas desenhadas e a
 > suíte emitem **4 `DEPRECATION WARNING`**, todas de `config/routes.rb:2` (`devise_for :users`),
@@ -815,9 +824,12 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 9. ✅ `bin/rails test` — **20 runs, 54 assertions, 0 failures, 0 errors, 0 skips**. Baseline mantida. O pin do minitest segurou (a suíte carregou) e o contorno do Devise foi verificado ativamente: `execute_unless_loaded` existe no 8.1, e `Devise.mappings` vai de `[]` para `[:user]` depois dele.
 10. ✅ Boots em development e production (`eager_load=true`) — **nenhuma deprecation ou warning além dos conhecidos**: as 4 do Devise e o warn de `libvips` (artefato do host WSL sem a biblioteca; comportamento novo do Active Storage 8.1, que resolve o `variant_transformer` no boot em vez de sob demanda — não deve aparecer no Heroku, que serve variantes hoje).
 11. ✅ **Extra, não previsto na numeração:** `RAILS_ENV=production assets:precompile` — **exit 0 em 2s**, 65 assets, `screw.glb` no manifest do Sprockets (prova de que a rejeição do `assets.rb` funcionou), `application.css` compilado pelo dartsass sem warning de Sass. `assets:clobber` depois — nada de `public/assets` no commit.
-12. ⬜ Merge para `master`, deploy para Heroku — **só com aprovação explícita**.
-13. ⬜ Pós-deploy: `heroku logs` procurando `Regexp::TimeoutError`, `R14` (memória/YJIT), o warn de `libvips` e 500s. Validar `/up`, `/`, `/screws`, `/screws?page=999`, página de produto.
-14. ⬜ Upgrade completo — Rails 8.1.3.1 em produção, com bug fixes até ~out/2026 e segurança até ~out/2027.
+12. ✅ Merge para `master`, deploy para Heroku — **feito em 2026-08-13**. Backup **b009** antes; branch publicada no `origin`; merge `--no-ff` em **`88755c7`**; deploy **v56**.
+13. 🔶 Pós-deploy — **PARCIAL**. Endpoints e logs validados; fluxos de compra completos pendentes de verificação manual em produção. Mesmo caso da D1 (passo 13 daquela etapa), e pela mesma razão: produção não tem pedidos, então o caminho de compra não é exercitável sem criar dado.
+    - **Validado em produção (v56):** `/up`, `/`, `/screws` e `/screws?page=999` → **200** (o overflow do pagy continua servindo a última página, não 500); `Rails.version` = **8.1.3.1**; `heroku logs` **limpo** — sem `R14` (memória/YJIT), sem `Regexp::TimeoutError`, sem o warn de `libvips`.
+    - **O warn de `libvips` não apareceu no Heroku**, confirmando a leitura da investigação: era artefato do host WSL sem a biblioteca, e não sinal de que as variantes de imagem dependem de algo ausente em produção.
+    - **Não validado:** os fluxos de compra ponta a ponta (carrinho → checkout → webhook → e-mail), o Fluxo 1 (autenticação Devise) e o Fluxo 9 (upload novo no Cloudinary). Continuam pendentes desde a D1.
+14. ✅ **Upgrade completo** — Rails 8.1.3.1 em produção desde 2026-08-13, com bug fixes até ~out/2026 e segurança até ~out/2027.
 
 ---
 
@@ -929,12 +941,13 @@ Hoje  [Rails 7.1 EOL — sem suporte de segurança]
  │    Backup BD · instalar · migrations · validar local
  │    · deploy Heroku + migrations · confirmar estável
  │
- ├─ Etapa E: Rails 8.0 → 8.1.3.1 (3–4h15)  ✅ EXECUTADA EM LOCAL (2026-08-13)
+ ├─ Etapa E: Rails 8.0 → 8.1.3.1 (3–4h15)  ✅ DEPLOYADA (v56, 2026-08-13)
  │    SÓ `bundle update rails` ✅ · app:update 9 aceitos/11 rejeitados ✅
  │    · load_defaults 8.1 ✅ · 7 flags conferidos em runtime ✅ · yjit=false ✅
  │    · suíte 20 runs/54 asserts ✅ · precompile exit 0 (screw.glb ok) ✅
- │    · [PENDENTE] backup BD · merge · deploy Heroku · validar Heroku
- │    [bug fixes até ~out/2026 · segurança até ~out/2027]
+ │    · backup b009 ✅ · merge 88755c7 ✅ · deploy v56 ✅ · endpoints validados ✅
+ │    · [PENDENTE] fluxos de compra completos em produção
+ │    [bug fixes até ~out/2026 · segurança até ~out/2027] 🏁 DESTINO ALCANÇADO
  │    Investigação e execução: RAILS_81_MIGRATION.md
  │    NOTA: 4 deprecations do Devise 4.9.4 sob 8.1 → resolvidas na Etapa F
  │
@@ -949,6 +962,45 @@ Hoje  [Rails 7.1 EOL — sem suporte de segurança]
 Total estimado: 14–20h  (12–16h da cadeia Rails + 1–2h da F + 1–2h da G)
 (sem prazo fixo entre etapas — prosseguir quando confirmar estabilidade)
 ```
+
+---
+
+## 8. O que resta depois da Etapa E
+
+**[Adicionado em 2026-08-13, com a cadeia de upgrade concluída.]**
+
+Com o Rails 8.1.3.1 em produção, **nada do que resta é urgência de segurança**. A dívida que motivou
+este documento — produção rodando uma série EOL — está paga. O que segue abaixo é **melhoria,
+manutenção ou pré-requisito de go-live**, e pode ser priorizado livremente.
+
+### Etapas deste plano que não foram executadas
+
+| Etapa | O que é | Por que ainda importa | Urgência |
+|---|---|---|---|
+| **D2 — Solid Queue** | Fila persistente em PostgreSQL, no lugar do `:async` in-memory | **Bug real:** o Heroku reinicia dynos diariamente e toda fila pendente se perde. Afeta os dois `deliver_later` (`orders_controller.rb:126`, `stripe_webhooks_controller.rb:112`) — e-mail de pedido pendente e de pagamento confirmado. Hoje não machuca porque não há tráfego | **Média** — sobe para alta no go-live |
+| **F — Devise 4.9.4 → 5.0.4** | Upgrade da gem de autenticação | **Dois motivos agora:** (a) remove o contorno de `test_helper.rb` (lazy route loading do Rails 8.0); (b) elimina as **4 deprecations** que o Devise 4.9.4 emite sob 8.1 (`resource` com hash), que viram **erro no Rails 8.2**. A 5.0.4 é estável e pede `railties >= 7.0` | **Média** — é a que tem prazo (8.2) |
+| **G — minitest `~> 5.27` → 6.x** | Sair do pin assumido na D1 | `activesupport` 8.1.3.1 segue com `minitest (>= 5.1)` sem teto, então o pin é o que impede o bundler de puxar a série 6 e derrubar a suíte. Exige `minitest-mock` (ou reescrever o stub do webhook) | **Baixa** — sem deploy, sem banco |
+| **D3 — Solid Cache** | Cache persistente em PostgreSQL | Mudança passiva; o projeto não usa cache de forma significativa (zero `<% cache %>` nas views) | **Baixa** |
+
+### Fora deste plano, registrados no `TODO.md`
+
+| Item | Natureza | Urgência |
+|---|---|---|
+| **Itens de go-live do Stripe** | Chaves `sk_live_`, webhook endpoint em modo Live, **reabilitar o endpoint test-mode** (desabilitado em 2026-08-10), e **validar amount/currency no webhook** — hoje o handler marca `paid` confiando só em `metadata.order_id` | **Alta** — bloqueiam pagamento real |
+| **`screw.glb` de 31MB** | Cada visitante da home baixa 31MB. Compressão Draco levaria a ~300KB | **Alta** — antes de qualquer usuário real |
+| **CSP desabilitada** | `content_security_policy.rb` inteiramente comentado, num e-commerce com checkout | **Média** |
+| **`friendly_id` 5.5.1 → 5.7.0** | Upgrade de gem; agora testável (22 slugs no dev) | **Baixa** — melhoria, não bug |
+| **Fluxos de compra nunca validados em produção** | Herdado da D1 e repetido na E: carrinho → checkout → webhook → e-mail nunca foi percorrido pós-upgrade | **Média** — é o que sustentaria "sem regressão" com confiança |
+| **Fat controller `orders_controller.rb`** (258 linhas) | Refator para `OrderCreationService`; exige testes de integração antes | **Baixa** |
+| **Sprockets → Propshaft** | Alinha com o default do Rails 8; 4–6h | **Baixa** |
+| **Cobertura de testes** | 20 testes hoje. `config/ci.rb` + `bin/ci` foram rejeitados na E por serem assunto próprio — voltam aqui | **Média** |
+
+### Ordem sugerida
+
+1. **Stripe go-live + `screw.glb`** — os dois únicos com impacto direto em usuário real.
+2. **F (Devise 5.0.4)** — tem prazo (Rails 8.2) e paga duas dívidas de uma vez.
+3. **D2 (Solid Queue)** — antes de haver pedido real cuja confirmação possa se perder.
+4. **G, D3, friendly_id, CSP, cobertura** — quando houver espaço.
 
 ---
 
