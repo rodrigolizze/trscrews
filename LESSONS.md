@@ -72,3 +72,43 @@ e em nenhum dos dois o upgrade do Rails teve participação.
 **Mitigação estrutural:** teste de regressão que exercita a **condição de volume**, não só o caminho
 feliz — no caso do catálogo, um teste que cria registros suficientes para gerar a segunda página. É
 o que transforma "invisível por 11 meses" em "vermelho no primeiro `bin/rails test`".
+
+---
+
+## `grep -c DEPRECATION` não cobre deprecations emitidas com `Kernel#warn`
+
+**Regra:** ao verificar deprecations num upgrade, **não** confiar só em contar `DEPRECATION` na
+saída. Esse critério enxerga apenas o que passa por `ActiveSupport::Deprecation`. Gems fora do Rails
+frequentemente avisam com `Kernel#warn`, que escreve em stderr sem a palavra `DEPRECATION` e escapa
+inteiro da verificação. Cobertura real exige **também** olhar a saída de `warn` no boot e na suíte.
+
+**Por quê:** `ActiveSupport::Deprecation` é convenção do Rails, não do Ruby. O Rails a usa para o
+próprio código e para o que ele controla; Rack, Puma, e gems de terceiros em geral usam `warn` puro
+ou `Warning.warn`. Os dois aparecem no terminal e se parecem, mas só um casa com o grep. O critério
+parece exaustivo — "0 deprecations" — quando na verdade responde uma pergunta mais estreita do que a
+que foi feita.
+
+**Descoberta de referência (2026-08-18, Etapa F):** o critério de aceite da Etapa E era
+`RAILS_ENV=test bin/rails runner '...' 2>&1 | grep -c DEPRECATION` → **`0`**, e ele deu `0` de fato.
+Mesmo assim havia uma deprecation ativa e não vista: `config.responder.error_status =
+:unprocessable_entity` em `config/initializers/devise.rb:305`. O Rack 3.2 removeu esse símbolo do
+`SYMBOL_TO_STATUS_CODE` e emite
+
+```
+warning: Status code :unprocessable_entity is deprecated and will be removed in a
+future version of Rack. Please use :unprocessable_content instead.
+```
+
+Sem a palavra `DEPRECATION`, via `Kernel#warn`. Passou batido pela Etapa E inteira e só apareceu na
+Etapa F, ao comparar o initializer do Devise linha a linha contra o template da gem — ou seja, foi
+encontrada por **leitura de diff**, não pela verificação que existia para encontrá-la. Registro
+completo em `DEVISE_50_MIGRATION.md` §12.3; a correção está no `TODO.md` como item próprio.
+
+**Sinal prático:** quando um critério de aceite dá o número redondo esperado logo na primeira
+tentativa, vale perguntar o que ele **não** consegue ver. `grep -c DEPRECATION` = 0 não significa
+"nenhuma deprecation"; significa "nenhuma deprecation **do Rails**".
+
+**Mitigação estrutural:** nas próximas etapas, rodar também um passo que capture stderr cru —
+`RAILS_ENV=test bin/rails runner 'nil' 2>&1 | grep -iE "deprecat|warning"` — e ler a saída, em vez
+de contá-la. O custo é um comando; o que ele pega é justamente a classe de aviso que o outro
+critério não alcança.
