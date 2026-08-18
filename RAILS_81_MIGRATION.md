@@ -408,6 +408,15 @@ DEPRECATION WARNING: resource received a hash argument path_names. ... removed i
 DEPRECATION WARNING: resource received a hash argument controller. ... removed in Rails 8.2
 ```
 
+> **[PRECISÃO ACRESCENTADA 2026-08-14]** São **4 avisos de UMA única chamada**, não 4 chamadas
+> distintas — um aviso por chave do hash. A chamada é `resource :registration, options` em
+> `devise-4.9.4/lib/devise/rails/routes.rb:416`, onde `options` traz exatamente
+> `only:`, `path:`, `path_names:` e `controller:`. As outras chamadas de `resource` do mesmo arquivo
+> (`devise_session:378`, `devise_password:386`, `devise_confirmation:391`, `devise_unlock:397`) passam
+> as opções inline, que o Ruby 3 entrega como keywords, e por isso não emitem. No Devise 5.0.x a linha
+> é `resource :registration, **options` — a correção são dois caracteres. Ver
+> `DEVISE_50_MIGRATION.md` §5.
+
 **NÃO são do nosso código** — nossas rotas não emitem. As 4 mensagens citam a linha 2 sem exceção; a
 linha 7 (`resources :shipping_addresses, only: [...]`) e todas as demais rotas próprias ficam
 silenciosas. A origem confirmada na fonte da gem:

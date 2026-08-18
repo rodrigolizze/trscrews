@@ -296,8 +296,12 @@ visitada — que é exatamente o que os test helpers fazem — o Devise levanta
 
 **Nossa versão está do lado errado da linha.** `devise 4.9.4` foi publicada em **2024-04-10**; Rails
 8.0.0 saiu em **2024-11-07**. A 4.9.4 é a última da série 4 — **não existe 4.9.5**. A correção entrou
-no **Devise 5.0.0.rc** ([PR #5695](https://github.com/heartcombo/devise/pull/5695)), que passa a
+no **Devise 5.0.0.rc** ([PR #5728](https://github.com/heartcombo/devise/pull/5728)), que passa a
 carregar as rotas antes de resolver as mappings.
+
+> **[CORRIGIDO 2026-08-14]** Este documento citava o **PR #5695** em três lugares (aqui, no §4.2 e na
+> lista de referências). O #5695 foi **fechado sem merge**; a correção que entrou é o **#5728**. Ver
+> `DEVISE_50_MIGRATION.md` §4 para a evidência e o mecanismo real.
 
 **Nossa exposição real, medida:**
 
@@ -357,7 +361,7 @@ própria e isolada**, registrada como **Etapa F** no `UPGRADE_PLAN.md`.
 #
 # `try` porque `execute_unless_loaded` só existe a partir do Rails 8.0 — no 7.2 a
 # linha é inerte. É a MESMA chamada que o Devise 5.0 passou a fazer internamente
-# (heartcombo/devise#5695), então este contorno some ao migrarmos para o Devise 5.
+# (heartcombo/devise#5728), então este contorno some ao migrarmos para o Devise 5.
 # Ver UPGRADE_PLAN.md, Etapa F.
 Rails.application.routes_reloader.try(:execute_unless_loaded)
 ```
@@ -365,9 +369,11 @@ Rails.application.routes_reloader.try(:execute_unless_loaded)
 **Mecanismo:** `execute_unless_loaded` é a API que o Rails 8.0 criou para forçar o desenho das rotas
 adiadas. Sai imediatamente se já estiverem carregadas, é thread-safe (monitor lock), protege contra
 reentrância quando o próprio `routes.rb` chama `routes.draw`, e roda os hooks `after_routes_loaded` —
-idempotente por construção. É literalmente a chamada que o Devise 5.0 embutiu em
-`Devise::Mapping.find_scope!` ([PR #5695](https://github.com/heartcombo/devise/pull/5695)); a
-diferença é só que chamamos uma vez no boot em vez de sob demanda.
+idempotente por construção. É a chamada que o Devise 5.0 embutiu em `Devise.mappings`
+([PR #5728](https://github.com/heartcombo/devise/pull/5728), via o wrapper
+`Rails.application.reload_routes_unless_loaded`); a diferença é só que chamamos uma vez no boot em vez
+de sob demanda. *(Corrigido em 2026-08-14: dizia `find_scope!` e PR #5695 — o local é `Devise.mappings`,
+um nível acima, e o #5695 nunca foi mergeado.)*
 
 **Por que `try`:** verificado no ambiente atual — o `Rails::Application::RoutesReloader` do Rails
 7.2.3.1 **não responde** a `execute_unless_loaded` (só a `execute`). Sem o `try`, a linha levantaria
@@ -555,6 +561,6 @@ porque o passo 6 termina num estado consistente e testável.
 - [Rails Maintenance Policy](https://guides.rubyonrails.org/maintenance_policy.html) — janelas de suporte
 - [rails/rails#52353](https://github.com/rails/rails/pull/52353) — lazy route loading
 - [rails/rails#53373](https://github.com/rails/rails/issues/53373) — testes de Devise quebrados
-- [heartcombo/devise#5694](https://github.com/heartcombo/devise/issues/5694) e [PR #5695](https://github.com/heartcombo/devise/pull/5695) — correção do Devise
+- [heartcombo/devise#5694](https://github.com/heartcombo/devise/issues/5694) — o bug; e [PR #5728](https://github.com/heartcombo/devise/pull/5728) — a correção que entrou no Devise 5.0.0.rc (o [PR #5695](https://github.com/heartcombo/devise/pull/5695), antes citado aqui, foi fechado sem merge)
 - [Devise CHANGELOG](https://github.com/heartcombo/devise/blob/main/CHANGELOG.md) — breaking changes do 5.0.0
 - API do rubygems.org — versões e dependências declaradas de cada gem
