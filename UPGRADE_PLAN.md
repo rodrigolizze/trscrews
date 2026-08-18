@@ -789,6 +789,10 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 > 5.0.4), que agora tem dois motivos: estas deprecations e o lazy route loading. Detalhamento em
 > `RAILS_81_MIGRATION.md` §3.8.
 >
+> **[PRECISÃO ACRESCENTADA 2026-08-14]** "4 deprecations" é a contagem correta, mas são **4 avisos de
+> uma única chamada** — um por chave do hash em `resource :registration, options`
+> (`devise/rails/routes.rb:416`). Não são 4 pontos distintos a corrigir. Ver `DEVISE_50_MIGRATION.md` §5.
+>
 > **O risco previsto não se materializou.** O plano apontava o `config/cable.yml` como risco nº 1 da
 > etapa (template do 8.1 propondo `solid_cable`). Na execução, **o `app:update` do 8.1 não toca o
 > `cable.yml`** — não há o que rejeitar. A precaução era barata e a decisão segue válida, mas o risco
@@ -844,7 +848,17 @@ bloqueada por elas. Fazer isoladamente é o ponto — foi para isso que ficou de
 **Contexto:** o Rails 8.0 passou a desenhar rotas sob demanda (rails/rails#52353). O Devise resolve
 `Devise.mappings` durante o carregamento das rotas, então os test helpers falham com
 `Could not find a valid mapping`. Não existe `devise 4.9.5` — a série 4 terminou na 4.9.4. A correção
-entrou no Devise 5.0.0.rc (heartcombo/devise#5695).
+entrou no Devise 5.0.0.rc (heartcombo/devise#5728).
+
+> **[CORRIGIDO 2026-08-14 — número do PR e local da correção]** Este texto citava o
+> **heartcombo/devise#5695**. Errado: o #5695 ("Rails 8: Make test helpers work with deferred routes")
+> foi **fechado sem merge** (`merged_at: null` na API do GitHub), embora de fato mexesse em
+> `lib/devise/mapping.rb` — o que explica a crença de que a correção estaria em `find_scope!`. Quem
+> entrou foi o **#5728** ("Make Devise.mappings work with lazy loaded routes", mergeado em
+> 2024-11-24), que mexe em `lib/devise.rb`: converte `mappings` de `mattr_reader` para método e chama
+> `Rails.application.try(:reload_routes_unless_loaded)` antes de devolver `@@mappings`. A correção do
+> 5.0 está portanto **um nível acima** de `find_scope!`, e cobre mais caminhos que o nosso contorno.
+> Ver `DEVISE_50_MIGRATION.md` §4.
 
 **Breaking changes do Devise 5.0 já conferidos contra o nosso código** (`RAILS_80_MIGRATION.md` §4.1):
 derruba Ruby < 2.7 / Rails < 7.0 (ok); `secret_key` passa a vir sempre de `secret_key_base` (o nosso

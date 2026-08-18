@@ -262,3 +262,37 @@ Após confirmar que Rails 7.2 está estável em produção por ~1 semana:
 - [ ] Monitorar `heroku logs` e `heroku ps` por R14 (memory exceeded)
 - [ ] Se R14 aparecer: adicionar `RUBY_YJIT_ENABLE=0` nas config vars do Heroku
       e não reabilitar até upgrade de dyno tier
+
+## `config.responder.error_status` deprecado no Rack 3.2 (descoberto 2026-08-18)
+
+`config/initializers/devise.rb:305` traz
+`config.responder.error_status = :unprocessable_entity`. O Rack 3.2 **removeu esse
+símbolo** do `SYMBOL_TO_STATUS_CODE` — ele sobrevive apenas por um caminho de
+compatibilidade que o próprio Rack anuncia que vai remover:
+
+```
+SYMBOL_TO_STATUS_CODE[:unprocessable_entity]   = nil
+SYMBOL_TO_STATUS_CODE[:unprocessable_content]  = 422
+Rack::Utils.status_code(:unprocessable_entity) = 422
+  + warning: Status code :unprocessable_entity is deprecated and will be
+             removed in a future version of Rack. Please use :unprocessable_content instead.
+```
+
+**Funciona hoje** — não há bug em aberto. O Fluxo 1 do Devise 5.0 devolveu 422 em
+todos os pontos esperados (`DEVISE_50_MIGRATION.md` §10.5 e §11.2).
+
+**Origem: Rack 3.2, que entrou com a Etapa E** (Rails 8.1.3.1) — não é do Devise.
+Descoberto na revisão do initializer da Etapa F (`DEVISE_50_MIGRATION.md` §12.3) e
+deixado de fora daquele commit de propósito, para não misturar assunto de outra
+dependência no diff do upgrade.
+
+- [ ] Trocar para `config.responder.error_status = :unprocessable_content`
+      (uma linha; `config/initializers/devise.rb:305`)
+- [ ] **Escrever o teste que hoje não existe** — `grep -rn "422\|unprocessable" test/`
+      não devolve **nada**: a suíte não cobre esse caminho. O 422 foi observado
+      só manualmente (Fluxo 1: login inválido e troca de e-mail rejeitada).
+      Um teste de sign_in com senha errada asserindo `assert_response
+      :unprocessable_entity` fecha o buraco e vira a rede de proteção da troca
+- [ ] `bin/rails test` depois da troca (baseline atual: 24 runs / 64 assertions)
+- [ ] Conferir que não há outro `:unprocessable_entity` literal no projeto:
+      `grep -rn "unprocessable_entity" app/ config/ test/`

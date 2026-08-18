@@ -17,7 +17,15 @@ pt-BR:
       unconfirmed: "Você precisa confirmar seu e-mail antes de continuar."
 
     registrations:
+      signed_up: "Bem-vindo! Sua conta foi criada com sucesso."
       signed_up_but_unconfirmed: "Enviamos um e-mail com o link de confirmação. Por favor, acesse sua caixa de entrada para ativar sua conta."
+      signed_up_but_inactive: "Sua conta foi criada com sucesso, mas ainda não pudemos conectar você porque ela não está ativa."
+      updated: "Sua conta foi atualizada com sucesso."
+      updated_but_not_signed_in: "Sua conta foi atualizada com sucesso. Como você alterou a senha, entre novamente."
+      # Reconfirmable: exibida quando o usuário troca o e-mail em /users/edit.
+      # O e-mail antigo continua valendo até o novo ser confirmado.
+      update_needs_confirmation: "Sua conta foi atualizada com sucesso, mas precisamos confirmar seu novo e-mail. Acesse sua caixa de entrada e clique no link de confirmação."
+      destroyed: "Sua conta foi cancelada com sucesso. Esperamos ver você de volta em breve!"
 
     # Mensagens de sessão (login/logout)
     sessions:
@@ -25,13 +33,32 @@ pt-BR:
       signed_out: "Você saiu da sua conta com sucesso."
       already_signed_out: "Você já tinha saído da sua conta."
 
+    # Mensagens de recuperação de senha
+    passwords:
+      send_instructions: "Enviamos um e-mail com instruções para redefinir sua senha."
+      updated: "Sua senha foi alterada com sucesso. Você já está conectado."
+      updated_not_active: "Sua senha foi alterada com sucesso."
+      no_token: "Você não pode acessar esta página sem vir de um e-mail de redefinição de senha. Se você veio de um, confirme que usou o endereço completo do link."
+      # Só é usada se config.paranoid for ligada no initializer (hoje está desligada)
+      send_paranoid_instructions: "Se o seu e-mail estiver cadastrado, você receberá um link para redefinir sua senha em alguns minutos."
+
     # Mensagens de confirmação de e-mail
     confirmations:
-      confirmed: "Seu e-mail foi confirmado com sucesso. Bem-vindo à TRAutoParts!"
+      confirmed: "Seu e-mail foi confirmado com sucesso. Bem-vindo à TR AutoParts!"
+      send_instructions: "Enviamos um e-mail com instruções para confirmar seu endereço."
+      # Idem: depende de config.paranoid
+      send_paranoid_instructions: "Se o seu e-mail estiver cadastrado, você receberá instruções para confirmá-lo em alguns minutos."
 
     mailer:
       confirmation_instructions:
-        subject: "Confirme sua conta na Trautoparts"
+        subject: "Confirme sua conta na TR AutoParts"
+      reset_password_instructions:
+        subject: "Redefina sua senha na TR AutoParts"
+      # Os dois abaixo só são enviados se as notificações forem ligadas no initializer
+      password_change:
+        subject: "Sua senha foi alterada"
+      email_changed:
+        subject: "Seu e-mail de acesso foi alterado"
 
   activerecord:
     attributes:
@@ -41,6 +68,10 @@ pt-BR:
   errors:
     messages:
       taken: "já está em uso"   # ← ESTA É A CHAVE QUE A GENTE QUER
+      already_confirmed: "já foi confirmado, tente fazer login"
+      confirmation_period_expired: "precisa ser confirmado em até %{period}, solicite um novo"
+      expired: "expirou, solicite um novo"
+      not_found: "não encontrado"
       not_saved:
         one: "1 erro impediu este %{resource} de ser salvo:"
         other: "%{count} erros impediram este %{resource} de ser salvo:"
