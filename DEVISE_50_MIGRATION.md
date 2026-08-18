@@ -1472,6 +1472,88 @@ de segurança nova disponível. O arquivo **não foi modificado** nesta etapa.
 
 ---
 
+## 13. Validação em produção (§7 passo 15) — **EXECUTADO E DEPLOYADO (v57)**
+
+Deploy em 2026-08-18. Backup **`b010`** capturado antes (`heroku pg:backups:capture`). Merge
+`--no-ff` em `7be6d57`; `git push heroku master:main` → **Released v57**. Sem migration nesta etapa.
+
+**Boot conferido em produção:**
+
+```
+Devise (loaded_specs) = 5.0.4        Rails = 8.1.3.1        Ruby = 3.3.5
+reconfirmable = true                 secret_key deriva de secret_key_base? true (por digest)
+User.count = 15                      mappings = [:user]     web dyno up
+/up → 200   / → 200   /users/sign_in → 200   log sem erro
+```
+
+O `mappings = [:user]` em produção é a confirmação final de que o contorno do `test_helper.rb` não
+faz falta: o 5.0.4 resolve o lazy route loading na origem, no ambiente real.
+
+### 13.1 — A prova central: hash legado do 4.9.4 autentica sob o 5.0.4
+
+Este é o risco de maior impacto do §8 ("usuário existente não autentica após o deploy"). Testado por
+**leitura pura** (`valid_password?`, não escreve, não invalida sessão, não gera e-mail) em dois
+usuários cujos hashes foram gerados sob o 4.9.4, com senhas diferentes:
+
+| Usuário | Hash gerado sob | Verifica sob 5.0.4? | Cost |
+|---|---|---|---|
+| id 134 (`trautoparts.suporte+teste18@gmail.com`) | 4.9.4 | **`true`** | `$2a$12$` |
+| id 135 (`isabella_vilar@hotmail.com`) | 4.9.4 | **`true`** | `$2a$12$` |
+
+**O risco não se materializou, e agora está provado — não suposto.** Como o §8 previu: o
+`encrypted_password` é BCrypt puro, independente do `Devise.secret_key`, e `config.stretches` (cost
+12) não mudou. O 5.0 não altera o esquema de hash. Rollback não foi necessário.
+
+### 13.2 — Fluxo 1 real via HTTP em produção (usuário legado id 134)
+
+Cliente HTTP com cookie jar contra o site real, não `runner`:
+
+| # | Requisição | Observado | |
+|---|---|---|---|
+| V2.0 | `GET /shipping_addresses` deslogado | 302 → `/users/sign_in` | ✅ |
+| V2.2 | `POST /users/sign_in` id 134 / senha legada | **303 → `/shipping_addresses`** (friendly forwarding do V2.0) | ✅ |
+| V2.3 | `GET /` logado | 200, navbar com "Sair" | ✅ |
+| V2.4 | `GET /shipping_addresses` logado | 200 (id 134 tem endereço) | ✅ |
+| V2.5 | `DELETE /users/sign_out` | 303 → `/` | ✅ |
+| V2.6 | `GET /shipping_addresses` deslogado | 302 → `/users/sign_in` | ✅ |
+| V2.7 | `GET /` deslogado | 200, **sem** "Sair" | ✅ |
+
+O login do usuário legado entrou de fato no site de produção, `current_user` resolveu (navbar), rota
+protegida abriu, e o ciclo entrar/sair fechou — V2.6 separa "a sessão morreu" de "o sign_out só
+respondeu 303". Sem escrita no banco: `trackable` não está ativo, e a sessão criada foi destruída em
+V2.5.
+
+### 13.3 — O que o passo 15 NÃO cobre
+
+`/orders/mine` (`OrdersController#mine`) e `OrdersController#show` com **pedido real** não foram
+exercitados em produção, porque **`Order.count = 0`** — os 15 pedidos de teste foram deletados no
+RECALC fix (ver `RECALC_TOTALS_FIX.md`). O `authenticate_user!` desses dois sites foi validado só no
+caminho **deslogado** (§10.1 A2, redireciona para login) e localmente com pedido de fixture (§10).
+
+**Isto não é regressão da Etapa F.** É a dívida herdada da D1 e da E (`UPGRADE_PLAN.md` §8: "fluxos de
+compra nunca validados em produção"), e continua aberta pela mesma razão de sempre: não há pedido em
+produção para exercê-los. O passo 15 fecha **autenticação**, que é o caminho crítico desta etapa;
+não fecha **compra**.
+
+### 13.4 — Follow-ups registrados fora do escopo da F
+
+- **Senha fraca:** o teste de senha do §13.1 revelou que `123456` autentica em 5 das 15 contas de
+  produção. São usuários de teste (sem cliente real ainda). Registrado no `TODO.md` como item de
+  segurança próprio — não é da F, que trocou a versão do Devise, não a política de senha.
+- **`config.responder.error_status`:** deprecação do Rack 3.2, `TODO.md` (§12.3).
+- **`d63f910` no Heroku:** o `git push heroku` mostrou o range `d63f910..7be6d57`, e `d63f910` **não
+  existe** no histórico do GitHub — em algum momento o Heroku recebeu um commit que não passou pelo
+  origin. Não afetou este deploy (o merge subiu por cima). Registrado no `TODO.md` para investigar.
+
+### 13.5 — Veredito da Etapa F
+
+**CONCLUÍDA E EM PRODUÇÃO (v57).** As duas CVEs estão fechadas — CVE-2026-32700 validada na prática
+(§11) e CVE-2026-40295 coberta pelo pin `>= 5.0.4` (§3.14). O contorno do `test_helper.rb` foi
+removido com prova de processo limpo. Autenticação validada de ponta a ponta em produção, com hashes
+legados. Zero regressão observada. Rollback não foi necessário.
+
+---
+
 ## Apêndice — comandos de verificação usados nesta investigação
 
 Todos somente-leitura; nenhum modificou o repositório.

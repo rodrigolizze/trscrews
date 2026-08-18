@@ -296,3 +296,42 @@ dependência no diff do upgrade.
 - [ ] `bin/rails test` depois da troca (baseline atual: 24 runs / 64 assertions)
 - [ ] Conferir que não há outro `:unprocessable_entity` literal no projeto:
       `grep -rn "unprocessable_entity" app/ config/ test/`
+
+## Política de senha fraca em produção (descoberto 2026-08-18)
+
+Ao validar a Etapa F (Devise 5.0.4), um teste de senha por leitura pura
+(`valid_password?`, sem escrita) contra os 12 usuários confirmados de produção
+mostrou que **`123456` autentica em 5 das 15 contas**. Outras candidatas
+triviais (`1234567`) batem em mais.
+
+**Contexto que reduz a urgência hoje:** são todos usuários de **teste** —
+produção não tem clientes reais ainda (`Order.count = 0`; ver
+`RECALC_TOTALS_FIX.md`). Não há dado de terceiro protegido por essas senhas.
+
+**Fora do escopo da Etapa F** — a F trocou a versão do Devise, não a política
+de senha. `config.password_length = 6..128` (`config/initializers/devise.rb`)
+aceita `123456` por comprimento; não há validação de senha comum.
+
+- [ ] Quando houver usuários reais: adotar validação contra senhas comuns
+      (ex.: gem `zxcvbn` ou lista de bloqueio) e/ou elevar o mínimo de 6
+- [ ] Considerar forçar reset das contas de teste antes de abrir para clientes,
+      ou deletá-las (são dados de teste remanescentes)
+
+## Heroku tem um commit fora do GitHub — d63f910 (descoberto 2026-08-18)
+
+No deploy da Etapa F (`git push heroku master:main`, v57), o range foi
+**`d63f910..7be6d57`**. O `d63f910` era o topo anterior do `main` do Heroku e
+**não existe no histórico do GitHub** — lá o topo antes deste deploy era
+`a2e95d3`. Em algum momento o Heroku recebeu um push que não passou pelo
+`origin`, ou os dois remotes divergiram.
+
+**Não afetou a Etapa F:** o merge `7be6d57` subiu inteiro por cima, e a
+validação em produção passou. Mas é uma divergência de histórico que vale
+entender antes que cause confusão num rollback futuro (um `git push heroku
+<sha>:main` só funciona com SHA que o Heroku conheça).
+
+- [ ] `git fetch heroku` e comparar: `git log --oneline heroku/main` contra
+      `origin/master` — achar onde divergiram
+- [ ] Descobrir o que é `d63f910` (deploy manual? push direto? release antiga?)
+- [ ] Decidir se realinhar os dois remotes ou só documentar a diferença
+- [ ] Não urgente — produção está correta (7be6d57); é higiene de histórico

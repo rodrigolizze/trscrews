@@ -1,7 +1,7 @@
 # Plano de Upgrade: Rails 7.1.5.1 → Rails 8.1.3.1
 
 **Elaborado em:** 2026-05-19 · **Revisado em:** 2026-08-13  
-**Estado atual:** ✅ **Rails 8.1.3.1 · Ruby 3.3.5 · em produção no Heroku (v56, `88755c7`) desde 2026-08-13**  
+**Estado atual:** ✅ **Rails 8.1.3.1 · Ruby 3.3.5 · Devise 5.0.4 · em produção no Heroku (v57, `7be6d57`) desde 2026-08-18**  
 **Objetivo:** ~~Migrar para Rails 8.1.3.1 com zero downtime e zero regressões em produção~~ — **ALCANÇADO**  
 
 > **🏁 CADEIA DE UPGRADE CONCLUÍDA (2026-08-13).** Rails 7.1.5.1 → 7.2.3.1 (Etapa C) → 8.0.5.1 (D1) →
@@ -837,7 +837,25 @@ Cada etapa é independente e pode ser pausada/retomada. Nenhuma etapa é pré-re
 
 ---
 
-### Etapa F — Devise 4.9.4 → 5.0.x (1–2h) · INDEPENDENTE da cadeia Rails
+### Etapa F — Devise 4.9.4 → 5.0.4 (1–2h) · INDEPENDENTE da cadeia Rails · ✅ **DEPLOYADA (v57, `7be6d57`, Devise 5.0.4 em produção; 2 CVEs fechadas)**
+
+> **EXECUTADA E DEPLOYADA em 2026-08-18.** Backup **b010** antes do merge; branch `upgrade/devise-5`
+> publicada no `origin`; merge `--no-ff` em **`7be6d57`**; deploy **v57**. Sem migration.
+>
+> **O motivo real era segurança, não deprecations:** a série 4 terminou na 4.9.4 (não existe 4.9.5),
+> com **duas CVEs sem backport** — CVE-2026-32700 (race no reconfirmable, corrigida no 5.0.3) e
+> CVE-2026-40295 (open redirect no FailureApp, corrigida no 5.0.4). O pin `~> 5.0, >= 5.0.4` fecha as
+> duas; o `>= 5.0.4` não é cosmético. As 4 deprecations do Rails 8.1 eram efeito colateral, não a
+> causa — sumiram (`grep -c DEPRECATION` → 0).
+>
+> **CVE-2026-32700 validada na prática**, não suposta: a linha `devise_unconfirmed_email_will_change!`
+> mantém token e `unconfirmed_email` consistentes, verificado por SQL. **Validação em produção (v57):**
+> hashes legados do 4.9.4 (ids 134 e 135) autenticam sob o 5.0.4 — o risco de maior impacto não se
+> materializou; Fluxo 1 real via HTTP com usuário legado, ponta a ponta, verde. Detalhamento em
+> `DEVISE_50_MIGRATION.md` §10–§13.
+>
+> **[PENDENTE]** `/orders/mine` e `OrdersController#show` com pedido real — `Order.count = 0` em
+> produção. Dívida herdada da D1/E, não regressão da F (§13.3).
 
 **Objetivo:** eliminar a dívida assumida na D1 — sair de uma gem de abr/2024 rodando sobre Rails 8.x,
 combinação não suportada pelo autor, e remover o contorno de `test/test_helper.rb`.
@@ -965,9 +983,13 @@ Hoje  [Rails 7.1 EOL — sem suporte de segurança]
  │    Investigação e execução: RAILS_81_MIGRATION.md
  │    NOTA: 4 deprecations do Devise 4.9.4 sob 8.1 → resolvidas na Etapa F
  │
- ├─ Etapa F: Devise 4.9.4 → 5.0.x (1–2h)  ← independente; a qualquer momento pós-D1
- │    Backup BD · bundle update devise · REMOVER contorno de test_helper.rb
- │    · Fluxo 1 completo local · deploy Heroku · Fluxo 1 completo no Heroku
+ ├─ Etapa F: Devise 4.9.4 → 5.0.4 (1–2h)  ✅ DEPLOYADA (v57, `7be6d57`, 2026-08-18)
+ │    Backup b010 ✅ · bundle update devise ✅ · contorno de test_helper.rb REMOVIDO ✅
+ │    · suíte 24 runs/64 asserts ✅ · Fluxo 1 completo local ✅ · CVE-2026-32700 validada ✅
+ │    · merge --no-ff 7be6d57 ✅ · deploy v57 ✅
+ │    · Fluxo 1 no Heroku ✅ (hash legado 4.9.4 autentica sob 5.0.4, ids 134/135)
+ │    · 2 CVEs fechadas (32700 + 40295) 🏁 · [PENDENTE] /orders/mine com pedido real
+ │    Investigação e execução: DEVISE_50_MIGRATION.md
  │
  └─ Etapa G: minitest 5.27 → 6.x (1–2h)  ← independente; sem deploy, sem banco
       Remover pin do Gemfile · minitest-mock (ou reescrever o stub do webhook)
