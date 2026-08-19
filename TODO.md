@@ -335,3 +335,36 @@ entender antes que cause confusão num rollback futuro (um `git push heroku
 - [ ] Descobrir o que é `d63f910` (deploy manual? push direto? release antiga?)
 - [ ] Decidir se realinhar os dois remotes ou só documentar a diferença
 - [ ] Não urgente — produção está correta (7be6d57); é higiene de histórico
+
+## `initScrew()` roda 2× por carregamento — home 3D (descoberto 2026-08-19)
+
+`app/javascript/screw_3d.js` registra `run()` em **dois** eventos:
+
+```js
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", run);
+} else {
+  run();
+}
+document.addEventListener("turbo:load", run);
+```
+
+Num carregamento normal da home os dois disparam, então `initScrew()` executa
+duas vezes. Consequências observadas ao instrumentar o `onError`:
+
+1. **O `.glb` é requisitado duas vezes por visita.** Com o modelo em 1,5 MB isso
+   dobra o custo de rede da home (a segunda vem do cache HTTP, mas ainda assim é
+   um segundo parse + decode Draco).
+2. **Corrida no env map.** Cada init cria seu próprio `PMREMGenerator`. Quando o
+   segundo init descarta o do primeiro, o material metálico (`metalness: 1`,
+   `roughness: 0.03`) fica sem reflexo e o parafuso renderiza **quase preto**.
+   Isso invalidou as primeiras comparações visuais da Etapa 3 do Draco, e é
+   plausível que o mesmo aconteça de forma intermitente em produção.
+3. Dois `renderer`/`animate()` — o `initScrew()` cancela o `animationId` anterior
+   e limpa o `innerHTML`, mas o WebGLRenderer antigo não é `dispose()`d.
+
+- [ ] Guardar contra re-init (flag de inicializado, ou só `turbo:load` sem o
+      `DOMContentLoaded`, ou `turbo:before-render` para limpar)
+- [ ] `renderer.dispose()` e `pmremGenerator.dispose()` ao reinicializar
+- [ ] Confirmar com a aba Network que o `.glb` passa a ser requisitado 1×
+- [ ] **Item separado — NÃO entra no commit do Draco** (DRACO_COMPRESSION.md)

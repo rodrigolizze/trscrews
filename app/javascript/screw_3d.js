@@ -1,6 +1,13 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+
+// screw.glb is Draco-compressed, so GLTFLoader needs a decoder injected or it cannot
+// read the mesh at all. The decoder is pinned to the same three.js release we load
+// from jsDelivr, so both move together on upgrade.
+const DRACO_DECODER_PATH =
+  "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/";
 
 let scene, camera, renderer, screwGroup, animationId;
 let currentProgress = 0;
@@ -193,7 +200,12 @@ function initScrew() {
   function onEnvLoaded(envMap) {
     scene.environment = envMap;
     if (modelUrl) {
+      const dracoLoader = new DRACOLoader();
+      dracoLoader.setDecoderPath(DRACO_DECODER_PATH);
+      dracoLoader.setDecoderConfig({ type: "wasm" });
+
       const loader = new GLTFLoader();
+      loader.setDRACOLoader(dracoLoader);
       loader.load(
         modelUrl,
         (gltf) => {
@@ -203,6 +215,7 @@ function initScrew() {
           model.scale.setScalar(1);
           applyMetallicMaterials(model, envMap);
           screwGroup.add(model);
+          dracoLoader.dispose();
         },
         undefined,
         () => {
