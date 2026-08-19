@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg" style="background-color: $color-owhite;">
+<nav class="navbar navbar-expand-lg" style="background-color: $color-owhite;" data-controller="navbar">
   <div class="container-fluid px-0 py-0">
     <%= link_to root_path, class: "navbar-brand d-flex align-items-center" do %>
       <%= image_tag "logo-tr-autofix.png",
@@ -21,7 +21,7 @@
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div class="collapse navbar-collapse justify-content-center" id="mainNav">
+    <div class="collapse navbar-collapse justify-content-center" id="mainNav" data-navbar-target="menu">
       <ul class="navbar-nav mb-2 mb-lg-0 gap-3">
         <li class="nav-item"><%= link_to "Início", root_path, class: "nav-link" %></li>
         <li class="nav-item"><%= link_to "Produtos", screws_path, class: "nav-link" %></li>

@@ -12,3 +12,12 @@ application.register("gallery", GalleryController)
 
 import HelloController from "controllers/hello_controller"
 application.register("hello", HelloController)
+
+// NÃO regerar com `bin/rails stimulus:manifest:update`: a versão instalada da
+// task reescreve todos os specifiers para o formato relativo ("./application").
+// O importmap pina estes módulos como "controllers/<nome>" apontando para URLs
+// COM digest; um "./application" seria resolvido pelo browser contra a URL do
+// index já digerido, virando /assets/controllers/application.js — caminho sem
+// digest, que não existe em produção. Adicionar entradas à mão, neste formato.
+import NavbarController from "controllers/navbar_controller"
+application.register("navbar", NavbarController)
