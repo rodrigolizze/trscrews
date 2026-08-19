@@ -1,13 +1,54 @@
-# Compressão Draco do `screw.glb` — Investigação
+# Compressão Draco do `screw.glb`
 
 **Data:** 2026-08-19
-**Branch:** master
-**Status:** investigação apenas — nada foi modificado, instalado ou comprimido
-**Meta do usuário:** reduzir 31 MB → ~300 KB–1 MB sem mudança visual perceptível
+**Branch:** `master` (via `perf/draco-screw-model`, merge `3e0f71c`)
+**Status:** ✅ **EXECUTADO E DEPLOYADO — produção v58**
+**Resultado:** 31.749.504 → **1.549.192 bytes (−95,1%)**
 
 ---
 
-## Resumo executivo (leia isto primeiro)
+## ✅ Fechamento — em produção desde 2026-08-19 (v58)
+
+| | |
+|---|---|
+| Release Heroku | **v58** |
+| Commit | `3e0f71c` (merge de `caadbca`) |
+| Push | `7be6d57..3e0f71c master -> main`, fast-forward limpo |
+| Tamanho antes | 31.749.504 B |
+| Tamanho depois | **1.549.192 B** (−95,1%) |
+| Triângulos | 1.376.376 → 344.093 |
+| Texturas | 3 × JPEG 4096² → 3 × WebP 1024² |
+| VRAM estimada | ~268 MB → ~17 MB |
+
+**Validação em produção:**
+
+- `Content-Length: 1549192` no asset servido
+- MD5 do corpo baixado = `a07ce8e6…` — **byte-a-byte idêntico** à variante E3 aprovada
+- Digest exatamente o previsto no precompile local: `screw-63e81cdb…glb`
+- Os três arquivos do decoder Draco retornam 200 do jsDelivr
+- Render correto, sem erro no console
+
+**Três motores confirmam o mesmo resultado:** Chromium/SwiftShader, Firefox 153/llvmpipe
+(ambos headless, rasterização por software) e o **Chrome real em produção** — cromado,
+rosca e a gravação "TR" na cabeça, esta última provando que o WebP decodificou, já que
+vem da textura basecolor. Nenhum dos três caiu no fallback procedural.
+
+**O que ficou em aberto**, todos como itens próprios no `TODO.md`, nenhum urgente:
+`initScrew()` rodando 2× por carregamento; o `.glb` servido como `text/plain`; e os
+assets com digest sem `Cache-Control: immutable` (pré-existente, app inteiro).
+
+**Branch `perf/draco-screw-model`: mantida** em `origin` como ponto de recuperação.
+Custa nada e preserva o histórico linear do trabalho fora do merge. Pode ser deletada
+a qualquer momento com `git push origin --delete perf/draco-screw-model` — o merge
+`3e0f71c` já contém tudo.
+
+---
+
+## Resumo executivo da investigação original
+
+> As seções abaixo são o documento como foi escrito **antes** da execução. Ficam
+> preservadas porque registram o raciocínio, inclusive onde ele estava errado — as
+> correções estão marcadas em linha, e a §4.1.1 tem os números reais.
 
 Três achados mudam o plano em relação ao que foi pedido:
 
@@ -17,6 +58,11 @@ Três achados mudam o plano em relação ao que foi pedido:
    triângulos. Draco deve levar o arquivo para a faixa de **1,5–3,5 MB** (redução de
    ~89–95%). Para bater a meta é preciso **decimar a malha antes** (`simplify`) —
    e o modelo é tão denso que a decimação é visualmente gratuita neste caso.
+   > ❌ **A última frase está errada** — ver §4.1.1. A decimação **não** é gratuita:
+   > a rosca e o aro chanfrado da cabeça são features de alta frequência e se
+   > degradam independentemente do tamanho do canvas. Ironicamente, a estimativa de
+   > "1,5–3,5 MB" acabou certa pelo motivo errado: o arquivo final tem 1,55 MB, mas
+   > com decimação e texturas tratadas, não com Draco sozinho.
 3. **Existem DOIS `screw.glb` no repositório**, de modelos diferentes. O de 31 MB é o
    servido; o de 324 KB em `public/` é órfão e nunca é requisitado.
 

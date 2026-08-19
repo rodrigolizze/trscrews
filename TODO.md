@@ -143,23 +143,31 @@ reais, executar nesta ordem:
 - [ ] Confirmar que email de confirmação chega
 - [ ] Testar fluxo de reembolso via dashboard Stripe
 
-## Otimização do modelo 3D do parafuso (PRIORITÁRIO)
+## ~~Otimização do modelo 3D do parafuso (PRIORITÁRIO)~~ — RESOLVIDO em 2026-08-19
 
-**Estado atual:** `app/assets/images/screw.glb` tem 31MB e está em uso
-via asset_path no JavaScript (screw_3d.js). Cada visitante baixa 31MB
-para ver o parafuso girando na home. Em conexões móveis pode levar
-20-60 segundos.
+**Resultado:** `app/assets/images/screw.glb` saiu de **31.749.504 → 1.549.192 bytes
+(−95,1%)**, em produção desde a **v58** (merge `3e0f71c`). Draco na geometria +
+decimação para 344k triângulos + texturas 1024² WebP. Detalhes completos em
+`DRACO_COMPRESSION.md`.
 
-**Ações futuras (NÃO fazer agora):**
-1. Comprimir o modelo com Draco compression no glTF — reduz para ~300KB
-   sem perda visual perceptível
-2. Verificar quantos polígonos o modelo tem hoje — pode ter sido
-   exportado em qualidade muito alta sem necessidade
-3. Considerar LOD (Level of Detail) — carregar versão menor primeiro
-4. Remover `public/screw.glb` (324KB, órfão, sem referências no código)
+Do plano original, o que se confirmou e o que não:
 
-Essa otimização não bloqueia a migração Cloudinary, mas é trabalho
-prioritário antes do site ter qualquer usuário real.
+1. ✅ Draco aplicado — mas a estimativa de "~300KB sem perda visual perceptível"
+   **estava errada**. 300KB exige decimar abaixo de 206k triângulos, e aí o aro
+   chanfrado da cabeça quebra em facetas visíveis no cromado. 1,55MB é o menor
+   arquivo visualmente limpo — descoberto medindo 10 variantes, não deduzido.
+2. ✅ Contagem de polígonos verificada: **1.376.376 triângulos**, geometria era 96%
+   do arquivo. Gerado por Tripo 2.0 (IA), sem atributo `NORMAL`.
+3. ⏭️ LOD não foi necessário — 1,55MB carrega em ~1-2s em 4G.
+4. ✅ `public/screw.glb` removido (era modelo CC-BY de outro autor, servido sem
+   atribuição).
+
+**Bônus não previsto:** texturas de 4096² → 1024² derrubaram o consumo de VRAM de
+~268MB para ~17MB, o que provavelmente importa mais em celular que os bytes.
+
+Validado em Chromium/SwiftShader, Firefox 153/llvmpipe e no Chrome real em
+produção. Ficam abertos, como itens próprios abaixo: `initScrew()` 2×, o
+content-type do `.glb`, e o `Cache-Control` dos assets.
 
 ## Otimização de assets binários (futuro)
 
@@ -330,11 +338,34 @@ validação em produção passou. Mas é uma divergência de histórico que vale
 entender antes que cause confusão num rollback futuro (um `git push heroku
 <sha>:main` só funciona com SHA que o Heroku conheça).
 
-- [ ] `git fetch heroku` e comparar: `git log --oneline heroku/main` contra
+- [x] `git fetch heroku` e comparar: `git log --oneline heroku/main` contra
       `origin/master` — achar onde divergiram
-- [ ] Descobrir o que é `d63f910` (deploy manual? push direto? release antiga?)
-- [ ] Decidir se realinhar os dois remotes ou só documentar a diferença
-- [ ] Não urgente — produção está correta (7be6d57); é higiene de histórico
+- [x] Descobrir o que é `d63f910` (deploy manual? push direto? release antiga?)
+- [x] Decidir se realinhar os dois remotes ou só documentar a diferença
+
+### RESOLVIDO em 2026-08-19 — não era divergência
+
+O `git fetch heroku` (feito antes do deploy do Draco, v58) desfez a suspeita:
+
+- **`d63f910` é `Redesign Devise sign up and login pages`**, de 2025-11-26. Está no
+  histórico de **todos** os refs — `heroku/main`, `master` e `origin/master`.
+  Confirmado com `git merge-base --is-ancestor` nos três.
+- **Nunca houve divergência.** O que a nota original observou foi que o *ponteiro*
+  do `main` do Heroku estava em `d63f910` enquanto o do GitHub estava em `a2e95d3`
+  — dois ponteiros em posições diferentes da **mesma** linha de história, não
+  históricos separados. O commit entrou no GitHub por merges normais de branches
+  de refactor.
+- **`git log master..heroku/main` volta vazio**: o Heroku nunca teve nada que o
+  GitHub não tivesse. O deploy da v58 foi fast-forward limpo.
+
+**Ponta solta que sobrou (menor):** o remote do Heroku tem um ref `master` parado
+em `88755c7` (`Merge branch 'upgrade/rails-8.1'`, 2026-08-13), além do `main` que
+é o branch de deploy. É resíduo inofensivo — `88755c7` é ancestral tanto do nosso
+`master` quanto de `heroku/main` — mas a coexistência de `main` e `master` no mesmo
+remote é fonte de confusão real (um `git push heroku master` iria para o ref errado
+e não dispararia build).
+
+- [ ] Deletar o ref órfão: `git push heroku :master` — não urgente, só higiene
 
 ## `initScrew()` roda 2× por carregamento — home 3D (descoberto 2026-08-19)
 
@@ -368,3 +399,67 @@ duas vezes. Consequências observadas ao instrumentar o `onError`:
 - [ ] `renderer.dispose()` e `pmremGenerator.dispose()` ao reinicializar
 - [ ] Confirmar com a aba Network que o `.glb` passa a ser requisitado 1×
 - [ ] **Item separado — NÃO entra no commit do Draco** (DRACO_COMPRESSION.md)
+
+## Home sem formatação no celular — responsividade mobile (descoberto 2026-08-19) — IMPORTANTE
+
+**A home aparece sem formatação no celular.** Layout/CSS quebrado em viewport
+móvel — o desktop está correto, o mobile não.
+
+**Por que é importante e não "futuro":** a maioria dos visitantes é mobile. Um
+e-commerce cuja home chega quebrada no celular perde o visitante antes do
+catálogo. Isso pesa mais que qualquer otimização de bytes já feita — de nada
+adianta a home carregar em 1s se ela chega desformatada.
+
+Ainda não diagnosticado. Pontos por onde começar:
+
+- [ ] Reproduzir: DevTools em viewport móvel + aparelho real (o DevTools não
+      pega tudo — `100vh`, barra de endereço, fontes do sistema)
+- [ ] Conferir a `<meta name="viewport">` no layout
+- [ ] Conferir os breakpoints do Bootstrap 5 nas views da home
+      (`app/views/pages/home.html.erb`) — as colunas usam `col-lg-*`, então
+      abaixo de `lg` tudo empilha; verificar se o empilhamento está previsto
+- [ ] Conferir o CSS custom em `app/assets/stylesheets/` — pode ter largura
+      fixa ou `position` que não colapsa
+- [ ] A coluna do 3D (`#screw-3d-root`) é `position-sticky` com altura
+      calculada por JS (`syncScrewHeight`) a partir de `#screw-cards-col` —
+      forte suspeita de que isso se comporte mal quando as colunas empilham
+- [ ] Decidir se o 3D deve simplesmente **não carregar** em telas pequenas —
+      economizaria 1,55MB + o decode Draco justamente em quem tem menos banda
+      e menos CPU (ver DRACO_COMPRESSION.md)
+
+## `.glb` servido como `text/plain` (descoberto 2026-08-19)
+
+Em produção, `screw-<digest>.glb` responde com `Content-Type: text/plain`,
+porque o Rails não conhece a extensão `.glb`.
+
+**Não quebra nada:** o `GLTFLoader` busca o arquivo como `arraybuffer` e ignora
+o content-type — está provado pelo modelo renderizando corretamente em produção.
+Mas é incorreto, confunde ferramentas (uma sonda de teste mediu o corpo como
+texto e reportou 2,4MB em vez de 1,55MB), e pode atrapalhar heurísticas de
+compressão/cache de CDN no futuro.
+
+- [ ] Registrar o mime type num initializer — uma linha:
+      `Mime::Type.register "model/gltf-binary", :glb`
+- [ ] Confirmar com `curl -sI` que o header muda
+- [ ] Não urgente
+
+## Assets com digest sem `Cache-Control` (descoberto 2026-08-19) — pré-existente
+
+Nenhum asset com digest recebe `Cache-Control` em produção — vale para o app
+inteiro (`application.js`, CSS, imagens), não só o `.glb`. Foi notado durante a
+validação do deploy do Draco, mas **é anterior a ele**.
+
+**Impacto real, medido, sem exagero:** há `Last-Modified`, e uma requisição
+condicional retorna **304 Not Modified** corretamente. Ou seja, visitantes
+recorrentes **não** rebaixam os bytes. O custo é um round-trip de revalidação
+por asset, por visita — o que é justamente o que um asset com digest jamais
+deveria pagar, já que o digest garante que o conteúdo nunca muda sob a mesma URL.
+
+`config/environments/production.rb:24` tem `config.public_file_server` inteiramente
+comentado.
+
+- [ ] Configurar `config.public_file_server.headers` com
+      `Cache-Control: public, max-age=31536000, immutable`
+- [ ] Medir antes/depois com `curl -sI` num asset com digest
+- [ ] ⚠️ Mudança em `config/` — exige aprovação (ver CLAUDE.md)
+- [ ] Não urgente
