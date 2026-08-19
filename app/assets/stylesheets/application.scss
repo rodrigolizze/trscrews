@@ -63,6 +63,20 @@ body {
   }
 }
 
+// Abaixo de lg as duas colunas do slide 1 empilham e o conteúdo passa dos 420px.
+// Como o .carousel-inner do Bootstrap é overflow:hidden, o excedente era cortado
+// (as imagens do produto sumiam pela metade). Altura livre no mobile.
+//
+// O min-height sobe de 320 para 420 aqui de propósito: os slides 2 e 3 têm
+// min-height: 420px inline no .container, então sem este piso o slide 1 ficaria
+// mais baixo que os outros e o carrossel "pularia" na transição.
+@media (max-width: 991.98px) {
+  .banner-full-bleed .carousel-item {
+    height: auto;
+    min-height: 420px;
+  }
+}
+
 // Overlay escuro para legibilidade do texto sobre o fundo metálico
 .banner-overlay {
   position: absolute;
@@ -101,6 +115,28 @@ body {
 .banner-hero-card {
   border: 3px solid rgba(255, 255, 255, 0.9);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  // Vinham do style inline no home.html.erb. Precisaram sair de lá porque estilo
+  // inline vence qualquer regra de folha, e a media query abaixo nunca teria
+  // efeito. Mesmos valores — o desktop computa exatamente o que computava.
+  width: 240px;
+  height: 240px;
+  object-fit: cover;
+}
+
+// 3 x 240px + 2 gaps de 16px = 752px dentro de um viewport de 375px. O excedente
+// vazava para os dois lados (justify-content-center) e era cortado pelo
+// overflow:hidden do .banner-full-bleed / .carousel-inner — na prática só a
+// imagem do meio aparecia, e cortada. Abaixo de md as três dividem a largura
+// disponível em partes iguais, mantendo o quadrado.
+@media (max-width: 767.98px) {
+  .banner-hero-card {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    height: auto;
+    aspect-ratio: 1;
+  }
 }
 
 // Posição do background por slide (ajuste os valores conforme necessário)
