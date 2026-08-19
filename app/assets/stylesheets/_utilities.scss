@@ -23,6 +23,14 @@
 
 .section-porque-bg {
   position: relative;
+
+  // A arte de fundo é 1536x1024 (3:2). Com background-size: 100% ela cobre
+  // largura x (largura/1,5) — no desktop isso dá conta de quase toda a seção,
+  // mas no mobile as colunas empilham, a seção passa de 2000px de altura e a
+  // imagem pinta só ~250px. Sem background-color o resto era o branco do body,
+  // e como a seção é .text-white o texto sumia (branco sobre branco).
+  // Valor medido da própria imagem (média global), para a emenda não aparecer.
+  background-color: #3C3B40;
   background-size: 100%; /* padrões menores: aumente (ex: 200%); padrões maiores: diminua (ex: 120%) */
   background-position: center;
   background-repeat: no-repeat;
