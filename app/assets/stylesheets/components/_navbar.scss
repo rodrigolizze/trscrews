@@ -24,6 +24,20 @@
     display: block;
   }
 
+  // Alvo de toque do hambúrguer. O padding do Bootstrap deixa o botão com ~40px
+  // de altura, abaixo do mínimo de 44px recomendado por Apple e Google — e este
+  // é o único caminho de navegação no celular.
+  //
+  // Sem media query de propósito: o próprio Bootstrap já esconde o toggler em
+  // >=992px. Note que NÃO declaramos `display` aqui — `.navbar .navbar-toggler`
+  // empata em especificidade com `.navbar-expand-lg .navbar-toggler{display:none}`
+  // e o nosso CSS carrega depois do CDN, então qualquer `display` nosso venceria
+  // e faria o botão aparecer no desktop.
+  .navbar-toggler {
+    min-height: 44px;
+    min-width: 44px; // já satisfeito (~56px pelo padding do Bootstrap); piso explícito
+  }
+
   .nav-link {
     color: $color-otitle;
     font-weight: 500;

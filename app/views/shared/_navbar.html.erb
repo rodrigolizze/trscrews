@@ -6,7 +6,22 @@
             class: "navbar-logo" %>
     <% end %>
 
-    <div class="collapse navbar-collapse justify-content-center">
+    <%# // Abre o menu abaixo de lg. O Bootstrap esconde este botão em >=992px
+        // (.navbar-expand-lg .navbar-toggler { display: none }), então no desktop
+        // nada muda — lá o menu já é sempre visível. O grupo da direita
+        // (Carrinho / Entrar / Cadastrar) fica FORA do collapse de propósito:
+        // esconder o carrinho atrás do hambúrguer custaria conversão. %>
+    <button class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#mainNav"
+            aria-controls="mainNav"
+            aria-expanded="false"
+            aria-label="Abrir menu de navegação">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse justify-content-center" id="mainNav">
       <ul class="navbar-nav mb-2 mb-lg-0 gap-3">
         <li class="nav-item"><%= link_to "Início", root_path, class: "nav-link" %></li>
         <li class="nav-item"><%= link_to "Produtos", screws_path, class: "nav-link" %></li>
