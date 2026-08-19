@@ -10,6 +10,7 @@ const DRACO_DECODER_PATH =
   "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/";
 
 let scene, camera, renderer, screwGroup, animationId;
+let initializedRoot = null;
 let currentProgress = 0;
 let targetProgress = 0;
 const ratios = [0, 0, 0, 0];
@@ -149,6 +150,19 @@ function addProceduralScrew(group) {
 function initScrew() {
   const root = document.getElementById("screw-3d-root");
   if (!root) return;
+
+  // Idempotência por elemento. run() é chamado por vários gatilhos: a avaliação
+  // do módulo, turbo:load, e a travessia do breakpoint no tablet. Sem isto o init
+  // roda 2× por carregamento e os dois RGBELoader em voo se atropelam sobre as
+  // mesmas variáveis de módulo — o envMap do primeiro chega numa cena que já é a
+  // do segundo, e o material metálico renderiza quase preto.
+  //
+  // Guardamos a REFERÊNCIA do elemento, não um data-attribute nem "existe canvas?":
+  // o snapshot do Turbo serializa o DOM, então marca e canvas voltariam no cache e
+  // o guard barraria a reconstrução, deixando um canvas morto na tela. Identidade
+  // de nó é justamente o que o snapshot não preserva.
+  if (initializedRoot === root) return;
+  initializedRoot = root;
 
   if (animationId) cancelAnimationFrame(animationId);
   if (renderer && renderer.domElement) {
@@ -314,7 +328,15 @@ function onResize() {
   syncScrewHeight();
 }
 
+// 992px = breakpoint lg do Bootstrap, o mesmo do col-lg-7 da coluna do 3D.
+// Abaixo dele as colunas empilham e o 3D deixa de fazer sentido: syncScrewHeight()
+// copiaria a altura da coluna de cards (~870px no celular) para o canvas,
+// empurrando para baixo o conteúdo que vende, com camera.aspect ~0,43. E como a
+// coluna passa a ser d-none, offsetWidth/offsetHeight seriam 0 e o aspect, NaN.
+const desktopQuery = window.matchMedia("(min-width: 992px)");
+
 function run() {
+  if (!desktopQuery.matches) return;
   if (document.getElementById("screw-3d-root")) {
     initScrew();
   }
@@ -326,3 +348,11 @@ if (document.readyState === "loading") {
   run();
 }
 document.addEventListener("turbo:load", run);
+
+// Tablet girando de retrato (<992) para paisagem (>=992): o init foi pulado no
+// carregamento e a coluna, agora visível, ficaria vazia. Chamar run() aqui é
+// seguro porque initScrew() é idempotente por elemento. O desktop nunca dispara
+// este evento — já entra com matches = true.
+desktopQuery.addEventListener("change", (event) => {
+  if (event.matches) run();
+});

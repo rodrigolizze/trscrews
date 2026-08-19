@@ -100,7 +100,9 @@
           </div>
         </div>
       </div>
-      <div class="col-lg-7 order-1 order-lg-2">
+      <%# // Some abaixo de lg: ver o guard em screw_3d.js. Esconder a coluna
+          // inteira (e não só o canvas) evita deixar uma coluna vazia na row. %>
+      <div class="col-lg-7 order-1 order-lg-2 d-none d-lg-block">
         <div id="screw-3d-root" class="position-sticky" data-screw-model="<%= asset_path('screw.glb') %>" style="top: 80px; min-height: 400px;"></div>
       </div>
     </div>
