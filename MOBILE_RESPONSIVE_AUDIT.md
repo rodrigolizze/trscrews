@@ -674,6 +674,421 @@ caiu medindo 10 variantes.
 
 ---
 
+## 7. Ampliação — o funil de compra no mobile (2026-08-20)
+
+A auditoria original (§2) focou a home, e as páginas do funil ficaram com análise
+qualitativa: "fácil passar de 600px", "cabe justo", "merece verificação renderizada".
+Esta seção **quantifica** esses pontos e cobre o que faltava — em especial o
+**checkout (`/orders/new`), que não tinha seção nenhuma** apesar de ser o passo mais
+crítico do funil.
+
+Contexto: home já corrigida e no ar (v60, Fases 1 e 3). Fase 2 (peso dos PNGs) foi
+**deliberadamente pulada** — as artes de fundo são de teste e serão trocadas pelas
+oficiais; comprimir agora seria retrabalho.
+
+### 7.0 Método e orçamento de largura
+
+Todas as contas assumem **viewport de 375px** (iPhone SE/12 mini, o mais estreito
+comum) e as regras do Bootstrap 5.3 conferidas em arquivo:
+
+| camada | conta | largura útil |
+|---|---|---|
+| viewport | — | 375px |
+| `.container` (<576px) | `width:100%` + `padding-inline: 12px` | **351px** |
+| `.row` + `.col` | margem `-8/-12px` cancela o padding `8/12px` do col | **351px** |
+| `.card-body` (`p-3`/1rem) | −16px de cada lado | **319px** |
+| `.card-body p-4` (1.5rem) | −24px de cada lado | **303px** |
+
+Larguras de texto estimadas com a fonte real do site (**Aldrich**, `body` em
+`application.scss:25`), que é notavelmente larga: ~8px/caractere a 14px, ~9px a 16px.
+Onde a estimativa decide o veredito, marco **Confiança: média** — é o mesmo critério
+do §0.
+
+**Não executado:** renderização real a 375px. Playwright continua sem iniciar nesta
+máquina (§Apêndice). Tudo abaixo é aritmética de CSS sobre as classes das views.
+
+---
+
+### 7.1 Catálogo (`/screws`) — complementa §2.3
+
+#### 🔴 A linha de ação do card estoura o orçamento — e o `.card` deixa vazar
+
+`screws/_card.html.erb:30-51`. Card = 351px, `.card-body` (1rem) → **319px de
+orçamento**. A linha é `d-flex justify-content-between`, **sem `flex-wrap`**:
+
+| cenário | conteúdo | soma | veredito |
+|---|---|---|---|
+| em estoque | preço ~99 + "Ver" ~42 + gap 8 + "Adicionar ao carrinho" ~186 | **~335px** | estoura ~16px |
+| sem estoque | preço ~99 + badge "Indisponível" ~98 + gap 8 + "Ver" ~42 + gap 8 + "Adicionar" ~90 | **~345px** | estoura ~26px |
+
+E `_utilities.scss:110` desativa o clipping do Bootstrap:
+```scss
+.card { overflow: visible !important; } // allow arrows to extend outside
+```
+Sem `overflow:hidden`, o excedente **não é cortado — vaza para fora da borda do card**.
+
+**"Adicionar ao carrinho" é o botão de conversão do catálogo.** É o achado de maior
+impacto comercial desta ampliação.
+
+**Confiança: média** — o veredito depende da métrica da Aldrich. Mas os dois cenários
+estouram, e o de estoque zerado estoura com folga; um erro de 10% na estimativa não
+inverte a conclusão.
+
+#### 🔴 20 cards por página × ~483px = ~10.000px de rolagem
+
+`config/initializers/pagy.rb:11-13` documenta que o `DEFAULT[:items] = 12` morreu na
+migração para pagy 9 (`:items` → `:limit`) e **o catálogo caiu no default de 20**.
+
+Altura de um card a 375px:
+
+| parte | altura |
+|---|---|
+| `.ratio.ratio-1x1` a 351px de largura | **351px** |
+| `.card-body`: padding 32 + spec ~17 + descrição ~44 (2 linhas) + `mb-2` 8 + linha de ação ~31 | ~132px |
+| **total** | **~483px** |
+
+20 × 483 + 19 gaps de 16px ≈ **9.960px**. Num viewport de 667px de altura são
+**~15 telas de rolagem** para uma página de catálogo — e o produto do fim da página
+custa 15 swipes.
+
+A imagem 1:1 responde por **73% da altura do card**. É o parâmetro a mexer.
+
+#### 🟡 Correção ao §2.3: os filtros não estão 🟢 em `md`
+
+A auditoria classificou os filtros como "a melhor parte responsiva do projeto".
+No **mobile isso se sustenta** (`col-6` = 2 por linha, correto). Mas a soma das
+colunas Bootstrap passa de 12:
+
+`col-md-4` (busca) + 5 × `col-md-2` (montadora, modelo, rosca, tratamento, ordenar)
+= **4 + 10 = 14 colunas** num grid de 12.
+
+Em `md` (768-991px, tablets em retrato) a linha quebra e sobram 2 colunas órfãs.
+Não afeta 375px — mas o 🟢 do §2.3 é generoso demais.
+
+#### 🟡 Paginação do pagy
+
+`pagy_bootstrap_nav` gera `.page-link` com `padding: .375rem .75rem` → ~38px de altura,
+abaixo dos 44px. Mesma família do problema de alvo de toque (§2.3), no fim de 10.000px
+de rolagem.
+
+---
+
+### 7.2 Página de produto (`/screws/:slug`) — complementa §2.4
+
+Confirmo o 🟢 estrutural do §2.4: `col-12 col-lg-7` / `col-12 col-lg-5`, thumbs desktop
+`d-none d-md-flex`, thumbs mobile `d-md-none ... overflow-auto`, specs em
+`.table-responsive`. **Foi a página feita com mais cuidado mobile do projeto.**
+
+#### 🟡 Caixa de preço + CTA — o §2.4 pediu número, aqui está
+
+`show.html.erb:165`. A caixa é `p-3` dentro de `.card-body.p-4` dentro do col:
+351 − 48 (`p-4`) − 32 (`p-3`) = **271px de orçamento**, `d-flex justify-content-between
+gap-3`, **sem `flex-wrap`**:
+
+- preço `fs-3` (1.75rem = 28px): "R$ 1.234,56" ≈ **~150px**
+- botão "COMPRAR" `px-4 py-2` ≈ **~120px**
+- `gap-3` = 16px
+
+Soma ≈ **286px em 271px** → estoura ~15px. Com preço de 4 dígitos ("R$ 12.345,67")
+passa de 300px.
+
+Atenuante real: o bloco da esquerda é uma `<div>` com "Estoque: 12 un." embaixo, e
+flex items encolhem por padrão (`min-width:auto` só trava no conteúdo mínimo) — então
+o mais provável é **compressão feia**, não vazamento. Ainda assim é o CTA da página.
+
+**Confiança: média.**
+
+#### 🟢 `position-sticky` no mobile — inofensivo, confirmado
+
+`show.html.erb:108`. Quando a coluna empilha, o sticky não tem o que grudar dentro do
+próprio col. Código sem propósito no mobile, sem efeito colateral. Não priorizar.
+
+---
+
+### 7.3 Carrinho (`/cart`) — quantifica §2.5
+
+#### 🔴 A tabela precisa de ~800px num viewport de 375px
+
+`carts/show.html.erb:9-107`. `.table-responsive` está lá (bom — não vaza para a
+página), mas transforma o problema em **rolagem lateral**. Largura mínima por coluna:
+
+| coluna | conteúdo | mínimo |
+|---|---|---|
+| Produto | thumb 72px + `gap-3` 16px + descrição (~180px antes de quebrar feio) | ~268px |
+| Quantidade | `number_field` `width:90px` + `gap-2` 8px + botão "Atualizar" ~95px | **~193px** |
+| Preço | `format_price` | ~85px |
+| Total | `format_price` em `<strong>` | ~85px |
+| (Remover) | `btn-sm btn-outline-danger` | ~85px |
+| padding das células | `.table` usa `.5rem` → 5 col × 16px | 80px |
+| **total** | | **~796px** |
+
+**Razão: 2,1× a largura da tela.** O `<th style="width:140px">` da Quantidade é
+inócuo — o conteúdo do `<td>` (input 90 + gap + botão) força ~193px de qualquer forma.
+
+Consequência prática: para ver o **Total** da linha ou apertar **Remover**, o usuário
+precisa rolar a tabela para o lado — um gesto que a maioria não descobre, porque não
+há indicação visual de que há mais conteúdo à direita.
+
+Cards empilhados abaixo de `md` é o padrão de e-commerce mobile aqui (já é o item
+**4.3** do plano no §5).
+
+#### 🟡 Botões de ação sem `flex-wrap` — número
+
+`carts/show.html.erb:110`: `d-flex gap-2` com "Continuar comprando" (~200px),
+"Esvaziar" (~110px) e "Finalizar compra" (`ms-auto`, ~190px) = **~516px em 351px**.
+Sem `flex-wrap`, os três comprimem. **"Finalizar compra" é o CTA mais importante do
+site** e vai chegar espremido.
+
+#### 🟡 Correção ao §2.5: o `tfoot` não desalinha os totais
+
+O §2.5 afirma que Subtotal/Frete/Total "ficam desalinhados da coluna Total". Conferindo
+a marcação: `<colspan=3>` cobre Produto+Quantidade+Preço e o `<th>` seguinte cai na
+**4ª coluna, que é exatamente "Total"**. O que falta é a 5ª célula (a de "Remover"),
+então as linhas do `tfoot` têm 4 células num corpo de 5 colunas.
+
+É marcação incompleta — não desalinhamento. Continua valendo corrigir (item 4.4 do
+plano), mas **como higiene de HTML, não como bug visual**. Rebaixar a prioridade.
+
+---
+
+### 7.4 Checkout (`/orders/new`) — **seção nova, não existia na auditoria**
+
+O passo mais crítico do funil não tinha análise. `orders/new.html.erb`, 243 linhas,
+`col-lg-7` (resumo) + `col-lg-5` (formulário) — empilham abaixo de `lg`, resumo primeiro.
+
+#### 🔴 CEP sem `inputmode` no cadastro de endereço — teclado errado
+
+Este é o achado mais barato de consertar e o mais irritante de sofrer.
+
+`orders/new.html.erb:143-154` faz **certo**:
+```erb
+inputmode: "numeric", autocomplete: "postal-code", pattern: "\\d{5}-\\d{3}", maxlength: 9
+```
+
+`shipping_addresses/_form.html.erb:33-41` — o mesmo campo CEP, alcançável pelo botão
+"Novo endereço" **de dentro do próprio checkout** (`orders/new.html.erb:70`) — não tem
+**nenhum** dos quatro:
+```erb
+<%= f.text_field :cep, class: "form-control", placeholder: "00000-000", maxlength: 9, ... %>
+```
+
+No celular, `text_field` sem `inputmode` abre o **teclado alfabético** para um campo de
+8 dígitos. O usuário precisa trocar para o numérico manualmente, num formulário de
+entrega. Sem `autocomplete="postal-code"`, o preenchimento automático do navegador
+também não dispara.
+
+A máscara em si funciona nos dois: `cep_controller.js:32-36` liga o listener direto no
+elemento no `connect()`, então não depende do `data-action` — por isso o
+`input->cep#mask` ausente no `_form` não quebra nada. **É só o teclado.**
+
+Mesma falta em "Número" (`orders/new.html.erb:166` e `_form:54`): campo numérico,
+teclado alfabético.
+
+**Confiança: máxima** — ausência de atributo, verificada em arquivo.
+
+#### 🟡 A tabela do resumo também rola (~544px)
+
+`orders/new.html.erb:9-58`, 4 colunas: Produto (thumb 64 + gap 16 + descrição ~180) +
+Qtd ~50 + Preço ~85 + Total ~85 + padding 64 = **~544px em 351px** → **1,5× a tela**.
+
+Menos grave que o carrinho (§7.3) porque aqui não há botão a alcançar — é só leitura.
+Mas o usuário chega ao checkout e a primeira coisa que vê é uma tabela cortada.
+
+#### 🟡 Linha de totais sem `flex-wrap` — e o rótulo do frete é variável
+
+`orders/new.html.erb:215-229`: `d-flex justify-content-between` com três blocos, dentro
+de `.card-body.p-4` → **303px de orçamento**. Sem `flex-wrap`, sem `gap`:
+
+- "Subtotal" + valor ≈ 70px
+- "Frete (SP – Sudeste)" + valor ≈ **~140px** ← rótulo montado em runtime (linha 222)
+- "Total" + valor `h5` ≈ 90px
+
+Soma ≈ **300px em 303px**. Passa raspando com "Sudeste"; com **"Centro-oeste"** (a
+região mais longa da lista) o rótulo cresce ~20px e a linha estoura.
+
+É o resumo financeiro imediatamente acima do botão "Confirmar pedido". Quebrar ali
+custa confiança no pior momento possível.
+
+#### 🟢 O que está certo no checkout
+
+- `d-grid` no "Confirmar pedido" (`:231`) → botão de largura total, alvo de toque bom
+- pares `col-6`/`col-6` (Número/Complemento, Bairro/Cidade) → ~168px cada em 375px,
+  apertado mas usável para campos curtos
+- lista de endereços em `.list-group` → empilha nativamente
+
+---
+
+### 7.5 Endereços (`/shipping_addresses`)
+
+#### 🟡 Rodapé do card com 3 botões sem `flex-wrap`
+
+`shipping_addresses/index.html.erb:30-48`: `card-footer d-flex gap-2` com "Editar"
+(~65px), "Tornar padrão" (~135px) e "Excluir" (~80px, `ms-auto`) = **~296px** de
+orçamento **319px**. Cabe — mas sem margem, e o `button_to` de "Tornar padrão" gera um
+`<form>` que vira flex item.
+
+Os três são `btn-sm` → **~31px de altura**, abaixo dos 44px.
+
+#### 🟢 O formulário empilha certo
+
+`_form.html.erb` usa só `col-md-*` → abaixo de 768px tudo vira largura total. Estrutura
+correta; o problema é o `inputmode` (§7.4).
+
+---
+
+### 7.6 Login / Cadastro — confirmado 🟢
+
+Reli `devise/sessions/new.html.erb` e `devise/registrations/new.html.erb`. O §2.6 está
+certo e **nada mudou**: `col-md-6 col-lg-5` (100% abaixo de `md`), `card-body p-4 p-md-5`
+(padding menor no mobile — deliberado), campos `form-control` full-width, botão
+`btn-lg` em `d-grid` (~48px de altura, **o único alvo de toque do funil que passa dos
+44px por desenho**).
+
+**São as telas mais bem adaptadas do projeto.** Não priorizar.
+
+Dois pontos não-responsivos, registrados de passagem:
+- copy diz "TR AutoParts" (`sessions/new:11`, `registrations/new:11`, `_footer:7`) —
+  é o rebrand para **TR AutoFix**, já separado como tema próprio
+- `sessions/new_old.html.erb` e `registrations/new_old.html.erb` são views mortas
+
+---
+
+### 7.7 Os 4 cards da home ("Por que escolher") — item 3 do pedido
+
+Medi antes de opinar, porque a impressão do print ("cada um ocupa quase a tela toda")
+**não se confirma**.
+
+#### Como estão estruturados
+
+`home.html.erb:79-101`: os 4 cards ficam num `col-lg-5`, empilhados por
+`<div class="d-flex flex-column gap-4">` — **não** pelo `.tr-feature-grid`.
+
+Cada card é `shared/_feature_card.html.erb` → `.tr-feature-card` (SVG de check + título
++ texto), estilizado em `components/_feature_cards.scss` (236 linhas).
+
+#### 🟢 Já têm três níveis de responsividade
+
+`_feature_cards.scss` tem breakpoints em **992px, 768px e 520px**, reduzindo padding,
+ícone (78 → 62 → 56px), título (2,1 → 1,65 → 1,42rem) e texto (1 → 0,98 → 0,92rem), e
+soltando o `min-height: 230px` para `auto` abaixo de 768px.
+
+**É o arquivo mais bem adaptado do projeto** — ironicamente, o único que a auditoria
+original acusou de ser desktop-only por associação (§3).
+
+#### Altura real medida a 375px
+
+Card = 351px de largura (col) → `padding: 20px 18px` (≤768px) → `__content` com
+`padding: 18px 14px 22px` (≤520px) → sobram 263px, dos quais o ícone toma 56 + 12 de gap:
+
+| parte | altura |
+|---|---|
+| título 1,42rem, 2 linhas (`<br>` explícito no `home.html.erb`) | ~46px |
+| margem do título | 10px |
+| texto 0,92rem, ~2 linhas em 195px | ~38px |
+| corpo = max(ícone 56, texto 94) | 94px |
+| paddings (20+18 topo, 22+20 base) | 80px |
+| **card** | **~174px** |
+
+4 cards × 174 + 3 gaps de 24px = **~768px**.
+
+**Veredito: um card ocupa ~26% da tela (174px de 667px), não "quase a tela toda".**
+O que pesa é o conjunto — 768px, ~1,15 tela — mais o `py-5` da seção. Compactar mais um
+card individual rende pouco; o ganho estaria em **2 colunas**, e aí o título de 1,42rem
+em ~130px de largura quebraria feio. **Não vale mexer agora.**
+
+#### 🟡 Achado lateral: `.tr-feature-grid` é CSS morto
+
+`_feature_cards.scss:148-162` define um grid de 2 colunas com fallback para 1 abaixo de
+992px. `grep -rn "tr-feature-grid" app/views/` → **vazio**. Nunca foi ligado em view
+nenhuma. São 15 linhas de CSS (**× 4** pelo `require_tree` — ver §7.9) que nunca pintam pixel.
+
+Higiene, não responsividade.
+
+---
+
+### 7.9 Filtros do catálogo — medição e correção (aplicada em `afb5b46`)
+
+**Não estão quebrados** — `col-6` põe dois por linha e os `select` nativos abrem o
+seletor do sistema. O problema é **custo de espaço**.
+
+Métricas extraídas do `bootstrap.min.css` do CDN (232.914 bytes), não estimadas:
+`.form-label{margin-bottom:.5rem}`, `.form-control`/`.form-select` = `.375rem` +
+`line-height:1.5` + borda → **38px**, `.g-2{--bs-gutter-y:.5rem}`.
+
+Cada campo custa **67px** (label 21 + margem 8 + controle 38). Os 6 campos empilham em
+4 linhas (busca `col-12`; 5 selects `col-6` → 2+2+**1 sozinho**, sobra ímpar) + linha de
+botões 38px + gutters 32px + `.mb-4` 24px = **362px**.
+
+| | antes | depois |
+|---|---|---|
+| altura antes do 1º produto (24 `py-4` + 50 `h1` + bloco) | **436px** | **128px** |
+| sobra na 1ª tela (667 − ~90 navbar = 577px) | 141px | **449px** |
+| do 1º card (483px) aparece | **29%** | **93%** |
+
+**Correção:** form envolvido em `.collapse.d-lg-block` atrás de botão "Filtrar e
+ordenar" (`.d-lg-none`) com badge de filtros ativos. Desktop intocado —
+`.d-lg-block{display:block!important}` vence `.collapse:not(.show){display:none}`
+(especificidade 0,2,0, sem `!important`). Form byte-a-byte idêntico (sha256
+`7e206ad433072ecd` antes e depois); `display:none` não remove campo de submit.
+
+**Não inverter a ordem do DOM** foi decisão deliberada: botão de filtro depois dos
+produtos faz o usuário rolar ~10.000px (§7.1) sem descobrir que dá para filtrar.
+
+#### Correção ao §5.1: a duplicação é ×4 para partials, não ×2
+
+Contagem no `application.css` compilado:
+
+| origem | ocorrências |
+|---|---|
+| partial `_utilities.scss` (`.text-title-custom`) | **4** |
+| partial `components/_navbar.scss` (`navbar-logo`) | **4** |
+| escrita direto em `application.scss` (`por-que-tr-autofix`) | **1** |
+
+O que vem de partial é multiplicado por 4; o que é escrito no manifesto sai uma vez.
+O §5.1 e o Apêndice dizem "× 2" — subestimam o efeito pela metade.
+
+---
+
+### 7.8 Achados priorizados — impacto no funil primeiro
+
+Ordem por **dano à venda**, não por esforço.
+
+| # | Achado | Onde | Impacto | Confiança |
+|---|---|---|---|---|
+| **P0-1** | Linha de ação do card estoura 319px (~335 em estoque, ~345 sem) e **vaza**, porque `.card{overflow:visible!important}` | `screws/_card.html.erb:30-51` + `_utilities.scss:110` | botão **"Adicionar ao carrinho"** deformado no catálogo | média |
+| **P0-2** | CEP sem `inputmode`/`autocomplete`/`pattern` → **teclado alfabético** para 8 dígitos | `shipping_addresses/_form.html.erb:33-41` (checkout já faz certo) | atrito direto no **cadastro de entrega**, alcançável de dentro do checkout | **máxima** |
+| **P0-3** | Tabela do carrinho precisa de **~796px** (2,1× a tela) → rolagem lateral para ver Total e alcançar "Remover" | `carts/show.html.erb:9-107` | último passo antes do checkout | alta |
+| **P0-4** | Alvos de toque `btn-sm` ≈ **31px** (<44px) em 11 pontos do funil | catálogo, carrinho, checkout, endereços | erro de toque em botões de compra | **máxima** |
+| **P1-5** | Botões do carrinho somam ~516px em 351px sem `flex-wrap` — **"Finalizar compra"** espremido | `carts/show.html.erb:110` | CTA principal do site | alta |
+| **P1-6** | Linha de totais do checkout: ~300px em 303px, sem `flex-wrap`, rótulo de frete variável | `orders/new.html.erb:215-229` | resumo financeiro logo acima de "Confirmar pedido" | média |
+| **P1-7** | Tabela do resumo do checkout: ~544px (1,5× a tela) | `orders/new.html.erb:9-58` | primeira coisa vista no checkout | alta |
+| **P1-8** | Caixa preço + "COMPRAR": ~286px em 271px sem `flex-wrap` | `screws/show.html.erb:165` | CTA da página de produto | média |
+| **P1-9** | 20 cards/página × ~483px = **~10.000px** (~15 telas) de rolagem | `pagy.rb:11-13` (default 20) + `_card.html.erb` | abandono na navegação do catálogo | alta |
+| **P2-10** | Rodapé de endereço: 3 `btn-sm` em ~296px de 319px, sem `flex-wrap` | `shipping_addresses/index.html.erb:30-48` | cosmético | média |
+| **P2-11** | Filtros somam **14 colunas** de 12 em `md` (tablet retrato) | `screws/index.html.erb:7-48` | não afeta 375px | **máxima** |
+| **P2-12** | `tfoot` com 4 células num corpo de 5 colunas | `carts/show.html.erb:58-106` | **não** desalinha (corrige §2.5); só higiene de HTML | **máxima** |
+| **P2-13** | `.tr-feature-grid` é CSS morto | `_feature_cards.scss:148-162` | higiene | **máxima** |
+| **P2-14** | Paginação `.page-link` ≈ 38px de altura | `pagy_bootstrap_nav` | alvo de toque | alta |
+| — | 4 cards da home: **~174px cada**, ~768px o conjunto | `_feature_cards.scss` | **já responsivo em 3 breakpoints — não mexer** | alta |
+| — | Login / Cadastro | `devise/*/new.html.erb` | **corretos — não mexer** | **máxima** |
+
+#### Leitura rápida da prioridade
+
+**P0-2 é o mais barato**: quatro atributos numa linha de ERB, confiança máxima, zero
+risco de desktop (atributo de teclado só existe no mobile). Deveria vir primeiro por
+relação custo/benefício, mesmo não sendo o de maior impacto isolado.
+
+**P0-1, P0-3 e P1-5** são a mesma família — `d-flex` sem `flex-wrap` num orçamento que
+não fecha — e admitem a mesma correção mobile-only.
+
+**P0-4** (alvos de toque) toca 11 pontos e é a única que muda a aparência do desktop se
+feita sem media query. Exige `@media (max-width: 991.98px)`, como as Fases 1 e 3.
+
+**P1-9** é o único que não é CSS: mexer no `limit` do pagy é `config/` → mudança
+"maior" pelo CLAUDE.md, exige aprovação e as 2-3 abordagens.
+
+---
+
 ## Apêndice — comandos usados
 
 ```bash
