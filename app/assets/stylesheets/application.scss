@@ -176,6 +176,16 @@ section {
   overflow: visible;
 }
 
+// O .btn base do Bootstrap tem ~38px de altura (padding .375rem + line-height
+// 1.5 + borda), abaixo dos 44px de Apple e Google. Este botão é o único caminho
+// para os filtros no celular — mesmo argumento do .navbar-toggler
+// (_navbar.scss:36). Só abaixo de lg: no desktop o botão nem é renderizado.
+@media (max-width: 991.98px) {
+  [data-bs-target="#catalogFilters"] {
+    min-height: 44px;
+  }
+}
+
 #screw-3d-root {
   width: 100%;
   overflow: visible;

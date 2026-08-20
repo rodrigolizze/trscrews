@@ -2,6 +2,32 @@
 <div class="container py-4">
   <h1 class="h3 mb-3">Catálogo</h1>
 
+  <%# // Conta filtros ativos para o badge do botão. Sem isso, quem filtra e
+      // recebe o painel fechado de volta não tem como saber que filtrou. %>
+  <% filter_keys = %i[q automaker model thread surface_treatment sort] %>
+  <% active_filters = filter_keys.count { |k| params[k].present? } %>
+
+  <%# // Botão só abaixo de lg — o Bootstrap esconde com .d-lg-none
+      // (display:none!important em min-width:992px), então no desktop não existe. %>
+  <button class="btn btn-outline-secondary w-100 mb-3 d-lg-none"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#catalogFilters"
+          aria-controls="catalogFilters"
+          aria-expanded="false">
+    Filtrar e ordenar
+    <% if active_filters > 0 %>
+      <span class="badge bg-warning text-dark ms-1"><%= active_filters %></span>
+    <% end %>
+  </button>
+
+  <%# // Wrapper de colapso. Abaixo de lg começa fechado (.collapse:not(.show)
+      // {display:none}); a partir de 992px o .d-lg-block{display:block!important}
+      // vence por !important e o painel fica sempre aberto — desktop idêntico.
+      //
+      // O form fica INTACTO dentro do wrapper: display:none não impede submit
+      // (só `disabled` faria isso), então os params continuam os mesmos. %>
+  <div class="collapse d-lg-block" id="catalogFilters">
   <%# -- Filter + Search + Sort form (GET) -- %>
   <%= form_with url: screws_path, method: :get, local: true, class: "row g-2 mb-4" do %>
     <div class="col-12 col-md-4">
@@ -52,6 +78,7 @@
       <%= link_to "Limpar", screws_path, class: "btn btn-outline-secondary" %>
     </div>
   <% end %>
+  </div>
 
   <%# -- Grid of product cards -- %>
   <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
