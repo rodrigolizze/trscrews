@@ -59,6 +59,18 @@
     z-index: 0;
   }
 
+  // O <p> de apresentação carrega .text-title-custom (#374151) e fica em 1.1:1
+  // sobre este fundo. A especificidade daqui — .section-porque-bg .text-title-custom
+  // (0,2,0) — vence a regra base (0,1,0), ambas com !important.
+  //
+  // Escopo mobile por decisão do usuário; o desktop segue em 1.33:1, registrado
+  // como dívida (a arte de fundo mede #3F3E43 nessa faixa, não é fundo claro).
+  @media (max-width: 991.98px) {
+    .text-title-custom {
+      color: #FFFFFF !important;
+    }
+  }
+
   .container {
     position: relative;
     z-index: 1;

@@ -53,6 +53,29 @@
   //
   // O fundo não é enfeite: sem ele o conteúdo da página aparece através do menu.
   @media (max-width: 991.98px) {
+    // O PNG do logo é 1536x1024 (3:2) com ~25% de margem morta em volta da arte,
+    // então a altura foi para 120px para o wordmark ficar legível. Isso renderiza
+    // uma caixa de 180px de largura e, com box-sizing border-box, transborda 35px
+    // ABAIXO da navbar de 70px: (120 - (70 - 20)) / 2.
+    //
+    // Em 375px o grupo do carrinho não cabe na linha 1 e o flex-wrap o joga para a
+    // linha 2, que começa em y=70 — dentro do transbordo. Daí a sobreposição.
+    //
+    // height: auto no brand é o conserto estrutural: o slot passa a se dimensionar
+    // pelo conteúdo, então nenhuma altura de logo transborda de novo. O padding-top
+    // de 20px só existia para acomodar os 120px; sem eles, ele só desalinha.
+    //
+    // A largura segue `auto` (regra base, linha 22): 3:2 preservado, 48px de altura
+    // = 72px de largura. Sem distorção.
+    .navbar-brand {
+      height: auto;
+      padding-top: 0;
+    }
+
+    .navbar-logo {
+      height: 48px;
+    }
+
     .navbar-collapse {
       position: absolute;
       top: 100%;

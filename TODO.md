@@ -463,3 +463,35 @@ comentado.
 - [ ] Medir antes/depois com `curl -sI` num asset com digest
 - [ ] ⚠️ Mudança em `config/` — exige aprovação (ver CLAUDE.md)
 - [ ] Não urgente
+
+## Legibilidade do parágrafo "Por que escolher" no DESKTOP (descoberto 2026-08-20)
+
+A Fase 3.2 corrigiu o contraste do parágrafo de apresentação da seção
+"Por que escolher a TR AutoFix?" **só no mobile** (`@media max-width: 991.98px`,
+`_utilities.scss`). O desktop ficou de fora — e lá o problema também existe.
+
+O `<p>` (`home.html.erb:74`) carrega `.text-title-custom` = `#374151`. A premissa
+de que isso era legível no desktop **não se confirma**: decodifiquei o
+`bg_segundasection.png` (1536×1024) e a arte mede **`#3F3E43`** na faixa onde o
+parágrafo cai (linhas 130-200, colunas centrais) — média global da imagem
+`#3B3B40`, o que confirma o `#3C3B40` adotado como fallback na Fase 1.1. O fundo
+do desktop **nunca foi claro ali**; o branco do `<body>` só aparecia mais abaixo.
+
+Contraste medido (WCAG AA para texto normal exige 4.5:1):
+
+| contexto | fundo efetivo | `#374151` |
+|---|---|---|
+| desktop (arte + ~36% de `#0f0f0f` do `::before`) | `#2E2D30` | **1.33 : 1** |
+| mobile, sob o gradiente `::before` | `#1C1C1D` | 1.65 : 1 — corrigido |
+| mobile, gradiente dissipado | `#3C3B40` | 1.08 : 1 — corrigido |
+
+Não é regressão da Fase 1.1: é bug pré-existente, igual nos dois breakpoints.
+Só ficou visível pelos prints do celular.
+
+- [ ] Decidir o escopo: remover `.text-title-custom` do `<p>` (herda o
+      `.text-white` da própria `<section>`, como o `<h2>` ao lado) resolve os dois
+      breakpoints e dispensa a media query adicionada em `_utilities.scss`
+- [ ] Se remover, limpar o override mobile-only para não deixar regra morta
+- [ ] `$color-ogray` (#9CA3AF) foi avaliado como alternativa mais suave e
+      **descartado**: 4.37:1 no pior caso do mobile, reprova em AA por pouco
+- [ ] Não urgente — o mobile, que era o sintoma reportado, já está corrigido
