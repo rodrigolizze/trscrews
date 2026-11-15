@@ -1,60 +1,34 @@
-<footer class="bg-secondary-custom text-light pt-5 pb-4">
-  <div class="container">
-    <div class="row text-center text-md-start">
-
-      <!-- Logo and Description -->
-      <div class="col-md-3 mb-4">
-        <h4 class="fw-bold text-primary-custom">TR AutoParts</h4>
-        <p class="mb-0 small">
-          Especialistas em peças automotivas.<br>
-          Qualidade e confiança no mercado.
-        </p>
-      </div>
-
-      <!-- Quick Links -->
-      <div class="col-md-3 mb-4">
-        <h6 class="fw-bold text-primary-custom">Links Rápidos</h6>
-        <ul class="list-unstyled small">
-          <li><%= link_to "Início", root_path, class: "text-light text-decoration-none" %></li>
-          <li><%= link_to "Produtos", "#", class: "text-light text-decoration-none" %></li>
-          <li><%= link_to "Sobre Nós", "#", class: "text-light text-decoration-none" %></li>
-          <li><%= link_to "Carrinho", "#", class: "text-light text-decoration-none" %></li>
-        </ul>
-      </div>
-
-      <!-- Categories -->
-      <div class="col-md-3 mb-4">
-        <h6 class="fw-bold text-primary-custom">Categorias</h6>
-        <ul class="list-unstyled small">
-          <li><%= link_to "Suspensão", "#", class: "text-light text-decoration-none" %></li>
-          <li><%= link_to "Freios", "#", class: "text-light text-decoration-none" %></li>
-          <li><%= link_to "Motor", "#", class: "text-light text-decoration-none" %></li>
-          <li><%= link_to "Escapamento", "#", class: "text-light text-decoration-none" %></li>
-        </ul>
-      </div>
-
-      <!-- Contact -->
-      <div class="col-md-3 mb-4">
-        <h6 class="fw-bold text-primary-custom">Contato</h6>
-        <ul class="list-unstyled small">
-          <li>📞 (11)99999-9999</li>
-          <li>📧 contato@trautoparts.com.br</li>
-          <li>📍 Rua Do Money, 123<br>São Paulo - SP<br>CEP: 01234-567</li>
-        </ul>
-
-        <!-- Social Media Icons -->
-        <div class="mt-2">
-          <a href="#" class="text-light me-3">🌐</a>
-          <a href="#" class="text-light me-3">📘</a>
-          <a href="#" class="text-light me-3">📷</a>
-          <a href="#" class="text-light">🐦</a>
-        </div>
-      </div>
+<%# // Rodapé — redesign direção D. Versão "limpa": sem dados de contato até o
+    // Rodrigo definir os reais (o original tinha endereço/telefone fictícios e
+    // categorias de autopeças). Original em Escritorio-IA/.../redesign/backup-original/.
+    // TODO: links de Trocas e reembolso, Privacidade e Termos quando as páginas existirem. %>
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <div class="site-footer__brand">
+      <%= link_to root_path, class: "site-footer__logo" do %>TR <span>AUTOFIX</span><% end %>
+      <p>Parafusos de roda aftermarket.</p>
     </div>
+
+    <nav class="site-footer__col" aria-label="Loja">
+      <h2 class="site-footer__title">Loja</h2>
+      <%= link_to "Produtos", screws_path %>
+      <%= link_to "Pedido especial", root_path(anchor: "pedido-especial") %>
+      <%= link_to "Carrinho", cart_path %>
+    </nav>
+
+    <nav class="site-footer__col" aria-label="Minha conta">
+      <h2 class="site-footer__title">Minha conta</h2>
+      <% if defined?(user_signed_in?) && user_signed_in? %>
+        <%= link_to "Meus pedidos", my_orders_path %>
+        <%= link_to "Meus endereços", shipping_addresses_path %>
+      <% else %>
+        <%= link_to "Entrar", new_user_session_path %>
+        <%= link_to "Criar conta", new_user_registration_path %>
+      <% end %>
+    </nav>
   </div>
 
-  <!-- Copyright Bar -->
-  <div class="bg-dark text-center text-muted py-2 mt-3 small text-light-custom">
-    &copy; <%= Time.now.year %> TR AutoParts. Todos os direitos reservados.
+  <div class="site-footer__bottom">
+    &copy; <%= Time.current.year %> TR AutoFix. Todos os direitos reservados.
   </div>
 </footer>

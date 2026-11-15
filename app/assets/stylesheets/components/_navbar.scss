@@ -1,108 +1,114 @@
-@use "sass:color";
-@use "../variables" as *;
+// Navbar — redesign direção D (escura). Original em
+// Escritorio-IA/projetos/01-ecommerce/redesign/backup-original/_navbar.scss
 
-.navbar {
-  background-color: $color-owhite;
-  min-height: 70px; // altura do container da navbar
+.site-nav {
+  --nav-bg: #121417;
+  --nav-line: #23262B;
+  --nav-text: #EDEEF0;
+  --nav-muted: #A9AEB6;
+  --nav-accent: #FFC400;
 
-  .navbar-brand {
-    color: $color-otitle;
+  background-color: var(--nav-bg);
+  border-bottom: 1px solid var(--nav-line);
+  min-height: 64px;
+  padding: 8px 16px;
+  font-family: "Inter", system-ui, sans-serif;
 
-    // Slot do logo - deve caber o logo inteiro
-    height: 70px;
-    display: flex;
-    align-items: center;
-    padding-top: 20px;
-    padding-bottom: 0;
+  @media (min-width: 992px) { padding: 10px 32px; }
+
+  .container-fluid { max-width: 1200px; margin: 0 auto; }
+
+  .site-nav__brand {
+    font-family: "Anton", "Arial Narrow", sans-serif;
+    font-size: 24px;
+    letter-spacing: 1px;
+    color: var(--nav-text);
+    text-decoration: none;
+    line-height: 1;
+    padding: 10px 0;
+    span { color: var(--nav-accent); }
+    &:hover { color: var(--nav-text); }
+    @media (min-width: 992px) { font-size: 28px; }
   }
 
-  .navbar-logo {
-    // Ajuste a altura aqui para o logo caber sem cortar (ex: 55px, 60px, 70px)
-    height: 120px;
-    width: auto;
-    object-fit: contain;
-    display: block;
+  .nav-link {
+    color: var(--nav-text);
+    font-weight: 500;
+    font-size: 15px;
+    &:hover, &:focus-visible { color: var(--nav-accent); }
   }
 
-  // Alvo de toque do hambúrguer. O padding do Bootstrap deixa o botão com ~40px
-  // de altura, abaixo do mínimo de 44px recomendado por Apple e Google — e este
-  // é o único caminho de navegação no celular.
-  //
-  // Sem media query de propósito: o próprio Bootstrap já esconde o toggler em
-  // >=992px. Note que NÃO declaramos `display` aqui — `.navbar .navbar-toggler`
-  // empata em especificidade com `.navbar-expand-lg .navbar-toggler{display:none}`
-  // e o nosso CSS carrega depois do CDN, então qualquer `display` nosso venceria
-  // e faria o botão aparecer no desktop.
+  // Alvo de toque mínimo de 44px (o hambúrguer é o único caminho de navegação no
+  // celular). Sem `display` aqui: venceria o display:none do Bootstrap no desktop.
   .navbar-toggler {
     min-height: 44px;
-    min-width: 44px; // já satisfeito (~56px pelo padding do Bootstrap); piso explícito
+    min-width: 44px;
+    border-color: #3A3F46;
   }
 
-  // Menu sobreposto abaixo de lg. Em vez de virar uma linha do flex da navbar e
-  // empurrar 216px de página para baixo (4 nav-links de 40px + 3 gaps de 16px +
-  // mb-2), o painel sai do fluxo e abre POR CIMA do conteúdo.
-  //
-  // A âncora do position:absolute é a própria .navbar, que o Bootstrap já
-  // declara position:relative — e o .container-fluid intermediário não declara
-  // position, então não rouba a âncora. top:100% = a borda inferior da navbar.
-  //
-  // Um elemento absoluto deixa de ser item flex, então some do cálculo de quebra
-  // de linha: brand + toggler na linha 1, carrinho na linha 2, aberto OU fechado.
-  // É isso que resolve o carrinho descer para a terceira linha — sem mexer em
-  // order, sem mexer na ordem do DOM.
-  //
-  // O fundo não é enfeite: sem ele o conteúdo da página aparece através do menu.
+  .site-nav__cart {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+  }
+  .site-nav__cart-label { display: none; @media (min-width: 576px) { display: inline; } }
+  .site-nav__badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--nav-accent);
+    color: #121417;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+  }
+
+  .site-nav__cta {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--nav-accent);
+    color: var(--nav-text);
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background-color 250ms cubic-bezier(0.22, 1, 0.36, 1), color 250ms cubic-bezier(0.22, 1, 0.36, 1);
+    &:hover { background: var(--nav-accent); color: #121417; }
+    // Celular: não cabe na linha. "Entrar" continua visível e a tela de login
+    // tem o link de cadastro.
+    @media (max-width: 575.98px) { display: none; }
+  }
+
+  // Abaixo de lg o menu abre POR CIMA do conteúdo (absolute, âncora = .navbar,
+  // que o Bootstrap já declara position:relative), em vez de empurrar a página.
   @media (max-width: 991.98px) {
-    // O PNG do logo é 1536x1024 (3:2) com ~25% de margem morta em volta da arte,
-    // então a altura foi para 120px para o wordmark ficar legível. Isso renderiza
-    // uma caixa de 180px de largura e, com box-sizing border-box, transborda 35px
-    // ABAIXO da navbar de 70px: (120 - (70 - 20)) / 2.
-    //
-    // Em 375px o grupo do carrinho não cabe na linha 1 e o flex-wrap o joga para a
-    // linha 2, que começa em y=70 — dentro do transbordo. Daí a sobreposição.
-    //
-    // height: auto no brand é o conserto estrutural: o slot passa a se dimensionar
-    // pelo conteúdo, então nenhuma altura de logo transborda de novo. O padding-top
-    // de 20px só existia para acomodar os 120px; sem eles, ele só desalinha.
-    //
-    // A largura segue `auto` (regra base, linha 22): 3:2 preservado, 48px de altura
-    // = 72px de largura. Sem distorção.
-    .navbar-brand {
-      height: auto;
-      padding-top: 0;
-    }
-
-    .navbar-logo {
-      height: 48px;
-    }
-
     .navbar-collapse {
       position: absolute;
       top: 100%;
       left: 0;
       right: 0;
       z-index: 1030; // acima do conteúdo; abaixo de offcanvas (1045) e modal (1055)
-      background-color: $color-owhite;
-      padding: 0.5rem 1rem 1rem;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+      background-color: var(--nav-bg);
+      border-bottom: 1px solid var(--nav-line);
+      padding: 0.5rem 1.25rem 1rem;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
     }
+    // Grupo da direita (carrinho/entrar) fica fora do collapse de propósito:
+    // esconder o carrinho atrás do hambúrguer custaria conversão.
+    // Uma linha só no celular: marca | carrinho/entrar | hambúrguer.
+    .container-fluid { flex-wrap: nowrap; }
+    .site-nav__right { margin-left: auto; margin-right: 8px; order: 2; }
+    .navbar-toggler { order: 3; }
   }
 
-  .nav-link {
-    color: $color-otitle;
-    font-weight: 500;
-
-    &:hover {
-      color: $color-primary;
-    }
-  }
-
-  .btn {
-    background-color: $color-secondary;
-    color: white;
-
-    &:hover {
-      background-color: color.adjust($color-secondary, $lightness: -10%);
-    }
+  @media (prefers-reduced-motion: reduce) {
+    .site-nav__cta { transition: none; }
   }
 }

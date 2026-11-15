@@ -1,9 +1,12 @@
-<nav class="navbar navbar-expand-lg" style="background-color: $color-owhite;" data-controller="navbar">
+<%# // Redesign (direção D): navbar escura. data-bs-theme="dark" deixa o ícone do
+    // hambúrguer e o dropdown do usuário claros sobre o fundo escuro. %>
+<nav class="navbar navbar-expand-lg site-nav" data-bs-theme="dark" data-controller="navbar">
   <div class="container-fluid px-0 py-0">
-    <%= link_to root_path, class: "navbar-brand d-flex align-items-center" do %>
-      <%= image_tag "logo-tr-autofix.png",
-            alt: "TR AutoFix - Peças Automotivas",
-            class: "navbar-logo" %>
+    <%# // Wordmark em texto: o PNG do logo tem fundo branco e margens largas, e
+        // vazava/destoava sobre a navbar escura. Trocar por um SVG transparente
+        // quando a arte final existir. %>
+    <%= link_to root_path, class: "navbar-brand site-nav__brand", aria: { label: "TR AutoFix — início" } do %>
+      TR <span>AUTOFIX</span>
     <% end %>
 
     <%# // Abre o menu abaixo de lg. O Bootstrap esconde este botão em >=992px
@@ -36,13 +39,13 @@
       </ul>
     </div>
 
-    <div class="d-flex align-items-center gap-3">
+    <div class="d-flex align-items-center gap-2 gap-sm-3 site-nav__right">
       <%# // Cart link (kept as-is) %>
-      <%= link_to cart_path, class: "nav-link d-flex align-items-center gap-1" do %>
-        <span class="me-1">🛒</span>
-        <span>Carrinho</span>
+      <%= link_to cart_path, class: "nav-link site-nav__cart" do %>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 4h2l2.4 11h11l2-8H6.2"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/></svg>
+        <span class="site-nav__cart-label">Carrinho</span>
         <% if cart_count.to_i > 0 %>
-          <span class="badge bg-warning text-dark ms-1"><%= cart_count %></span>
+          <span class="site-nav__badge"><%= cart_count %></span>
         <% end %>
       <% end %>
 
@@ -65,10 +68,8 @@
         </div>
       <% else %>
         <%# // If not signed in: show Devise links %>
-        <%= link_to "Entrar", new_user_session_path, class: "text-dark nav-link" %>
-        <%= link_to "Cadastrar", new_user_registration_path,
-                    class: "btn text-white rounded-pill px-3",
-                    style: "background-color: $color-secondary;" %>
+        <%= link_to "Entrar", new_user_session_path, class: "nav-link" %>
+        <%= link_to "Cadastrar", new_user_registration_path, class: "site-nav__cta" %>
       <% end %>
     </div>
   </div>

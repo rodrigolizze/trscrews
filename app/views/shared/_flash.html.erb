@@ -1,4 +1,7 @@
 <!-- Renders Rails flash messages with Bootstrap styles -->
+<%# // Só renderiza o container quando há mensagem: vazio, o mt-3 deixava uma faixa
+    // branca de 16px entre a navbar escura e o hero. %>
+<% if flash.any? %>
 <div class="container mt-3">
   <% flash.each do |type, message| %>
     <%# Map Rails flash types to Bootstrap alert classes %>
@@ -9,3 +12,4 @@
     </div>
   <% end %>
 </div>
+<% end %>
