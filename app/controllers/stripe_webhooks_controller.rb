@@ -16,9 +16,16 @@ class StripeWebhooksController < ApplicationController
           Rails.logger.warn "[Stripe] Webhook verify error: #{e.class} - #{e.message}"
           return head :bad_request
         end
-      else
+      elsif Rails.env.local?
+        # Only development/test may skip the signature (no whsec_ locally).
         Rails.logger.warn "[Stripe] Dev env: parsing event sem checar assinatura"
         Stripe::Event.construct_from(JSON.parse(payload))
+      else
+        # Fail closed (audit A1): without the signing secret anyone could POST a
+        # fake "payment succeeded" event. 500 makes Stripe retry, so events are
+        # not lost once the secret is restored.
+        Rails.logger.error "[Stripe] STRIPE_SIGNING_SECRET missing – rejecting unsigned webhook"
+        return head :internal_server_error
       end
 
     Rails.logger.info "[Stripe] Event id=#{event['id']} type=#{event['type']}"
@@ -65,6 +72,8 @@ class StripeWebhooksController < ApplicationController
 
     mark_order_paid(order_id,
                     payment_reference: session["payment_intent"] || session["id"],
+                    amount_cents: session["amount_total"],
+                    currency: session["currency"],
                     source: "checkout.session.completed")
   end
 
@@ -75,6 +84,8 @@ class StripeWebhooksController < ApplicationController
     mark_order_paid(
       order_id,
       payment_reference: intent["id"],
+      amount_cents: intent["amount_received"] || intent["amount"],
+      currency: intent["currency"],
       source: "payment_intent.succeeded"
     )
   end
@@ -99,7 +110,7 @@ class StripeWebhooksController < ApplicationController
 
   # ---------- Core logic: marcar pedido como pago -------------------------
 
-  def mark_order_paid(order_id, payment_reference:, source:)
+  def mark_order_paid(order_id, payment_reference:, amount_cents:, currency:, source:)
     unless order_id.present?
       Rails.logger.warn "[Stripe] #{source}: missing order_id metadata"
       return
@@ -108,6 +119,16 @@ class StripeWebhooksController < ApplicationController
     order = Order.find_by(id: order_id)
     unless order
       Rails.logger.warn "[Stripe] #{source}: Order #{order_id} not found"
+      return
+    end
+
+    # Audit M3: only mark paid when Stripe charged exactly this order's total in
+    # BRL. A mismatch (wrong amount, other currency, missing data) is logged and
+    # the order stays pending for manual review.
+    expected_cents = (order.total_amount * 100).round.to_i
+    unless amount_cents.to_i == expected_cents && currency.to_s.downcase == "brl"
+      Rails.logger.error "[Stripe] #{source}: Order #{order.id} amount/currency mismatch " \
+                         "(got #{amount_cents.inspect} #{currency.inspect}, expected #{expected_cents} brl) – NOT marking paid"
       return
     end
 

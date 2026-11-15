@@ -2,8 +2,10 @@ require "test_helper"
 
 class Admin::ScrewsControllerTest < ActionDispatch::IntegrationTest
   def admin_auth_headers
-    user = ENV.fetch("ADMIN_USER", "admin")
-    pass = ENV.fetch("ADMIN_PASSWORD", "admin")
+    # Mirror Admin::BaseController#admin_credentials: blank ENV values (e.g. an
+    # empty ADMIN_PASSWORD= in .env) fall back to "admin" in development/test.
+    user = ENV["ADMIN_USER"].presence || "admin"
+    pass = ENV["ADMIN_PASSWORD"].presence || "admin"
     { "HTTP_AUTHORIZATION" => ActionController::HttpAuthentication::Basic.encode_credentials(user, pass) }
   end
 
