@@ -1,0 +1,280 @@
+// Tema escuro da loja (direção D) aplicado às páginas que ainda usam markup do
+// Bootstrap: carrinho, checkout, pedidos, endereços, login/cadastro.
+// O <main> recebe data-bs-theme="dark" (layout), então o Bootstrap 5.3 já pinta
+// cards, formulários e tabelas no modo escuro; aqui só alinhamos com a paleta,
+// as fontes e os botões da marca. Mesmos tokens de components/_home.scss.
+
+.theme-d {
+  --c-bg: #121417;
+  --c-surface: #17191D;
+  --c-border: #2A2E34;
+  --c-text: #EDEEF0;
+  --c-muted: #A9AEB6;
+  --c-subtle: #8A9099;
+  --c-accent: #FFC400;
+  --c-accent-hover: #FFD84D;
+  --c-on-accent: #121417;
+
+  // Variáveis do Bootstrap 5.3 (modo escuro) → paleta da marca
+  --bs-body-bg: var(--c-bg);
+  --bs-body-color: var(--c-text);
+  --bs-secondary-color: var(--c-muted);
+  --bs-tertiary-bg: var(--c-surface);
+  --bs-secondary-bg: #1E2126;
+  --bs-border-color: var(--c-border);
+  --bs-border-radius: 0;
+  --bs-border-radius-sm: 0;
+  --bs-border-radius-lg: 0;
+  --bs-link-color: var(--c-accent);
+  --bs-link-color-rgb: 255, 196, 0;
+  --bs-link-hover-color: var(--c-accent-hover);
+  --bs-link-hover-color-rgb: 255, 216, 77;
+  --bs-emphasis-color: #FFFFFF;
+  --bs-card-bg: var(--c-surface);
+  --bs-focus-ring-color: rgba(255, 196, 0, 0.35);
+
+  // flow-root: impede que a margem do primeiro .container (my-5) "vaze" para fora
+  // do <main> e deixe uma faixa branca do <body> embaixo da navbar.
+  display: flow-root;
+  min-height: 60vh;
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: "Inter", system-ui, sans-serif;
+
+  // Títulos de página na fonte da marca; subtítulos em Inter.
+  h1, .h1, .h2, .h3 {
+    font-family: "Anton", "Arial Narrow", sans-serif;
+    font-weight: 400 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  h2, h3, h4, h5, h6, .h4, .h5, .h6 { font-family: inherit; font-weight: 700; }
+
+  .text-muted { color: var(--c-muted) !important; }
+  .text-dark { color: var(--c-text) !important; }
+  .bg-light, .bg-white { background-color: var(--c-surface) !important; }
+  .shadow-sm { box-shadow: none !important; }
+
+  .card {
+    --bs-card-bg: var(--c-surface);
+    --bs-card-border-color: var(--c-border);
+    border: 1px solid var(--c-border) !important;
+  }
+
+  .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--c-text);
+    --bs-table-border-color: var(--c-border);
+    th { color: var(--c-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; }
+    tfoot th { color: var(--c-text); text-transform: none; letter-spacing: 0; font-size: 15px; }
+  }
+
+  .form-control, .form-select {
+    min-height: 44px;
+    background-color: var(--c-bg);
+    border-color: var(--c-border);
+    color: var(--c-text);
+    &::placeholder { color: #6B7079; }
+    &:focus { border-color: var(--c-accent); box-shadow: 0 0 0 0.2rem rgba(255, 196, 0, 0.25); }
+  }
+  .form-label, label { color: var(--c-muted); font-size: 13px; font-weight: 600; }
+  .form-check-input:checked { background-color: var(--c-accent); border-color: var(--c-accent); }
+
+  // Botões: primário/amarelo = ação principal; os "outline" viram botão fantasma.
+  .btn {
+    min-height: 44px;
+    border-radius: 0;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-sm { min-height: 36px; font-size: 12px; }
+  .btn-lg { min-height: 52px; }
+  .btn-primary, .btn-yellow, .btn-success, .btn-warning {
+    --bs-btn-bg: var(--c-accent);
+    --bs-btn-border-color: var(--c-accent);
+    --bs-btn-color: var(--c-on-accent);
+    --bs-btn-hover-bg: var(--c-accent-hover);
+    --bs-btn-hover-border-color: var(--c-accent-hover);
+    --bs-btn-hover-color: var(--c-on-accent);
+    --bs-btn-active-bg: var(--c-accent-hover);
+    --bs-btn-active-color: var(--c-on-accent);
+    --bs-btn-disabled-bg: #3A3F46;
+    --bs-btn-disabled-border-color: #3A3F46;
+    --bs-btn-disabled-color: var(--c-muted);
+    background-color: var(--bs-btn-bg);
+    border-color: var(--bs-btn-border-color);
+    color: var(--bs-btn-color);
+  }
+  .btn-outline-secondary, .btn-outline-dark, .btn-outline-primary, .btn-outline-success, .btn-secondary {
+    --bs-btn-bg: transparent;
+    --bs-btn-color: var(--c-text);
+    --bs-btn-border-color: #3A3F46;
+    --bs-btn-hover-bg: transparent;
+    --bs-btn-hover-color: var(--c-text);
+    --bs-btn-hover-border-color: var(--c-accent);
+    --bs-btn-active-bg: transparent;
+    --bs-btn-active-color: var(--c-text);
+    --bs-btn-active-border-color: var(--c-accent);
+  }
+  .btn-outline-danger {
+    --bs-btn-color: #FF8A80;
+    --bs-btn-border-color: #5A2A2A;
+    --bs-btn-hover-bg: #5A2A2A;
+    --bs-btn-hover-border-color: #FF8A80;
+    --bs-btn-hover-color: #FFFFFF;
+  }
+
+  .alert { border-radius: 0; }
+  .alert-info { --bs-alert-bg: var(--c-surface); --bs-alert-border-color: var(--c-border); --bs-alert-color: var(--c-text); }
+  .alert-success { --bs-alert-bg: rgba(61, 220, 132, 0.08); --bs-alert-border-color: rgba(61, 220, 132, 0.35); --bs-alert-color: #9BEFC0; }
+
+  .badge { border-radius: 0; }
+  .progress { --bs-progress-bg: #23262B; --bs-progress-bar-bg: var(--c-accent); --bs-progress-bar-color: var(--c-on-accent); border-radius: 0; height: 18px; font-weight: 700; }
+
+  .dropdown-menu { border-radius: 0; }
+}
+
+// ---------- Carrinho ----------
+.cart-d {
+  .cart-title { font-size: clamp(36px, 8vw, 56px); line-height: 1; margin-bottom: 20px; }
+}
+.cart-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  @media (min-width: 992px) {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 32px;
+    .cart-items { flex: 1 1 auto; min-width: 0; }
+    .cart-summary { flex: 0 0 360px; position: sticky; top: 24px; }
+  }
+}
+.cart-items { display: flex; flex-direction: column; gap: 10px; }
+.cart-item {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px 14px;
+  padding: 14px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  @media (min-width: 576px) { grid-template-columns: 88px minmax(0, 1fr) auto; }
+}
+.theme-d .cart-item__img {
+  width: 72px;
+  height: 72px;
+  background: #EDEEF0;
+  color: #5F6670;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+  @media (min-width: 576px) { width: 88px; height: 88px; }
+}
+.cart-item__body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.theme-d .cart-item__title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
+  a { color: var(--c-text); text-decoration: none; }
+  a:hover { color: var(--c-accent); }
+}
+.cart-item__meta, .cart-item__unit { margin: 0; font-size: 12.5px; color: var(--c-subtle); }
+.cart-item__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; form { margin: 0; } }
+.cart-qty {
+  display: flex;
+  gap: 6px;
+  .form-control { width: 72px; min-height: 36px; text-align: center; }
+}
+.cart-item__total {
+  grid-column: 1 / -1;
+  text-align: right;
+  font-family: "Anton", "Arial Narrow", sans-serif;
+  font-size: 22px;
+  @media (min-width: 576px) { grid-column: auto; align-self: start; }
+}
+.cart-secondary { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; form { margin: 0; } }
+
+.cart-summary {
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  padding: 20px;
+}
+.cart-free { font-size: 13px; color: var(--c-muted); margin-bottom: 8px; strong { color: var(--c-text); } }
+.cart-totals {
+  margin: 0 0 16px;
+  > div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--c-border); }
+  dt { font-weight: 400; color: var(--c-muted); }
+  dd { margin: 0; font-weight: 600; }
+}
+.cart-totals__grand {
+  border-bottom: 0 !important;
+  dt { color: var(--c-text) !important; font-weight: 700 !important; align-self: center; }
+  dd { font-family: "Anton", "Arial Narrow", sans-serif; font-size: 32px; font-weight: 400 !important; }
+}
+.cart-empty {
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--c-muted);
+}
+.cart-empty__title { font-family: "Anton", "Arial Narrow", sans-serif; font-size: 28px; text-transform: uppercase; color: var(--c-text); margin: 0; }
+
+// ---------- Checkout ----------
+.theme-d .co-title { font-size: clamp(36px, 8vw, 56px); line-height: 1; margin-bottom: 20px; }
+.co-summary { border: 1px solid var(--c-border); background: var(--c-surface); padding: 20px; }
+.theme-d .co-summary__title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-bottom: 12px;
+}
+.co-lines { list-style: none; margin: 0 0 8px; padding: 0; }
+.co-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--c-border);
+}
+.co-line__img {
+  flex: 0 0 52px;
+  height: 52px;
+  background: #EDEEF0;
+  color: #5F6670;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  img { width: 100%; height: 100%; object-fit: contain; padding: 3px; }
+}
+.co-line__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  strong { font-size: 14px; font-weight: 600; line-height: 1.3; }
+  small { color: var(--c-subtle); font-size: 12.5px; }
+}
+.co-line__total { font-weight: 700; white-space: nowrap; }
+.theme-d .list-group-item.active {
+  background: rgba(255, 196, 0, 0.08);
+  border-color: var(--c-accent);
+  color: var(--c-text);
+  .text-muted { color: var(--c-muted) !important; }
+}
+
+.theme-d .alert-danger { --bs-alert-bg: rgba(255, 138, 128, 0.08); --bs-alert-border-color: rgba(255, 138, 128, 0.4); --bs-alert-color: #FFB4AB; }

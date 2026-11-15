@@ -1,16 +1,31 @@
-<h2>Resend confirmation instructions</h2>
+<%# // Reenviar e-mail de confirmação — mesmo cartão da tela de login. %>
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card border-0">
+        <div class="card-body p-4 p-md-5">
+          <h1 class="h3 mb-2 text-center">Confirmar e-mail</h1>
+          <p class="text-muted small text-center mb-4">
+            Não recebeu o e-mail de confirmação? Enviamos de novo.
+          </p>
 
-<%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
-  <%= render "devise/shared/error_messages", resource: resource %>
+          <%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
+            <%= render "devise/shared/error_messages", resource: resource %>
+            <div class="mb-4">
+              <%= f.label :email, "E-mail", class: "form-label" %>
+              <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control",
+                    value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email) %>
+            </div>
+            <div class="d-grid mb-3">
+              <%= f.submit "Reenviar confirmação", class: "btn btn-primary btn-lg" %>
+            </div>
+          <% end %>
 
-  <div class="field">
-    <%= f.label :email %><br />
-    <%= f.email_field :email, autofocus: true, autocomplete: "email", value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email) %>
+          <p class="text-center text-muted small mb-0">
+            <%= link_to "Voltar para o login", new_session_path(resource_name), class: "fw-semibold" %>
+          </p>
+        </div>
+      </div>
+    </div>
   </div>
-
-  <div class="actions">
-    <%= f.submit "Resend confirmation instructions" %>
-  </div>
-<% end %>
-
-<%= render "devise/shared/links" %>
+</div>

@@ -1,119 +1,85 @@
-<div class="container py-4">
-  <h1 class="h3 mb-3">Seu carrinho</h1>
-
-  <%# -- Minimal “it renders” test; remove after you see it working -- %>
-  <p class="text-muted">Verifique cada item e quantidade.</p>
+<%# // Carrinho — redesign direção D. Itens em cartões (não em tabela) para caber no
+    // celular sem rolagem lateral. Os formulários são os mesmos de antes:
+    // set_cart (PATCH quantity), remove_cart (DELETE), clear_cart (DELETE) e o link
+    // de checkout — nada mudou no fluxo, só a apresentação.
+    // Original em Escritorio-IA/projetos/01-ecommerce/redesign/backup-original/. %>
+<div class="container py-4 py-lg-5 cart-d">
+  <h1 class="cart-title">Seu carrinho</h1>
 
   <% if @lines.present? %>
-    <div class="table-responsive">
-      <table class="table align-middle">
-        <thead>
-          <tr>
-            <th>Produto</th>
-            <th style="width:140px">Quantidade</th>
-            <th>Preço</th>
-            <th>Total</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @lines.each do |line| %>
-            <% screw = line[:screw]; qty = line[:qty]; line_total = line[:line_total] %>
-            <tr>
-              <td>
-                <div class="d-flex gap-3">
-                  <div style="width:72px;height:72px" class="border rounded d-flex align-items-center justify-content-center bg-white">
-                    <% if screw.images.attached? %>
-                      <%= image_tag screw.images.first.variant(resize_to_limit: [120,120]), class: "img-fluid p-1", style: "object-fit:contain" %>
-                    <% else %>
-                      <span class="text-muted small">Sem imagem</span>
-                    <% end %>
-                  </div>
-                  <div>
-                    <strong><%= screw.description %></strong><br>
-                    <small class="text-muted"><%= screw.thread %> — <%= screw.surface_treatment %></small>
-                  </div>
-                </div>
-              </td>
+    <div class="cart-grid">
+      <div class="cart-items">
+        <% @lines.each do |line| %>
+          <% screw = line[:screw]; qty = line[:qty]; line_total = line[:line_total] %>
+          <article class="cart-item">
+            <%= link_to screw_path(screw), class: "cart-item__img", tabindex: -1, aria: { hidden: true } do %>
+              <% if screw.images.attached? %>
+                <%= image_tag screw.images.first.variant(resize_to_limit: [160, 160]), alt: "" %>
+              <% else %>
+                <svg width="36" height="36" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 8h24l6 8-6 8H20l-6-8z"/><path d="M26 24v32h12V24"/><path d="M26 30l12 3M26 36l12 3M26 42l12 3M26 48l12 3"/></svg>
+              <% end %>
+            <% end %>
 
-              <td>
-                <%= form_with url: set_cart_path(screw_id: screw.id), method: :patch, local: true, class: "d-flex gap-2" do %>
-                  <%= number_field_tag :quantity, qty, class: "form-control", min: 0, style: "width:90px" %>
-                  <%= submit_tag "Atualizar", class: "btn btn-outline-secondary" %>
+            <div class="cart-item__body">
+              <h2 class="cart-item__title"><%= link_to screw.description, screw_path(screw) %></h2>
+              <p class="cart-item__meta"><%= [screw.thread, screw.surface_treatment].compact_blank.join(" · ") %></p>
+              <p class="cart-item__unit"><%= format_price(screw.price) %> / un.</p>
+
+              <div class="cart-item__actions">
+                <%= form_with url: set_cart_path(screw_id: screw.id), method: :patch, local: true, class: "cart-qty" do %>
+                  <label for="qty-<%= screw.id %>" class="visually-hidden">Quantidade</label>
+                  <%= number_field_tag :quantity, qty, id: "qty-#{screw.id}", class: "form-control", min: 0, inputmode: "numeric" %>
+                  <%= submit_tag "Atualizar", class: "btn btn-outline-secondary btn-sm", name: nil %>
                 <% end %>
-              </td>
-
-              <td><%= format_price(screw.price) %></td>
-              <td><strong><%= format_price(line_total) %></strong></td>
-              <td class="text-end">
                 <%= button_to "Remover",
                               remove_cart_path(screw_id: screw.id),
                               method: :delete,
                               form: { data: { turbo_confirm: "Remover item?" } },
                               class: "btn btn-sm btn-outline-danger" %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-        <tfoot>
-          <%# // NEW: full-width row for the progress bar %>
-          <tr>
-            <td colspan="4">
-              <%# // Progress bar de frete grátis (usa @subtotal) %>
-              <% free_limit = Rails.configuration.x.shipping.free_limit %>
-              <% remaining  = [free_limit - @subtotal.to_d, 0.to_d].max %>
-              <% percent    = [((@subtotal.to_d / free_limit) * 100).to_i, 100].min %>
+              </div>
+            </div>
 
-              <% if remaining > 0 %>
-                <div class="small mb-1">
-                  Faltam <strong><%= format_price(remaining) %></strong> para frete grátis
-                </div>
-                <div class="progress mb-3">
-                  <div class="progress-bar"
-                      role="progressbar"
-                      style="width: <%= percent %>%;"
-                      aria-valuenow="<%= percent %>"
-                      aria-valuemin="0"
-                      aria-valuemax="100">
-                    <%= percent %>%
-                  </div>
-                </div>
-              <% else %>
-                <div class="alert alert-success py-2 mb-3">
-                  🎉 Você ganhou <strong>frete grátis</strong>!
-                </div>
-              <% end %>
-            </td>
-          </tr>
+            <div class="cart-item__total"><%= format_price(line_total) %></div>
+          </article>
+        <% end %>
 
-          <%# // Subtotal row (unchanged) %>
-          <tr>
-            <th colspan="3" class="text-end">Subtotal</th>
-            <th><%= format_price(@subtotal) %></th>
-          </tr>
+        <div class="cart-secondary">
+          <%= link_to "Continuar comprando", screws_path, class: "btn btn-outline-secondary" %>
+          <%= button_to "Esvaziar carrinho", clear_cart_path, method: :delete,
+                        form: { data: { turbo_confirm: "Esvaziar carrinho?" } },
+                        class: "btn btn-outline-danger" %>
+        </div>
+      </div>
 
-          <%# // Frete row %>
-          <tr>
-            <th colspan="3" class="text-end">Frete</th>
-            <th><%= format_price(@shipping) %></th>
-          </tr>
+      <aside class="cart-summary" aria-label="Resumo do pedido">
+        <% free_limit = Rails.configuration.x.shipping.free_limit %>
+        <% remaining  = [free_limit - @subtotal.to_d, 0.to_d].max %>
+        <% percent    = [((@subtotal.to_d / free_limit) * 100).to_i, 100].min %>
 
-          <%# // Total row %>
-          <tr>
-            <th colspan="3" class="text-end">Total</th>
-            <th class="h5"><%= format_price(@total) %></th>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+        <% if remaining > 0 %>
+          <p class="cart-free">Faltam <strong><%= format_price(remaining) %></strong> para frete grátis</p>
+          <div class="progress mb-3" role="progressbar" aria-label="Progresso para frete grátis"
+               aria-valuenow="<%= percent %>" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar" style="width: <%= percent %>%;"></div>
+          </div>
+        <% else %>
+          <div class="alert alert-success py-2 mb-3">Você ganhou <strong>frete grátis</strong>!</div>
+        <% end %>
 
-    <div class="d-flex gap-2">
-      <%= link_to "Continuar comprando", screws_path, class: "btn btn-outline-secondary" %>
-      <%= button_to "Esvaziar", clear_cart_path, method: :delete, form: { data: { turbo_confirm: "Esvaziar carrinho?" } }, class: "btn btn-outline-danger" %>
-      <%= link_to "Finalizar compra", checkout_path, class: "btn btn-yellow ms-auto" %>
+        <dl class="cart-totals">
+          <div><dt>Subtotal</dt><dd><%= format_price(@subtotal) %></dd></div>
+          <div><dt>Frete</dt><dd><%= format_price(@shipping) %></dd></div>
+          <div class="cart-totals__grand"><dt>Total</dt><dd><%= format_price(@total) %></dd></div>
+        </dl>
+
+        <%= link_to "Finalizar compra", checkout_path, class: "btn btn-yellow btn-lg w-100" %>
+      </aside>
     </div>
   <% else %>
-    <div class="alert alert-info">Seu carrinho está vazio.</div>
-    <%= link_to "Voltar ao catálogo", screws_path, class: "btn btn-yellow" %>
+    <div class="cart-empty">
+      <p class="cart-empty__title">Seu carrinho está vazio.</p>
+      <p>Encontre o parafuso certo pela medida ou pelo seu carro.</p>
+      <%= link_to "Ver produtos", screws_path, class: "btn btn-yellow" %>
+    </div>
   <% end %>
 </div>
