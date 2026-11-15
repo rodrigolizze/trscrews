@@ -286,7 +286,15 @@ function initScrew() {
   animate();
 }
 
-// Progresso 0 → 1: do topo da página até o palco do parafuso sair da tela por cima.
+// Progresso 0 → 1. O giro TERMINA com o parafuso ainda na tela: quando o centro
+// do palco chega a 30% da altura da janela (de cima para baixo). Antes ele só
+// terminava com o palco já fora da tela, e o usuário nunca via a pose final
+// (cabeça de frente, com o logo).
+const END_AT_VIEWPORT_RATIO = 0.3;
+// Rolagem mínima para completar o giro — evita que ele "pule" em telas onde o
+// palco já começa perto do topo.
+const MIN_SCROLL_DISTANCE = 240;
+
 function updateProgress() {
   if (reducedMotionQuery.matches) {
     targetProgress = REDUCED_MOTION_PROGRESS;
@@ -295,9 +303,12 @@ function updateProgress() {
   const root = document.getElementById("screw-3d-root");
   if (!root) return;
   const rect = root.getBoundingClientRect();
-  const endY = rect.bottom + window.scrollY; // posição absoluta do fim do palco
-  const p = endY > 0 ? window.scrollY / endY : 0;
-  targetProgress = Math.min(1, Math.max(0, p));
+  const absCenter = rect.top + window.scrollY + rect.height / 2;
+  const endScroll = Math.max(
+    MIN_SCROLL_DISTANCE,
+    absCenter - window.innerHeight * END_AT_VIEWPORT_RATIO
+  );
+  targetProgress = Math.min(1, Math.max(0, window.scrollY / endScroll));
 }
 
 function animate() {
