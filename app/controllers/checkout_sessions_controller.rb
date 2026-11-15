@@ -9,18 +9,31 @@ class CheckoutSessionsController < ApplicationController
   before_action :set_order
   before_action :authorize_checkout!
 
+  # Errors send the customer back to thank_you (not orders#show): guests can open
+  # thank_you through session[:last_order_id], but orders#show requires login.
   def create
     # // Only block payment if the enum exists AND the order isn't pending
     if @order.respond_to?(:payment_status) && @order.payment_status.to_s != "pending"
-      redirect_to @order, alert: "Este pedido não está pendente de pagamento." and return
+      redirect_to thank_you_order_path(@order), alert: "Este pedido não está pendente de pagamento." and return
+    end
+
+    # Expired/cancelled orders already gave their stock back: no new payment.
+    if @order.cancelled? || @order.payment_expired?
+      redirect_to thank_you_order_path(@order), alert: "O prazo de pagamento deste pedido expirou. Faça um novo pedido." and return
+    end
+
+    # Stripe requires expires_at to be at least 30 minutes ahead. Too close to the
+    # deadline, a new session would outlive the stock reservation, so refuse.
+    if @order.payment_deadline < 31.minutes.from_now
+      redirect_to thank_you_order_path(@order), alert: "O prazo de pagamento deste pedido está acabando. Faça um novo pedido." and return
     end
 
     if @order.order_items.blank?
-      redirect_to @order, alert: "Pedido sem itens." and return
+      redirect_to thank_you_order_path(@order), alert: "Pedido sem itens." and return
     end
 
     if @order.order_items.any? { |i| i.unit_price.to_d <= 0 || i.quantity.to_i <= 0 }
-      redirect_to @order, alert: "Itens com preço/quantidade inválidos." and return
+      redirect_to thank_you_order_path(@order), alert: "Itens com preço/quantidade inválidos." and return
     end
 
     # ----------------- ITENS DO PEDIDO -----------------
@@ -75,6 +88,10 @@ class CheckoutSessionsController < ApplicationController
       cancel_url:  cancel_url,
       locale: "pt-BR",
 
+      # Same deadline as the stock reservation (Order::PAYMENT_WINDOW). When it
+      # passes, Stripe sends checkout.session.expired and the webhook restocks.
+      expires_at: @order.payment_deadline.to_i,
+
       # // ✅ Endereço de cobrança para recibo/antifraude
       # // "required" força sempre
       billing_address_collection: "required",
@@ -94,7 +111,7 @@ class CheckoutSessionsController < ApplicationController
   rescue Stripe::StripeError => e
     Rails.logger.error("[Stripe] Checkout error for order #{@order.id}: #{e.class} - #{e.message}")
     msg = Rails.env.development? ? "Stripe: #{e.message}" : "Não foi possível iniciar o pagamento. Tente novamente."
-    redirect_to @order, alert: msg
+    redirect_to thank_you_order_path(@order), alert: msg
   end
 
   private

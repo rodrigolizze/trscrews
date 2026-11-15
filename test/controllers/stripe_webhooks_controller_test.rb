@@ -132,4 +132,43 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
     assert StripeWebhookEvent.exists?(stripe_event_id: "evt_C_only"),
            "esperava o evento registrado para idempotência"
   end
+
+  # (f) ---------------------------------------------------------------------
+  test "checkout.session.expired cancels the unpaid order and restocks its items" do
+    order = orders(:one)
+    stock_one = screws(:one).stock
+
+    payload = webhook_payload(
+      id:   "evt_expired_1",
+      type: "checkout.session.expired",
+      object: { "id" => "cs_test_expired", "metadata" => { "order_id" => order.id.to_s } }
+    )
+
+    assert_enqueued_emails 0 do
+      deliver_webhook(payload)
+    end
+
+    assert_response :ok
+    order.reload
+    assert order.cancelled?, "esperava o pedido cancelado"
+    assert_equal "failed", order.payment_status
+    assert_equal stock_one + 2, screws(:one).reload.stock, "esperava o estoque devolvido"
+  end
+
+  test "checkout.session.expired does nothing to an order already paid" do
+    order = orders(:one)
+    order.mark_paid!(method: "stripe", reference: "pi_paid_before_expiry")
+    stock_one = screws(:one).stock
+
+    payload = webhook_payload(
+      id:   "evt_expired_2",
+      type: "checkout.session.expired",
+      object: { "id" => "cs_test_old_session", "metadata" => { "order_id" => order.id.to_s } }
+    )
+    deliver_webhook(payload)
+
+    assert_response :ok
+    assert order.reload.paid?
+    assert_equal stock_one, screws(:one).reload.stock
+  end
 end

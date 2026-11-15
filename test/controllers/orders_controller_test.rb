@@ -1,6 +1,9 @@
 require "test_helper"
 
 class OrdersControllerTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+  include ActionMailer::TestHelper
+
   # Regression for the recalc_totals! bug: `order_items.sum(:line_total)` issues a
   # SQL SUM() against an association whose rows are not inserted yet (recalc_totals!
   # runs before @order.save), so it returned 0 and every order was persisted with
@@ -37,4 +40,23 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal order.subtotal + order.shipping, order.total,
                  "total deveria ser subtotal + frete, nao apenas o frete"
   end
+
+  test "create goes straight to payment and does not send the pending e-mail" do
+    screw = screws(:one)
+    post add_cart_url(screw_id: screw.id), params: { quantity: 1 }
+
+    assert_no_enqueued_emails do
+      post orders_url, params: {
+        order: {
+          customer_name: "Cliente Teste", customer_email: "cliente@test.com",
+          cep: "01310-100", street: "Avenida Paulista", number: "1000", complement: "",
+          district: "Bela Vista", city: "São Paulo", state: "SP"
+        }
+      }
+    end
+
+    order = Order.order(:id).last
+    assert_redirected_to thank_you_order_path(order, pay: 1)
+  end
 end
+

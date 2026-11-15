@@ -39,13 +39,13 @@
   </head>
   <body>
     <%= render "shared/navbar" %>
-    <%= render "shared/flash" %>
     <%# // Tema escuro (direção D) para todas as páginas da loja: data-bs-theme="dark"
         // faz o Bootstrap 5.3 pintar cards, formulários e tabelas no modo escuro, e
         // .theme-d (components/_theme.scss) ajusta para a paleta da marca.
         // O /admin fica de fora de propósito: é ferramenta interna. %>
     <% storefront = !controller_path.start_with?("admin") %>
     <main class="<%= "theme-d" if storefront %>" <%= 'data-bs-theme=dark' if storefront %>>
+      <%= render "shared/flash" %>
       <%= yield %>
     </main>
     <%= render "shared/footer" %>
