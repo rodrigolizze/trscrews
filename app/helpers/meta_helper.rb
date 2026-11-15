@@ -2,7 +2,7 @@
 module MetaHelper
   # // ---- Defaults (safe fallbacks used if a page doesn't override) ----
   def site_name
-    "TR AutoParts"
+    "TR AutoFix"
   end
 
   def default_meta_title

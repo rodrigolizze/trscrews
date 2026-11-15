@@ -44,16 +44,16 @@ pt-BR:
 
     # Mensagens de confirmação de e-mail
     confirmations:
-      confirmed: "Seu e-mail foi confirmado com sucesso. Bem-vindo à TR AutoParts!"
+      confirmed: "Seu e-mail foi confirmado com sucesso. Bem-vindo à TR AutoFix!"
       send_instructions: "Enviamos um e-mail com instruções para confirmar seu endereço."
       # Idem: depende de config.paranoid
       send_paranoid_instructions: "Se o seu e-mail estiver cadastrado, você receberá instruções para confirmá-lo em alguns minutos."
 
     mailer:
       confirmation_instructions:
-        subject: "Confirme sua conta na TR AutoParts"
+        subject: "Confirme sua conta na TR AutoFix"
       reset_password_instructions:
-        subject: "Redefina sua senha na TR AutoParts"
+        subject: "Redefina sua senha na TR AutoFix"
       # Os dois abaixo só são enviados se as notificações forem ligadas no initializer
       password_change:
         subject: "Sua senha foi alterada"
