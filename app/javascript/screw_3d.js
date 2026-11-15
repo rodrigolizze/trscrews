@@ -9,28 +9,24 @@ import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 const DRACO_DECODER_PATH =
   "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/";
 
+// Redesign (direção D): o parafuso saiu da seção de cards e virou a peça central do
+// hero, em todas as larguras (antes era só >= 992px). O giro agora acompanha a
+// rolagem da página até o hero sair da tela, em vez de seguir os 4 cards.
+// O tamanho do palco vem do CSS (.hd-hero__visual); aqui só acompanhamos com
+// ResizeObserver.
+
 let scene, camera, renderer, screwGroup, animationId;
 let initializedRoot = null;
 let currentProgress = 0;
 let targetProgress = 0;
-const ratios = [0, 0, 0, 0];
-let heightObserver = null;
+let isVisible = true;
+let needsRender = true;
+let resizeObserver = null;
+let visibilityObserver = null;
 
-function syncScrewHeight() {
-  const root = document.getElementById("screw-3d-root");
-  const cardsCol = document.getElementById("screw-cards-col");
-  if (!root || !cardsCol) return;
-  const h = cardsCol.offsetHeight;
-  if (h > 0) {
-    root.style.height = `${h}px`;
-    if (renderer && camera) {
-      const w = root.offsetWidth;
-      renderer.setSize(w, h);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-    }
-  }
-}
+const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+// Ângulo de repouso para quem pede menos movimento: mostra cabeça e rosca.
+const REDUCED_MOTION_PROGRESS = 0.35;
 
 function createProceduralEnvMap(renderer) {
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -147,15 +143,25 @@ function addProceduralScrew(group) {
   group.add(socket2);
 }
 
+function webglAvailable() {
+  try {
+    const canvas = document.createElement("canvas");
+    return !!(window.WebGLRenderingContext &&
+      (canvas.getContext("webgl2") || canvas.getContext("webgl")));
+  } catch (_e) {
+    return false;
+  }
+}
+
 function initScrew() {
   const root = document.getElementById("screw-3d-root");
   if (!root) return;
 
-  // Idempotência por elemento. run() é chamado por vários gatilhos: a avaliação
-  // do módulo, turbo:load, e a travessia do breakpoint no tablet. Sem isto o init
-  // roda 2× por carregamento e os dois RGBELoader em voo se atropelam sobre as
-  // mesmas variáveis de módulo — o envMap do primeiro chega numa cena que já é a
-  // do segundo, e o material metálico renderiza quase preto.
+  // Idempotência por elemento. run() é chamado pela avaliação do módulo e pelo
+  // turbo:load. Sem isto o init roda 2× por carregamento e os dois RGBELoader em
+  // voo se atropelam sobre as mesmas variáveis de módulo — o envMap do primeiro
+  // chega numa cena que já é a do segundo, e o material metálico renderiza quase
+  // preto.
   //
   // Guardamos a REFERÊNCIA do elemento, não um data-attribute nem "existe canvas?":
   // o snapshot do Turbo serializa o DOM, então marca e canvas voltariam no cache e
@@ -165,12 +171,17 @@ function initScrew() {
   initializedRoot = root;
 
   if (animationId) cancelAnimationFrame(animationId);
-  if (renderer && renderer.domElement) {
-    root.innerHTML = "";
+  root.innerHTML = "";
+
+  // Sem WebGL (aparelho antigo, modo de economia): o palco fica só com o fundo.
+  if (!webglAvailable()) {
+    root.classList.add("is-fallback");
+    return;
   }
 
-  const width = root.offsetWidth;
-  const height = root.offsetHeight;
+  const width = root.clientWidth || 1;
+  const height = root.clientHeight || 1;
+  const isSmall = width < 768;
 
   scene = new THREE.Scene();
 
@@ -178,9 +189,12 @@ function initScrew() {
   camera.position.set(0, 0.4, 1.35);
   camera.lookAt(0, 0.4, 0);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  // Celular: limita a densidade de pixels (1.5) — a diferença visual é mínima e
+  // a economia de GPU/bateria é grande.
+  const maxRatio = isSmall ? 1.5 : 2;
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxRatio));
   renderer.setSize(width, height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.2;
   root.appendChild(renderer.domElement);
@@ -188,8 +202,7 @@ function initScrew() {
   const pmremGenerator = new THREE.PMREMGenerator(renderer);
   pmremGenerator.compileEquirectangularShader();
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-  scene.add(ambientLight);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
 
   const dirLight = new THREE.DirectionalLight(0xffffff, 3.5);
   dirLight.position.set(5, 8, 6);
@@ -213,6 +226,7 @@ function initScrew() {
 
   function onEnvLoaded(envMap) {
     scene.environment = envMap;
+    needsRender = true;
     if (modelUrl) {
       const dracoLoader = new DRACOLoader();
       dracoLoader.setDecoderPath(DRACO_DECODER_PATH);
@@ -230,14 +244,17 @@ function initScrew() {
           applyMetallicMaterials(model, envMap);
           screwGroup.add(model);
           dracoLoader.dispose();
+          needsRender = true;
         },
         undefined,
         () => {
           addProceduralScrew(screwGroup);
+          needsRender = true;
         }
       );
     } else {
       addProceduralScrew(screwGroup);
+      needsRender = true;
     }
   }
 
@@ -251,44 +268,36 @@ function initScrew() {
     onEnvLoaded(envMap);
   });
 
-  const cards = [1, 2, 3, 4].map((i) => document.getElementById(`screw-card-${i}`));
-  cards.forEach((card, i) => {
-    if (!card) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        ratios[i] = entry.intersectionRatio;
-        updateProgress();
-      },
-      {
-        threshold: [0, 0.25, 0.5, 0.75, 1],
-        rootMargin: "0px 0px -20% 0px"
-      }
-    );
-    observer.observe(card);
+  // Acompanha o tamanho do palco (mudança de breakpoint, rotação do celular).
+  if (resizeObserver) resizeObserver.disconnect();
+  resizeObserver = new ResizeObserver(() => onResize());
+  resizeObserver.observe(root);
+
+  // Fora da tela, não renderiza nada (economia de bateria no celular).
+  if (visibilityObserver) visibilityObserver.disconnect();
+  visibilityObserver = new IntersectionObserver(([entry]) => {
+    isVisible = entry.isIntersecting;
+    if (isVisible) needsRender = true;
   });
+  visibilityObserver.observe(root);
 
   updateProgress();
+  currentProgress = targetProgress;
   animate();
-
-  syncScrewHeight();
-  requestAnimationFrame(() => syncScrewHeight());
-
-  if (heightObserver) heightObserver.disconnect();
-  const cardsCol = document.getElementById("screw-cards-col");
-  if (cardsCol) {
-    heightObserver = new ResizeObserver(() => syncScrewHeight());
-    heightObserver.observe(cardsCol);
-  }
-
-  window.addEventListener("resize", onResize);
 }
 
+// Progresso 0 → 1: do topo da página até o palco do parafuso sair da tela por cima.
 function updateProgress() {
-  let maxIdx = 0;
-  for (let i = 0; i < 4; i++) {
-    if (ratios[i] > 0) maxIdx = i;
+  if (reducedMotionQuery.matches) {
+    targetProgress = REDUCED_MOTION_PROGRESS;
+    return;
   }
-  targetProgress = (maxIdx + ratios[maxIdx]) * 0.25;
+  const root = document.getElementById("screw-3d-root");
+  if (!root) return;
+  const rect = root.getBoundingClientRect();
+  const endY = rect.bottom + window.scrollY; // posição absoluta do fim do palco
+  const p = endY > 0 ? window.scrollY / endY : 0;
+  targetProgress = Math.min(1, Math.max(0, p));
 }
 
 function animate() {
@@ -297,22 +306,27 @@ function animate() {
     cancelAnimationFrame(animationId);
     return;
   }
+  if (!isVisible || document.hidden) return;
 
+  // Amortecimento: o parafuso "alcança" a rolagem em vez de pular.
   const alpha = 0.08;
-  currentProgress += (targetProgress - currentProgress) * alpha;
+  const delta = targetProgress - currentProgress;
+  if (Math.abs(delta) > 0.0005) {
+    currentProgress += delta * alpha;
+    needsRender = true;
+  }
+  if (!needsRender) return;
 
   const ease = Math.min(1, Math.max(0, currentProgress));
   const logoRotationDeg = 207;
-  const targetRotY = 0 + ease * (Math.PI / 2 + logoRotationDeg * (Math.PI / 180));
+  const targetRotY = ease * (Math.PI / 2 + logoRotationDeg * (Math.PI / 180));
   const targetRotZ = 0.14 * (1 - ease);
   const targetRotX = -0.04 * (1 - ease) + ease * (Math.PI / 2);
   const targetY = 0.4 - ease * 0.1;
   const targetScale = 0.78 + ease * 0.1;
 
   if (screwGroup) {
-    screwGroup.rotation.y = targetRotY;
-    screwGroup.rotation.z = targetRotZ;
-    screwGroup.rotation.x = targetRotX;
+    screwGroup.rotation.set(targetRotX, targetRotY, targetRotZ);
     screwGroup.position.set(0, targetY, 0);
     screwGroup.scale.setScalar(targetScale);
   }
@@ -320,27 +334,30 @@ function animate() {
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }
+  needsRender = false;
 }
 
 function onResize() {
   const root = document.getElementById("screw-3d-root");
   if (!root || !camera || !renderer) return;
-  syncScrewHeight();
+  const w = root.clientWidth;
+  const h = root.clientHeight;
+  if (w === 0 || h === 0) return;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  needsRender = true;
 }
 
-// 992px = breakpoint lg do Bootstrap, o mesmo do col-lg-7 da coluna do 3D.
-// Abaixo dele as colunas empilham e o 3D deixa de fazer sentido: syncScrewHeight()
-// copiaria a altura da coluna de cards (~870px no celular) para o canvas,
-// empurrando para baixo o conteúdo que vende, com camera.aspect ~0,43. E como a
-// coluna passa a ser d-none, offsetWidth/offsetHeight seriam 0 e o aspect, NaN.
-const desktopQuery = window.matchMedia("(min-width: 992px)");
-
 function run() {
-  if (!desktopQuery.matches) return;
   if (document.getElementById("screw-3d-root")) {
     initScrew();
   }
 }
+
+window.addEventListener("scroll", updateProgress, { passive: true });
+window.addEventListener("resize", updateProgress, { passive: true });
+reducedMotionQuery.addEventListener("change", () => { updateProgress(); needsRender = true; });
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", run);
@@ -348,11 +365,3 @@ if (document.readyState === "loading") {
   run();
 }
 document.addEventListener("turbo:load", run);
-
-// Tablet girando de retrato (<992) para paisagem (>=992): o init foi pulado no
-// carregamento e a coluna, agora visível, ficaria vazia. Chamar run() aqui é
-// seguro porque initScrew() é idempotente por elemento. O desktop nunca dispara
-// este evento — já entra com matches = true.
-desktopQuery.addEventListener("change", (event) => {
-  if (event.matches) run();
-});
