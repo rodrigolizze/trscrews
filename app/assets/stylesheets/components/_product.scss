@@ -1,0 +1,182 @@
+// Página do produto — redesign direção D. Usa os tokens de .home-d.
+
+.product-d { padding-bottom: 96px; @media (min-width: 992px) { padding-bottom: 72px; } }
+
+.pd-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 20px 0 16px;
+  font-size: 13px;
+  color: var(--c-subtle);
+  a { color: var(--c-muted); text-decoration: none; min-height: 32px; display: inline-flex; align-items: center; }
+  a:hover { color: var(--c-accent); }
+  @media (min-width: 992px) { padding: 32px 0 24px; }
+}
+
+.pd-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  @media (min-width: 992px) {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 48px;
+    .pd-gallery { flex: 1 1 58%; min-width: 0; }
+    .pd-info { flex: 1 1 42%; min-width: 0; }
+  }
+}
+
+// ---------- Galeria ----------
+.pd-media {
+  aspect-ratio: 1 / 1;
+  background: var(--c-photo-bg);
+  border: 1px solid var(--c-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  img { width: 100%; height: 100%; object-fit: contain; padding: 16px; }
+  @media (min-width: 992px) { aspect-ratio: 4 / 3.4; }
+}
+.pd-media__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #5F6670;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.pd-thumbs {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+.home-d .pd-thumb {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  background: var(--c-photo-bg);
+  border: 2px solid transparent;
+  opacity: 0.7;
+  transition: opacity var(--duration-fast) var(--ease-smooth-out), border-color var(--duration-fast) var(--ease-smooth-out);
+  img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+  &:hover { opacity: 1; }
+  // Classes que o gallery_controller.js aplica na miniatura ativa.
+  &.border-primary { border-color: var(--c-accent) !important; }
+  &.opacity-100 { opacity: 1; }
+}
+
+// ---------- Informações ----------
+.pd-info__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  @media (min-width: 992px) { position: sticky; top: 24px; }
+}
+.pd-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.pd-tag-outline {
+  border: 1px solid var(--c-border);
+  color: var(--c-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+}
+.pd-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 1;
+  font-size: clamp(32px, 7vw, 48px);
+}
+.pd-fit { color: var(--c-muted); strong { color: var(--c-text); font-weight: 600; } }
+
+.pd-buy {
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pd-price { font-family: var(--font-display); font-size: 44px; line-height: 1; }
+.pd-stock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--c-muted);
+  span { width: 8px; height: 8px; border-radius: 50%; }
+}
+.pd-stock--ok span { background: #3DDC84; }
+.pd-stock--out span { background: #6B7079; }
+.pd-buy__form { margin: 0; }
+.pd-buy__btn { width: 100%; min-height: 56px; }
+
+.pd-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-bottom: 8px !important;
+}
+.pd-specs dl { margin: 0; border-top: 1px solid var(--c-border); }
+.pd-spec {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--c-border);
+  font-size: 14px;
+  dt { font-weight: 400; color: var(--c-muted); }
+  dd { margin: 0; font-weight: 600; text-align: right; }
+}
+.pd-notes {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--c-subtle);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.pd-related {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  @media (min-width: 992px) { margin-top: 80px; gap: 24px; }
+}
+
+// ---------- Barra fixa de compra (celular) ----------
+.pd-mobilebar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1020;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(18, 20, 23, 0.96);
+  border-top: 1px solid var(--c-border);
+  backdrop-filter: blur(8px);
+  .hd-btn { min-height: 48px; padding: 0 28px; }
+  @media (min-width: 992px) { display: none; }
+}
+.pd-mobilebar__price { font-family: var(--font-display); font-size: 26px; line-height: 1; }
+.pd-mobilebar__form { margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-d .pd-thumb { transition: none; }
+}

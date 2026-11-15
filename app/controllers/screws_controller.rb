@@ -28,5 +28,12 @@ class ScrewsController < ApplicationController
 
   def show
     @screw = Screw.friendly.find(params[:id])
+
+    # "Veja também": same automaker first, then fill up with other products.
+    related_scope = Screw.includes(images_attachments: :blob).where.not(id: @screw.id)
+    @related = related_scope.where(automaker: @screw.automaker).limit(4).to_a
+    if @related.size < 4
+      @related += related_scope.where.not(id: @related.map(&:id)).order(created_at: :desc).limit(4 - @related.size).to_a
+    end
   end
 end

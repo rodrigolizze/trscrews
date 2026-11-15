@@ -29,174 +29,137 @@
   <% meta_image url_for(@screw.images.first.variant(resize_to_limit: [800, 800])) %>
 <% end %>
 
-<div class="container py-4 py-lg-5" data-controller="gallery">
-  <%# // Top link back %>
-  <div class="mb-3">
-    <%= link_to "← Voltar ao catálogo", screws_path, class: "text-decoration-none" %>
-  </div>
+<%# // Página do produto — redesign direção D. Tokens/componentes de .home-d
+    // (components/_home.scss) + estilos próprios em components/_product.scss.
+    // A galeria continua com o Stimulus "gallery" (targets main/thumb, ação swap).
+    // TODO (3D por produto): o palco .pd-media pode receber um canvas gerado a partir
+    // dos dados do parafuso — ver Escritorio-IA/projetos/01-ecommerce/README.md. %>
+<% price_label = @screw.price.present? ? number_to_currency(@screw.price, unit: "R$ ", separator: ",", delimiter: ".") : "Sob consulta" %>
+<% fit = [@screw.automaker, @screw.model].compact_blank.join(" · ") %>
+<% specs = {
+     "Rosca" => @screw.thread,
+     "Comprimento da rosca" => (@screw.thread_length.present? ? "#{number_with_precision(@screw.thread_length, precision: 1, strip_insignificant_zeros: true, separator: ",")} mm" : nil),
+     "Classe de resistência" => @screw.resistance_class,
+     "Acabamento" => @screw.surface_treatment,
+     "Montadora" => @screw.automaker,
+     "Modelo" => @screw.model
+   }.select { |_k, v| v.present? } %>
 
-  <div class="row gx-3 gy-4 align-items-start">
-    <%# // Left column: vertical thumbnails (desktop) — NÃO MEXER (mantido) %>
-    <div class="col-12 col-md-auto d-none d-md-flex flex-column gap-2">
-      <% if @screw.images.attached? %>
-        <% @screw.images.each do |img| %>
-          <a href="#"
-             class="d-inline-block"
-             data-action="click->gallery#swap"
-             data-gallery-target="thumb"
-             data-url="<%= url_for(img.variant(resize_to_limit: [1000, 1000])) %>">
-            <%= image_tag img.variant(resize_to_limit: [200, 200]),
-                          class: "rounded border opacity-75",
-                          style: "width: 72px; height: 72px; object-fit: cover;",
-                          alt: @screw.description,
-                          loading: "lazy",
-                          decoding: "async" %>
-          </a>
-        <% end %>
+<div class="home-d product-d">
+  <div class="hd-container">
+    <nav class="pd-crumbs" aria-label="Você está em">
+      <%= link_to "Catálogo", screws_path %>
+      <% if @screw.automaker.present? %>
+        <span aria-hidden="true">/</span>
+        <%= link_to @screw.automaker, screws_path(automaker: @screw.automaker) %>
       <% end %>
-    </div>
+    </nav>
 
-    <%# // Main area: image + details %>
-    <div class="col-12 col-md">
-      <div class="row gy-4">
-        <%# =====================
-            Left: main image + mobile thumbs (NÃO MEXER no funcionamento)
-            ===================== %>
-        <div class="col-12 col-lg-7">
-          <%# // pick the newest attached image; nil if none %>
+    <div class="pd-grid">
+      <%# ---------- Galeria ---------- %>
+      <div class="pd-gallery" data-controller="gallery">
+        <div class="pd-media">
           <% primary = primary_attachment(@screw) %>
-
           <% if primary %>
             <%= image_tag primary.variant(resize_to_limit: [1000, 1000]),
                   data: { gallery_target: "main" },
-                  class: "img-fluid rounded shadow-sm w-100",
-                  style: "max-height: 460px; object-fit: contain; background: #fff;",
                   alt: @screw.description %>
           <% else %>
-            <div class="bg-light d-flex align-items-center justify-content-center rounded"
-                 style="height: 360px;">
-              <span class="text-muted">Sem imagens</span>
+            <div class="pd-media__empty">
+              <svg width="96" height="96" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20 8h24l6 8-6 8H20l-6-8z"/><path d="M26 24v32h12V24"/><path d="M26 30l12 3M26 36l12 3M26 42l12 3M26 48l12 3"/></svg>
+              <span>Foto em breve</span>
             </div>
           <% end %>
-
-          <%# // Mobile thumbnails below the main image — mantido %>
-          <div class="d-md-none mt-3 d-flex gap-2 overflow-auto">
-            <% if @screw.images.attached? %>
-              <% @screw.images.each do |img| %>
-                <a href="#"
-                   class="d-inline-block"
-                   data-action="click->gallery#swap"
-                   data-gallery-target="thumb"
-                   data-url="<%= url_for(img.variant(resize_to_limit: [1000, 1000])) %>">
-                  <%= image_tag img.variant(resize_to_limit: [200, 200]),
-                                class: "rounded border opacity-75",
-                                style: "width: 72px; height: 72px; object-fit: cover;",
-                                alt: @screw.description,
-                                loading: "lazy",
-                                decoding: "async" %>
-                </a>
-              <% end %>
-            <% end %>
-          </div>
         </div>
 
-        <%# =====================
-            Right: Product details (melhoria visual)
-            ===================== %>
-        <div class="col-12 col-lg-5">
-          <%# // Sticky ajuda a manter o CTA visível no desktop %>
-          <div class="position-sticky" style="top: 1rem;">
-            <div class="card border-0 shadow-sm">
-              <div class="card-body p-4">
-                <%# // Badges com info rápida %>
-                <div class="d-flex flex-wrap gap-2 mb-2">
-                  <% if @screw.thread.present? %>
-                    <span class="badge rounded-pill text-bg-light border">Rosca: <%= @screw.thread %></span>
-                  <% end %>
+        <% if @screw.images.attached? && @screw.images.size > 1 %>
+          <div class="pd-thumbs" role="list">
+            <% @screw.images.each_with_index do |img, i| %>
+              <a href="#"
+                 class="pd-thumb"
+                 role="listitem"
+                 aria-label="Ver foto <%= i + 1 %>"
+                 data-action="click->gallery#swap"
+                 data-gallery-target="thumb"
+                 data-url="<%= url_for(img.variant(resize_to_limit: [1000, 1000])) %>">
+                <%= image_tag img.variant(resize_to_limit: [200, 200]), alt: "", loading: "lazy", decoding: "async" %>
+              </a>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
 
-                  <% if @screw.surface_treatment.present? %>
-                    <span class="badge rounded-pill text-bg-light border"><%= @screw.surface_treatment %></span>
-                  <% end %>
+      <%# ---------- Informações e compra ---------- %>
+      <div class="pd-info">
+        <div class="pd-info__inner">
+          <div class="pd-tags">
+            <% if @screw.thread.present? %><span class="hd-tag"><%= @screw.thread %></span><% end %>
+            <% if @screw.surface_treatment.present? %><span class="pd-tag-outline"><%= @screw.surface_treatment %></span><% end %>
+          </div>
 
-                  <%# // Estoque em destaque (sem prometer nada demais) %>
-                  <% if @screw.out_of_stock? %>
-                    <span class="badge rounded-pill text-bg-secondary">Indisponível</span>
-                  <% else %>
-                    <span class="badge rounded-pill text-bg-success">Em estoque</span>
-                  <% end %>
-                </div>
+          <h1 class="pd-title"><%= @screw.description %></h1>
+          <% if fit.present? %><p class="pd-fit">Compatível com <strong><%= fit %></strong></p><% end %>
 
-                <h1 class="h3 fw-bold mb-1"><%= @screw.description %></h1>
+          <div class="pd-buy" id="pd-buy">
+            <div class="pd-price"><%= price_label %></div>
+            <% if @screw.in_stock? %>
+              <p class="pd-stock pd-stock--ok"><span aria-hidden="true"></span>Em estoque · <%= @screw.stock %> un.</p>
+              <%= button_to add_cart_path(screw_id: @screw.id), method: :post, params: { quantity: 1 },
+                            class: "hd-btn hd-btn--primary pd-buy__btn", form_class: "pd-buy__form" do %>
+                Adicionar ao carrinho
+              <% end %>
+            <% else %>
+              <p class="pd-stock pd-stock--out"><span aria-hidden="true"></span>Sem estoque no momento</p>
+              <%= link_to "Pedir por encomenda", root_path(anchor: "pedido-especial"), class: "hd-btn hd-btn--ghost pd-buy__btn" %>
+            <% end %>
+          </div>
 
-                <div class="text-muted mb-3">
-                  <%= [@screw.automaker, @screw.model].compact_blank.join(" • ") %>
-                </div>
-
-                <%# // Specs em formato de tabela (mais “loja”) %>
-                <% specs = {
-                  "Rosca" => @screw.thread,
-                  "Comprimento da rosca" => @screw.thread_length,
-                  "Classe de resistência" => @screw.resistance_class,
-                  "Tratamento" => @screw.surface_treatment,
-                  "Montadora" => @screw.automaker,
-                  "Modelo" => @screw.model
-                }.select { |_k, v| v.present? } %>
-
-                <% if specs.any? %>
-                  <div class="border rounded-3 overflow-hidden mb-4">
-                    <div class="px-3 py-2 bg-light fw-semibold">Especificações</div>
-
-                    <div class="table-responsive">
-                      <table class="table table-sm mb-0 align-middle">
-                        <tbody>
-                          <% specs.each do |label, value| %>
-                            <tr>
-                              <td class="text-muted" style="width: 52%;"><%= label %></td>
-                              <td class="fw-semibold"><%= value %></td>
-                            </tr>
-                          <% end %>
-                        </tbody>
-                      </table>
-                    </div>
+          <% if specs.any? %>
+            <section class="pd-specs" aria-labelledby="pd-specs-title">
+              <h2 id="pd-specs-title" class="pd-section-title">Ficha técnica</h2>
+              <dl>
+                <% specs.each do |label, value| %>
+                  <div class="pd-spec">
+                    <dt><%= label %></dt>
+                    <dd><%= value %></dd>
                   </div>
                 <% end %>
+              </dl>
+            </section>
+          <% end %>
 
-                <%# // Caixa de preço + CTA %>
-                <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-between gap-3">
-                  <div>
-                    <div class="fs-3 fw-bold mb-1"><%= format_price(@screw.price) %></div>
-
-                    <% if @screw.out_of_stock? %>
-                      <small class="text-muted">Sem estoque no momento</small>
-                    <% else %>
-                      <small class="text-muted">Estoque: <%= @screw.stock %> un.</small>
-                    <% end %>
-                  </div>
-
-                  <div class="text-end">
-                    <% if @screw.in_stock? %>
-                      <%= button_to "COMPRAR",
-                                    add_cart_path(screw_id: @screw.id),
-                                    method: :post,
-                                    params: { quantity: 1 },
-                                    class: "btn btn-yellow px-4 py-2 fw-semibold" %>
-                    <% else %>
-                      <button class="btn btn-secondary px-4 py-2" disabled>Sem estoque</button>
-                    <% end %>
-                  </div>
-                </div>
-
-                <%# // Texto pequeno opcional (neutro, sem promessas) %>
-                <div class="small text-muted mt-3">
-                  <div>• Confira compatibilidade antes da compra.</div>
-                  <div>• Frete e prazo são calculados no checkout.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <%# // end sticky %>
+          <ul class="pd-notes">
+            <li>Confira a compatibilidade com o seu veículo antes da compra.</li>
+            <li>Frete e prazo calculados no checkout.</li>
+          </ul>
         </div>
       </div>
     </div>
+
+    <% if @related.present? %>
+      <section class="pd-related" aria-labelledby="pd-related-title">
+        <div class="hd-section-head">
+          <h2 id="pd-related-title" class="hd-h2">Veja também</h2>
+          <%= link_to "Ver catálogo", screws_path, class: "hd-link" %>
+        </div>
+        <div class="hd-grid">
+          <% @related.each do |screw| %>
+            <%= render "shared/product_card", screw: screw %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
   </div>
+
+  <%# // Barra de compra fixa no celular: o botão continua à vista enquanto a
+      // pessoa rola a ficha técnica. Some no desktop (lá a coluna é sticky). %>
+  <% if @screw.in_stock? %>
+    <div class="pd-mobilebar" aria-hidden="false">
+      <div class="pd-mobilebar__price"><%= price_label %></div>
+      <%= button_to add_cart_path(screw_id: @screw.id), method: :post, params: { quantity: 1 },
+                    class: "hd-btn hd-btn--primary", form_class: "pd-mobilebar__form" do %>
+        Comprar
+      <% end %>
+    </div>
+  <% end %>
 </div>
