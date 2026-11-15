@@ -34,7 +34,7 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
     payload = webhook_payload(
       id:   "evt_1",
       type: "payment_intent.succeeded",
-      object: { "id" => "pi_test_1", "metadata" => { "order_id" => order.id.to_s } }
+      object: { "id" => "pi_test_1", "amount" => 7200, "currency" => "brl", "metadata" => { "order_id" => order.id.to_s } }
     )
 
     assert_enqueued_emails 1 do
@@ -56,7 +56,7 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
     payload = webhook_payload(
       id:   "evt_1",
       type: "payment_intent.succeeded",
-      object: { "id" => "pi_test_1", "metadata" => { "order_id" => order.id.to_s } }
+      object: { "id" => "pi_test_1", "amount" => 7200, "currency" => "brl", "metadata" => { "order_id" => order.id.to_s } }
     )
 
     assert_enqueued_emails 1 do
@@ -87,12 +87,12 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
     evt_a = webhook_payload(
       id:   "evt_A",
       type: "checkout.session.completed",
-      object: { "id" => "cs_A", "metadata" => { "order_id" => order.id.to_s } }
+      object: { "id" => "cs_A", "amount_total" => 7200, "currency" => "brl", "metadata" => { "order_id" => order.id.to_s } }
     )
     evt_b = webhook_payload(
       id:   "evt_B",
       type: "payment_intent.succeeded",
-      object: { "id" => "pi_B", "metadata" => { "order_id" => order.id.to_s } }
+      object: { "id" => "pi_B", "amount" => 7200, "currency" => "brl", "metadata" => { "order_id" => order.id.to_s } }
     )
 
     assert_enqueued_emails 1 do
@@ -119,7 +119,8 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
     payload = webhook_payload(
       id:   "evt_C_only",
       type: "checkout.session.completed",
-      object: { "id" => "cs_C_only", "metadata" => { "order_id" => order.id.to_s } }
+      object: { "id" => "cs_C_only", "amount_total" => 2000, # orders(:two): no items, shipping only (R$ 20,00)
+                "currency" => "brl", "metadata" => { "order_id" => order.id.to_s } }
     )
 
     assert_enqueued_emails 1 do
@@ -170,5 +171,54 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
     assert_response :ok
     assert order.reload.paid?
     assert_equal stock_one, screws(:one).reload.stock
+  end
+
+  # (g) audit M3 -------------------------------------------------------------
+  test "does not mark paid when the charged amount differs from the order total" do
+    order = orders(:one)
+    payload = webhook_payload(
+      id: "evt_wrong_amount", type: "payment_intent.succeeded",
+      object: { "id" => "pi_cheap", "amount" => 100, "currency" => "brl",
+                "metadata" => { "order_id" => order.id.to_s } }
+    )
+
+    assert_enqueued_emails 0 do
+      deliver_webhook(payload)
+    end
+    assert_response :ok
+    assert_equal "pending", order.reload.payment_status
+  end
+
+  test "does not mark paid when the currency is not BRL" do
+    order = orders(:one)
+    payload = webhook_payload(
+      id: "evt_wrong_currency", type: "checkout.session.completed",
+      object: { "id" => "cs_usd", "amount_total" => 7200, "currency" => "usd",
+                "metadata" => { "order_id" => order.id.to_s } }
+    )
+
+    deliver_webhook(payload)
+    assert_response :ok
+    assert_equal "pending", order.reload.payment_status
+  end
+
+  # (h) audit A1 -------------------------------------------------------------
+  test "rejects unsigned events in production when the signing secret is missing" do
+    order = orders(:one)
+    payload = webhook_payload(
+      id: "evt_unsigned", type: "payment_intent.succeeded",
+      object: { "id" => "pi_forged", "amount" => 7200, "currency" => "brl",
+                "metadata" => { "order_id" => order.id.to_s } }
+    )
+
+    previous = ENV.delete("STRIPE_SIGNING_SECRET")
+    Rails.stub(:env, ActiveSupport::EnvironmentInquirer.new("production")) do
+      post WEBHOOK_PATH, params: payload.to_json, headers: { "CONTENT_TYPE" => "application/json" }
+    end
+    ENV["STRIPE_SIGNING_SECRET"] = previous if previous
+
+    assert_response :internal_server_error
+    assert_equal "pending", order.reload.payment_status
+    assert_not StripeWebhookEvent.exists?(stripe_event_id: "evt_unsigned")
   end
 end
