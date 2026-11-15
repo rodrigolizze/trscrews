@@ -1,103 +1,108 @@
-<!-- app/views/screws/index.html.erb -->
-<div class="container py-4">
-  <h1 class="h3 mb-3">Catálogo</h1>
+<%# // Catálogo — redesign direção D. Reaproveita os tokens e componentes da home
+    // (.home-d / .hd-*); os estilos próprios ficam em components/_catalog.scss.
+    // TODO: renomear .home-d para algo como .theme-d quando todas as páginas migrarem. %>
+<% filter_keys = %i[q automaker model thread surface_treatment sort] %>
+<%# // Conta filtros ativos para o badge do botão. Sem isso, quem filtra e
+    // recebe o painel fechado de volta não tem como saber que filtrou. %>
+<% active_filters = filter_keys.count { |k| params[k].present? } %>
 
-  <%# // Conta filtros ativos para o badge do botão. Sem isso, quem filtra e
-      // recebe o painel fechado de volta não tem como saber que filtrou. %>
-  <% filter_keys = %i[q automaker model thread surface_treatment sort] %>
-  <% active_filters = filter_keys.count { |k| params[k].present? } %>
+<div class="home-d catalog-d">
+  <header class="hd-container cat-head">
+    <p class="hd-eyebrow">Catálogo</p>
+    <h1 class="hd-h2 cat-title">Parafusos de roda</h1>
+    <p class="cat-count">
+      <%= @pagy ? @pagy.count : @screws.size %>
+      <%= (@pagy ? @pagy.count : @screws.size) == 1 ? "produto" : "produtos" %>
+      <% if active_filters > 0 %>· <%= link_to "limpar filtros", screws_path, class: "hd-link" %><% end %>
+    </p>
 
-  <%# // Botão só abaixo de lg — o Bootstrap esconde com .d-lg-none
-      // (display:none!important em min-width:992px), então no desktop não existe. %>
-  <button class="btn btn-outline-secondary w-100 mb-3 d-lg-none"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#catalogFilters"
-          aria-controls="catalogFilters"
-          aria-expanded="false">
-    Filtrar e ordenar
-    <% if active_filters > 0 %>
-      <span class="badge bg-warning text-dark ms-1"><%= active_filters %></span>
+    <%# // Atalho por montadora: é como o cliente procura parafuso de roda. Usa o
+        // mesmo parâmetro :automaker do formulário, então nada muda no controller. %>
+    <% if @automakers.compact_blank.any? %>
+      <nav class="cat-chips" aria-label="Filtrar por montadora">
+        <%= link_to "Todas", screws_path(params.permit(:model, :thread, :surface_treatment, :q, :sort).merge(automaker: nil)),
+                    class: ["cat-chip", ("is-active" if params[:automaker].blank?)] %>
+        <% @automakers.compact_blank.each do |maker| %>
+          <%= link_to maker, screws_path(params.permit(:thread, :surface_treatment, :q, :sort).merge(automaker: maker)),
+                      class: ["cat-chip", ("is-active" if params[:automaker] == maker)],
+                      aria: { current: (params[:automaker] == maker ? "true" : nil) } %>
+        <% end %>
+      </nav>
     <% end %>
-  </button>
+  </header>
 
-  <%# // Wrapper de colapso. Abaixo de lg começa fechado (.collapse:not(.show)
-      // {display:none}); a partir de 992px o .d-lg-block{display:block!important}
-      // vence por !important e o painel fica sempre aberto — desktop idêntico.
-      //
-      // O form fica INTACTO dentro do wrapper: display:none não impede submit
-      // (só `disabled` faria isso), então os params continuam os mesmos. %>
-  <div class="collapse d-lg-block" id="catalogFilters">
-  <%# -- Filter + Search + Sort form (GET) -- %>
-  <%= form_with url: screws_path, method: :get, local: true, class: "row g-2 mb-4" do %>
-    <div class="col-12 col-md-4">
-      <label class="form-label small">Buscar</label>
-      <%= text_field_tag :q, params[:q], class: "form-control", placeholder: "Ex.: parafuso M6, cabeçote hex..." %>
+  <div class="hd-container">
+    <%# // Botão só abaixo de lg (o Bootstrap esconde com .d-lg-none). %>
+    <button class="cat-filter-toggle d-lg-none"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#catalogFilters"
+            aria-controls="catalogFilters"
+            aria-expanded="false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+      Filtrar e ordenar
+      <% if active_filters > 0 %><span class="cat-badge"><%= active_filters %></span><% end %>
+    </button>
+
+    <%# // Abaixo de lg começa fechado; a partir de 992px o .d-lg-block vence por
+        // !important e o painel fica sempre aberto. display:none não impede o
+        // submit, então os params continuam os mesmos. %>
+    <div class="collapse d-lg-block" id="catalogFilters">
+      <%= form_with url: screws_path, method: :get, local: true, class: "cat-filters" do %>
+        <div class="cat-field cat-field--search">
+          <label for="q">Buscar</label>
+          <%= text_field_tag :q, params[:q], placeholder: "Ex.: M12, Onix, Geomet" %>
+        </div>
+        <div class="cat-field">
+          <label for="automaker">Montadora</label>
+          <%= select_tag :automaker, options_for_select([["Todas", ""]] + @automakers.map { |a| [a, a] }, params[:automaker]) %>
+        </div>
+        <div class="cat-field">
+          <label for="model">Modelo</label>
+          <%= select_tag :model, options_for_select([["Todos", ""]] + @models.map { |m| [m, m] }, params[:model]) %>
+        </div>
+        <div class="cat-field">
+          <label for="thread">Rosca</label>
+          <%= select_tag :thread, options_for_select([["Todas", ""]] + @threads.map { |t| [t, t] }, params[:thread]) %>
+        </div>
+        <div class="cat-field">
+          <label for="surface_treatment">Acabamento</label>
+          <%= select_tag :surface_treatment, options_for_select([["Todos", ""]] + @surfaces.map { |s| [s, s] }, params[:surface_treatment]) %>
+        </div>
+        <div class="cat-field">
+          <label for="sort">Ordenar</label>
+          <%= select_tag :sort, options_for_select(
+                [["Mais recentes", ""], ["Menor preço", "price_asc"], ["Maior preço", "price_desc"]],
+                params[:sort]) %>
+        </div>
+        <div class="cat-actions">
+          <%= submit_tag "Aplicar", class: "hd-btn hd-btn--primary", name: nil %>
+          <%= link_to "Limpar", screws_path, class: "hd-btn hd-btn--ghost" %>
+        </div>
+      <% end %>
     </div>
 
-    <div class="col-6 col-md-2">
-      <label class="form-label small">Montadora</label>
-      <%= select_tag :automaker,
-          options_for_select([["Todas", ""]] + @automakers.map { |a| [a, a] }, params[:automaker]),
-          class: "form-select" %>
-    </div>
-
-    <div class="col-6 col-md-2">
-      <label class="form-label small">Modelo</label>
-      <%= select_tag :model,
-          options_for_select([["Todos", ""]] + @models.map { |m| [m, m] }, params[:model]),
-          class: "form-select" %>
-    </div>
-
-    <div class="col-6 col-md-2">
-      <label class="form-label small">Rosca (thread)</label>
-      <%= select_tag :thread,
-          options_for_select([["Todas", ""]] + @threads.map { |t| [t, t] }, params[:thread]),
-          class: "form-select" %>
-    </div>
-
-    <div class="col-6 col-md-2">
-      <label class="form-label small">Tratamento</label>
-      <%= select_tag :surface_treatment,
-          options_for_select([["Todos", ""]] + @surfaces.map { |s| [s, s] }, params[:surface_treatment]),
-          class: "form-select" %>
-    </div>
-
-    <div class="col-6 col-md-2">
-      <label class="form-label small">Ordenar</label>
-      <%= select_tag :sort,
-          options_for_select(
-            [["Mais recentes", ""], ["Preço: menor → maior", "price_asc"], ["Preço: maior → menor", "price_desc"]],
-            params[:sort]
-          ),
-          class: "form-select" %>
-    </div>
-
-    <div class="col-12 d-flex gap-2">
-      <%= submit_tag "Aplicar", class: "btn btn-yellow" %>
-      <%= link_to "Limpar", screws_path, class: "btn btn-outline-secondary" %>
-    </div>
-  <% end %>
-  </div>
-
-  <%# -- Grid of product cards -- %>
-  <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
-    <% @screws.each do |screw| %>
-      <div class="col">
-        <%= render "card", screw: screw %>
+    <% if @screws.any? %>
+      <div class="hd-grid cat-grid">
+        <% @screws.each do |screw| %>
+          <%= render "shared/product_card", screw: screw %>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="cat-empty">
+        <p class="cat-empty__title">Nenhum parafuso encontrado.</p>
+        <p>Tente outra medida ou montadora, ou peça um item fora do catálogo.</p>
+        <div class="cat-actions">
+          <%= link_to "Limpar filtros", screws_path, class: "hd-btn hd-btn--ghost" %>
+          <%= link_to "Pedido especial", root_path(anchor: "pedido-especial"), class: "hd-btn hd-btn--primary" %>
+        </div>
       </div>
     <% end %>
-  </div>
 
-  <%# -- Empty state -- %>
-  <% if @screws.empty? %>
-    <div class="text-center text-muted mt-4">
-      Nenhum item encontrado com esses critérios.
-    </div>
-  <% end %>
-
-  <%# -- Pagination (Bootstrap) -- %>
-  <div class="d-flex justify-content-center mt-4">
-    <%== pagy_bootstrap_nav(@pagy) if @pagy && @pagy.pages > 1 %>
+    <% if @pagy && @pagy.pages > 1 %>
+      <div class="cat-pagination">
+        <%== pagy_bootstrap_nav(@pagy) %>
+      </div>
+    <% end %>
   </div>
 </div>

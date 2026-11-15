@@ -1,0 +1,24 @@
+<%# // Card de produto da direção D. Usado na home (destaques) e no catálogo.
+    // Depende dos tokens definidos em .home-d (components/_home.scss). %>
+<%= link_to screw_path(screw), class: "hd-card" do %>
+  <div class="hd-card__img">
+    <% primary = primary_attachment(screw) %>
+    <% if primary %>
+      <%= image_tag primary.variant(resize_to_limit: [600, 600]),
+                    alt: screw.description, loading: "lazy", decoding: "async" %>
+    <% else %>
+      <span class="hd-card__noimg">Sem imagem</span>
+    <% end %>
+  </div>
+  <div class="hd-card__body">
+    <% spec = [screw.thread, screw.surface_treatment].compact_blank.join(" · ") %>
+    <% if spec.present? %><span class="hd-tag"><%= spec %></span><% end %>
+    <h3 class="hd-card__title"><%= screw.description %></h3>
+    <% fit = [screw.automaker, screw.model].compact_blank.join(" · ") %>
+    <% if fit.present? %><p class="hd-card__fit"><%= fit %></p><% end %>
+    <div class="hd-card__foot">
+      <span class="hd-price"><%= number_to_currency(screw.price, unit: "R$ ", separator: ",", delimiter: ".") %></span>
+      <span class="hd-card__cta">Ver detalhes</span>
+    </div>
+  </div>
+<% end %>
