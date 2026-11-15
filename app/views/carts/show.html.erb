@@ -26,10 +26,17 @@
               <p class="cart-item__unit"><%= format_price(screw.price) %> / un.</p>
 
               <div class="cart-item__actions">
-                <%= form_with url: set_cart_path(screw_id: screw.id), method: :patch, local: true, class: "cart-qty" do %>
+                <%# // Atualiza sozinho (Stimulus cart-qty): − / + ou digitação enviam o mesmo
+                    // PATCH set_cart. O <noscript> mantém o botão para quem está sem JavaScript. %>
+                <%= form_with url: set_cart_path(screw_id: screw.id), method: :patch, local: true, class: "cart-qty",
+                              data: { controller: "cart-qty" } do %>
                   <label for="qty-<%= screw.id %>" class="visually-hidden">Quantidade</label>
-                  <%= number_field_tag :quantity, qty, id: "qty-#{screw.id}", class: "form-control", min: 0, inputmode: "numeric" %>
-                  <%= submit_tag "Atualizar", class: "btn btn-outline-secondary btn-sm", name: nil %>
+                  <button type="button" class="cart-qty__btn" data-action="cart-qty#decrement" aria-label="Diminuir quantidade">−</button>
+                  <%= number_field_tag :quantity, qty, id: "qty-#{screw.id}", class: "form-control", min: 1,
+                        max: (screw.stock if screw.stock.to_i > 0), inputmode: "numeric",
+                        data: { cart_qty_target: "input", action: "input->cart-qty#changed" } %>
+                  <button type="button" class="cart-qty__btn" data-action="cart-qty#increment" aria-label="Aumentar quantidade">+</button>
+                  <noscript><%= submit_tag "Atualizar", class: "btn btn-outline-secondary btn-sm", name: nil %></noscript>
                 <% end %>
                 <%= button_to "Remover",
                               remove_cart_path(screw_id: screw.id),

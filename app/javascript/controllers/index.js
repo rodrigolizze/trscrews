@@ -21,3 +21,6 @@ application.register("hello", HelloController)
 // digest, que não existe em produção. Adicionar entradas à mão, neste formato.
 import NavbarController from "controllers/navbar_controller"
 application.register("navbar", NavbarController)
+
+import CartQtyController from "controllers/cart_qty_controller"
+application.register("cart-qty", CartQtyController)
