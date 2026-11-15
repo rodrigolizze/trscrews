@@ -1,0 +1,77 @@
+// Rodapé — redesign direção D (escuro, combina com a navbar).
+.site-footer {
+  background: #121417;
+  border-top: 1px solid #23262B;
+  color: #8A9099;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 14px;
+
+  a {
+    color: #A9AEB6;
+    text-decoration: none;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    &:hover { color: #FFC400; }
+  }
+}
+
+.site-footer__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px 24px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px 20px;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 2fr 1fr 1fr;
+    padding: 56px 32px 32px;
+  }
+}
+
+.site-footer__brand {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  p { margin: 0; }
+  @media (min-width: 768px) { grid-column: auto; }
+}
+
+.site-footer .site-footer__logo {
+  display: inline-block; // inline-flex (regra dos links) engolia o espaço entre "TR" e "AUTOFIX"
+  align-self: flex-start;
+  font-family: "Anton", "Arial Narrow", sans-serif;
+  font-size: 24px;
+  letter-spacing: 1px;
+  color: #EDEEF0;
+  span { color: #FFC400; }
+  &:hover { color: #EDEEF0; }
+}
+
+.site-footer__col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.site-footer__title {
+  margin: 0 0 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #EDEEF0;
+}
+
+.site-footer__bottom {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 20px 28px;
+  border-top: 1px solid #23262B;
+  font-size: 12.5px;
+  color: #6B7079;
+  @media (min-width: 768px) { padding: 16px 32px 32px; }
+}
