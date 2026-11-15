@@ -38,6 +38,10 @@ class StripeWebhooksController < ApplicationController
       intent = event["data"]["object"]
       handle_payment_intent_succeeded(intent)
 
+    when "checkout.session.expired"
+      session = event["data"]["object"]
+      handle_checkout_session_expired(session)
+
     else
       Rails.logger.info "[Stripe] Ignored event type: #{event['type']}"
     end
@@ -73,6 +77,24 @@ class StripeWebhooksController < ApplicationController
       payment_reference: intent["id"],
       source: "payment_intent.succeeded"
     )
+  end
+
+  # The payment window closed without payment: cancel and give the stock back.
+  # expire_and_restock! is a no-op for paid/already-cancelled orders, so a late
+  # event for an order paid through a second session is harmless.
+  def handle_checkout_session_expired(session)
+    order_id = (session["metadata"] || {})["order_id"]
+    order = order_id.present? && Order.find_by(id: order_id)
+    unless order
+      Rails.logger.warn "[Stripe] checkout.session.expired: Order #{order_id.inspect} not found"
+      return
+    end
+
+    if order.expire_and_restock!
+      Rails.logger.info "[Stripe] checkout.session.expired: Order #{order.id} cancelled and restocked"
+    else
+      Rails.logger.info "[Stripe] checkout.session.expired: Order #{order.id} not pending – skipping"
+    end
   end
 
   # ---------- Core logic: marcar pedido como pago -------------------------

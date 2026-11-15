@@ -24,3 +24,6 @@ application.register("navbar", NavbarController)
 
 import CartQtyController from "controllers/cart_qty_controller"
 application.register("cart-qty", CartQtyController)
+
+import AutoSubmitController from "controllers/auto_submit_controller"
+application.register("auto-submit", AutoSubmitController)

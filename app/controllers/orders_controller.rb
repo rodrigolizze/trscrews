@@ -122,13 +122,11 @@ class OrdersController < ApplicationController
       # // Guarda o último pedido na sessão, para liberar o acesso à página "obrigado"
       session[:last_order_id] = @order.id
 
-      # // E-mail de "pedido recebido / pagamento pendente"
-      OrderMailer.pending_order(@order).deliver_later
-
-      # // Em vez de ir para /orders/:id (que exige login),
-      # // mandamos todo mundo para a página amigável de obrigado
-      redirect_to thank_you_order_path(@order),
-                  notice: "Pedido realizado com sucesso! Enviamos os detalhes para o seu e-mail."
+      # Straight to payment: the thank_you page auto-submits the existing Stripe
+      # button (pay=1), so CheckoutSessionsController stays the only place that
+      # talks to Stripe. No "pending payment" e-mail anymore — the customer only
+      # gets the payment_confirmed e-mail, sent by the webhook.
+      redirect_to thank_you_order_path(@order, pay: 1)
     else
       # // Transação falhou: reconstruímos o resumo e avisamos o usuário
       rebuild_summary_for_render

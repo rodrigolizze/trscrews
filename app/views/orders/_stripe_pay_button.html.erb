@@ -1,33 +1,39 @@
-<%# // Reusable Stripe Checkout button for an order (@order must be set) %>
+<%# // Botão de pagamento Stripe para um pedido (@order). Com params[:pay] (vindo do
+    // "Finalizar pedido"), o formulário se envia sozinho (Stimulus auto-submit) e a
+    // pessoa vai direto para a página segura da Stripe. O botão continua visível
+    // como alternativa caso o redirecionamento não aconteça. %>
+<% autopay = params[:pay].present? && !@order.paid? && !@order.payment_expired? %>
 
-<%# // Optional success/cancel hints via URL params from Checkout redirect %>
 <% if params[:paid].present? %>
-  <div class="alert alert-success mb-3">
-    Pagamento em processamento. Você receberá a confirmação por email.
-  </div>
+  <div class="alert alert-success mb-3">Pagamento em processamento. Você receberá a confirmação por e-mail.</div>
 <% elsif params[:canceled].present? %>
-  <div class="alert alert-warning mb-3">
-    Pagamento cancelado. Você pode tentar novamente abaixo.
-  </div>
+  <div class="alert alert-warning mb-3">Pagamento não concluído. Você pode tentar de novo abaixo.</div>
 <% end %>
 
-<%# // Decide if we should show the Stripe button ------------------------ %>
-<% show_button = !@order.paid? %>  <!-- // show only when NOT paid -->
-
-<% if show_button %>
+<% if @order.paid? %>
+  <div class="alert alert-success mb-0">Pagamento recebido.</div>
+<% elsif @order.payment_expired? %>
+  <div class="alert alert-warning mb-0">
+    O prazo para pagar este pedido terminou e os itens voltaram ao estoque.
+    <%= link_to "Fazer um novo pedido", screws_path, class: "alert-link" %>.
+  </div>
+<% else %>
   <div class="d-grid gap-2">
-    <%= button_to "Pagar com cartão (Stripe • teste)",
+    <% if autopay %>
+      <p class="pay-redirect" role="status">
+        <span class="pay-redirect__spinner" aria-hidden="true"></span>
+        Abrindo o pagamento seguro…
+      </p>
+    <% end %>
+    <%= button_to "Pagar agora",
                   checkout_sessions_path,
                   method: :post,
                   params: { order_id: @order.id },
-                  class: "btn btn-success btn-lg",
-                  form: { data: { turbo: false } } %>  <!-- // non-Turbo POST to follow Stripe redirect -->
+                  class: "btn btn-primary btn-lg",
+                  form: { data: { turbo: false, controller: ("auto-submit" if autopay) } } %>
     <small class="text-muted">
-      Você será redirecionado para a página de pagamento segura da Stripe.
+      Pagamento processado pela Stripe. Prazo para pagar:
+      <%= l(@order.payment_deadline.in_time_zone("America/Sao_Paulo"), format: "%d/%m às %Hh%M") %>.
     </small>
-  </div>
-<% else %>
-  <div class="alert alert-info mb-0">
-    Este pedido não está pendente de pagamento.
   </div>
 <% end %>

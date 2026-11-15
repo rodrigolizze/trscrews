@@ -9,6 +9,17 @@ class Order < ApplicationRecord
 
   before_validation :normalize_state
 
+  # Payment window: a placed order reserves its stock for this long. The Stripe
+  # Checkout Session expires at the same deadline (expires_at), so nobody can pay
+  # after the stock is released. The sweeper task waits an extra grace period in
+  # case the checkout.session.expired webhook is late or lost.
+  PAYMENT_WINDOW = 8.hours
+  EXPIRY_GRACE   = 15.minutes
+
+  scope :expired_unpaid, -> {
+    placed.pending.where("placed_at < ?", (PAYMENT_WINDOW + EXPIRY_GRACE).ago)
+  }
+
   # // Basic presence
   validates :customer_name,  presence: true
   validates :customer_email, presence: true
@@ -79,6 +90,35 @@ class Order < ApplicationRecord
     else
       !paid?
     end
+  end
+
+  # Deadline to pay (and when the Stripe session expires).
+  def payment_deadline
+    (placed_at || created_at) + PAYMENT_WINDOW
+  end
+
+  def payment_expired?
+    cancelled? || (payment_pending? && Time.current >= payment_deadline)
+  end
+
+  # Cancels an unpaid order and puts its items back in stock. Safe to call more
+  # than once and from concurrent callers (webhook + sweeper): the row lock plus
+  # the status check make the second call a no-op. Returns true only when THIS
+  # call cancelled the order.
+  def expire_and_restock!
+    cancelled_now = false
+    with_lock do
+      next unless placed? && payment_pending?
+
+      order_items.includes(:screw).each do |item|
+        screw = item.screw
+        next unless screw
+        screw.with_lock { screw.update!(stock: screw.stock + item.quantity.to_i) }
+      end
+      update!(status: :cancelled, payment_status: :failed)
+      cancelled_now = true
+    end
+    cancelled_now
   end
 
   def items_subtotal
