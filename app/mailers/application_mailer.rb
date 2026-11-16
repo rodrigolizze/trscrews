@@ -1,5 +1,5 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: "trautoparts.suporte@gmail.com"
+  default from: "TR AutoFix <trautoparts.suporte@gmail.com>"
   layout "mailer"
 
   # 👇 Isso faz os helpers de ApplicationHelper (incluindo format_price)

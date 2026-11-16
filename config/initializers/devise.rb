@@ -24,7 +24,9 @@ Devise.setup do |config|
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class
   # with default "from" parameter.
-  config.mailer_sender = 'TR AutoParts <trautoparts.suporte@gmail.com>'
+  # Display name matches the store (was "TR AutoParts", which helped land e-mails in spam).
+  # The address changes at go-live, with the store's own domain (see go-live.md).
+  config.mailer_sender = 'TR AutoFix <trautoparts.suporte@gmail.com>'
 
   # Configure the class responsible to send e-mails.
   # config.mailer = 'Devise::Mailer'

@@ -18,4 +18,13 @@ class DeviseMailerTest < ActionMailer::TestCase
     mail = Devise::Mailer.password_change(users(:one))
     assert_match "acabou de ser alterada", mail.html_part.body.to_s
   end
+
+  test "account e-mails come from TR AutoFix" do
+    mail = Devise::Mailer.reset_password_instructions(users(:one), "abc123")
+    assert_equal "TR AutoFix", mail[:from].display_names.first
+  end
+
+  test "order e-mails come from TR AutoFix" do
+    assert_match(/\ATR AutoFix </, ApplicationMailer.default[:from])
+  end
 end
