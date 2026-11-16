@@ -58,5 +58,40 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     order = Order.order(:id).last
     assert_redirected_to thank_you_order_path(order, pay: 1)
   end
-end
 
+  # Regression: the shipping fee came from the UF the customer picked, not from the
+  # CEP, so a Manaus CEP with UF "SP" was charged the cheaper Sudeste fee.
+  test "create rejects a CEP from another state and keeps the stock" do
+    screw = screws(:one)
+    post add_cart_url(screw_id: screw.id), params: { quantity: 1 }
+
+    assert_no_difference ["Order.count", -> { screw.reload.stock }] do
+      post orders_url, params: {
+        order: {
+          customer_name: "Cliente Teste", customer_email: "cliente@test.com",
+          cep: "69005-010", street: "Avenida Eduardo Ribeiro", number: "10", complement: "",
+          district: "Centro", city: "Manaus", state: "SP"
+        }
+      }
+    end
+
+    assert_response :unprocessable_entity
+    assert_match "não corresponde", response.body
+  end
+
+  test "create charges the fee of the region the CEP belongs to" do
+    screw = screws(:one)
+    post add_cart_url(screw_id: screw.id), params: { quantity: 1 }
+
+    post orders_url, params: {
+      order: {
+        customer_name: "Cliente Teste", customer_email: "cliente@test.com",
+        cep: "69005-010", street: "Avenida Eduardo Ribeiro", number: "10", complement: "",
+        district: "Centro", city: "Manaus", state: "AM"
+      }
+    }
+
+    order = Order.order(:id).last
+    assert_equal Rails.configuration.x.shipping.region_fee_table[:norte], order.shipping_fee
+  end
+end

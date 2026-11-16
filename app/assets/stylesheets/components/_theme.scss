@@ -227,6 +227,19 @@
   padding: 20px;
 }
 .cart-free { font-size: 13px; color: var(--c-muted); margin-bottom: 8px; strong { color: var(--c-text); } }
+.cart-cep {
+  margin: 4px 0 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--c-border);
+}
+.cart-cep__label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.cart-cep__row {
+  display: flex; gap: 8px;
+  .form-control { flex: 1; min-width: 0; }
+  .btn { white-space: nowrap; }
+}
+.cart-cep__info { font-size: 13px; color: var(--c-muted); margin: 8px 0 0; }
+.cart-totals__pending { font-weight: 400; color: var(--c-muted); font-size: 14px; }
 .cart-totals {
   margin: 0 0 16px;
   > div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--c-border); }

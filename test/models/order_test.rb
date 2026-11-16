@@ -49,4 +49,33 @@ class OrderTest < ActiveSupport::TestCase
     order = orders(:one)
     assert_equal order.placed_at + Order::PAYMENT_WINDOW, order.payment_deadline
   end
+
+  # Regression: shipping is priced by the UF field, which the server used to trust.
+  # A Manaus CEP with UF "SP" paid the Sudeste fee and still shipped to Manaus.
+  test "rejects a new order whose state does not match its CEP" do
+    order = orders(:one).dup
+    order.order_number = nil
+    order.cep = "69005-010"   # Manaus/AM
+    order.state = "SP"
+
+    assert_not order.valid?
+    assert_match "não corresponde", order.errors.full_messages.join
+  end
+
+  test "accepts a new order whose state matches its CEP" do
+    order = orders(:one).dup
+    order.order_number = nil
+    order.cep = "69005-010"
+    order.state = "AM"
+
+    assert order.valid?, order.errors.full_messages.to_sentence
+  end
+
+  test "still lets an existing order with a mismatched address be marked paid" do
+    order = orders(:one)
+    order.update_columns(cep: "69005-010", state: "SP") # legacy data, before the check
+
+    assert_nothing_raised { order.mark_paid!(method: "stripe", reference: "pi_legacy") }
+    assert order.reload.paid?
+  end
 end

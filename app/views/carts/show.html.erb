@@ -73,10 +73,42 @@
           <div class="alert alert-success py-2 mb-3">Você ganhou <strong>frete grátis</strong>!</div>
         <% end %>
 
+        <%# // Estimativa de frete pelo CEP. O valor final é recalculado no checkout
+            // a partir do endereço de entrega (que precisa bater com o CEP). %>
+        <%= form_with url: shipping_cart_path, method: :post, local: true, class: "cart-cep" do %>
+          <label for="cart-cep" class="cart-cep__label">Calcular frete</label>
+          <div class="cart-cep__row">
+            <%= text_field_tag :cep, @shipping_cep, id: "cart-cep", class: "form-control",
+                  placeholder: "00000-000", inputmode: "numeric", autocomplete: "postal-code",
+                  maxlength: 9, required: true, pattern: "\\d{5}-?\\d{3}",
+                  title: "CEP com 8 números, ex.: 01310-100" %>
+            <button type="submit" class="btn btn-outline-secondary">Calcular</button>
+          </div>
+          <% if @shipping_uf %>
+            <p class="cart-cep__info">
+              Entrega em <%= @shipping_uf %> (<%= @shipping_region.to_s.split("_").map(&:capitalize).join("-") %>) pelos Correios.
+            </p>
+          <% end %>
+        <% end %>
+
         <dl class="cart-totals">
           <div><dt>Subtotal</dt><dd><%= format_price(@subtotal) %></dd></div>
-          <div><dt>Frete</dt><dd><%= format_price(@shipping) %></dd></div>
-          <div class="cart-totals__grand"><dt>Total</dt><dd><%= format_price(@total) %></dd></div>
+          <div>
+            <dt>Frete</dt>
+            <dd>
+              <% if @shipping.nil? %>
+                <span class="cart-totals__pending">Informe o CEP</span>
+              <% elsif @shipping.zero? %>
+                Grátis
+              <% else %>
+                <%= format_price(@shipping) %>
+              <% end %>
+            </dd>
+          </div>
+          <div class="cart-totals__grand">
+            <dt><%= @shipping.nil? ? "Total sem frete" : "Total" %></dt>
+            <dd><%= format_price(@total) %></dd>
+          </div>
         </dl>
 
         <%= link_to "Finalizar compra", checkout_path, class: "btn btn-yellow btn-lg w-100" %>
