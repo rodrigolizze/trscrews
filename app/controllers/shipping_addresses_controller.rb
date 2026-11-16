@@ -12,7 +12,8 @@ class ShippingAddressesController < ApplicationController
   # GET /shipping_addresses/new
   def new
     # // Usa a variável com o nome do model para o form_with
-    @shipping_address = current_user.shipping_addresses.new
+    # Pre-fill the CEP the customer already typed in the cart's freight estimate.
+    @shipping_address = current_user.shipping_addresses.new(cep: session[:shipping_cep])
   end
 
   # POST /shipping_addresses

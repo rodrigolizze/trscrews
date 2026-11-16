@@ -1,6 +1,8 @@
 class ShippingAddress < ApplicationRecord
   belongs_to :user
 
+  include CepMatchesState
+
   before_create :set_default_if_first
 
   before_validation :normalize_cep

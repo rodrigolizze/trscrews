@@ -130,7 +130,14 @@ class OrdersController < ApplicationController
     else
       # // Transação falhou: reconstruímos o resumo e avisamos o usuário
       rebuild_summary_for_render
-      flash.now[:alert] = "Alguns itens não têm estoque suficiente. Atualizamos as quantidades do carrinho."
+      # Address errors (e.g. UF that does not match the CEP) also roll the order back;
+      # say which problem it was instead of always blaming the stock.
+      flash.now[:alert] =
+        if @order.errors.any?
+          "Confira o endereço: #{@order.errors.full_messages.to_sentence}"
+        else
+          "Alguns itens não têm estoque suficiente. Atualizamos as quantidades do carrinho."
+        end
       # // Opcional: ajusta o carrinho para não pedir mais itens do que há em estoque
       sync_cart_to_stock!
       render :new, status: :unprocessable_entity

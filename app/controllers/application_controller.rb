@@ -28,7 +28,7 @@ class ApplicationController < ActionController::Base
     map[uf.to_s.upcase] || :sudeste   # // fallback stays sudeste
   end
 
-  # // Frete por região + grátis ≥ R$150
+  # // Frete por região + grátis a partir de SHIPPING_FREE_LIMIT (config/initializers/shipping.rb)
   def shipping_for(subtotal, uf:)
     free_limit = Rails.configuration.x.shipping.free_limit
     return 0.to_d if subtotal.to_d >= free_limit

@@ -18,6 +18,7 @@ Rails.application.routes.draw do
     patch  "set/:screw_id",    to: "carts#set",    as: :set
     delete "remove/:screw_id", to: "carts#remove", as: :remove
     delete "clear",            to: "carts#clear",  as: :clear
+    post   "shipping",         to: "carts#shipping", as: :shipping
   end
 
 

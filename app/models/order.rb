@@ -2,6 +2,8 @@ class Order < ApplicationRecord
   has_many :order_items, dependent: :destroy
   belongs_to :user, optional: true
 
+  include CepMatchesState
+
   enum :status, { draft: 0, placed: 1, cancelled: 2, shipped: 3 }
 
   # // 0=pending, 1=paid, 2=failed
@@ -50,11 +52,6 @@ class Order < ApplicationRecord
 
     # total = subtotal + frete
     self.total = subtotal.to_d + shipping
-  end
-
-  # // Simple shipping rule: R$ 20,00; grátis acima de R$ 150,00
-  def compute_shipping(subtotal_value)
-    subtotal_value.to_d >= 150 ? 0.to_d : 20.to_d
   end
 
 

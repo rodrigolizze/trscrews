@@ -11,17 +11,36 @@ class CartsController < ApplicationController
 
     @subtotal = @lines.sum { |l| l[:line_total] }
 
-    uf = nil
-      if defined?(user_signed_in?) && user_signed_in?
-        addresses = current_user.shipping_addresses.default_first
-        default_addr = addresses.find_by(is_default: true) || addresses.first  # // padrão ou primeiro
-        uf = default_addr&.state                                               # // pode ser nil
-      end
+    # The fee depends on the destination, so only show one once we know it: the CEP
+    # typed in the cart wins (most recent intent), then the saved default address.
+    # Without either we ask for the CEP instead of showing a guessed Sudeste fee.
+    @shipping_cep = session[:shipping_cep]
+    if @shipping_cep.blank? && user_signed_in?
+      addresses    = current_user.shipping_addresses.default_first
+      default_addr = addresses.find_by(is_default: true) || addresses.first
+      @shipping_cep = BrazilianCep.format(default_addr&.cep)
+    end
 
-    @shipping = shipping_for(@subtotal, uf: uf)
-    @total    = @subtotal + @shipping
-    @shipping_uf     = uf.to_s.upcase.presence
-    @shipping_region = region_for_uf(@shipping_uf)
+    uf = BrazilianCep.uf_for(@shipping_cep)
+    free = @subtotal.to_d >= Rails.configuration.x.shipping.free_limit
+
+    @shipping_uf     = uf
+    @shipping_region = region_for_uf(uf) if uf
+    @shipping        = (shipping_for(@subtotal, uf: uf) if uf || free)
+    @total           = @subtotal + @shipping.to_d
+  end
+
+  # POST /cart/shipping — freight estimate before checkout. Stores only the CEP in
+  # the session; checkout still recalculates the fee from the address it receives.
+  def shipping
+    cep = BrazilianCep.format(params[:cep])
+
+    if cep && BrazilianCep.uf_for(cep)
+      session[:shipping_cep] = cep
+      redirect_to cart_path
+    else
+      redirect_to cart_path, alert: "CEP não encontrado. Confira o número digitado."
+    end
   end
 
   def add
