@@ -182,7 +182,13 @@ class StripeWebhooksController < ApplicationController
     # evitando e-mail de confirmação duplicado.
     newly_paid = false
     order.with_lock do
-      if order.paid?
+      if order.paid? && order.payment_reference.present? && order.payment_reference != payment_reference
+        # A different charge for an order that is already paid (e.g. a second
+        # Checkout Session paid before the first was confirmed): the money was
+        # taken twice. Keep the first payment and flag this one for a refund.
+        Rails.logger.error "[Stripe] #{source}: DUPLICATE PAYMENT for Order #{order.id}: already paid with " \
+                           "#{order.payment_reference}, received #{payment_reference} – refund it in the Stripe dashboard"
+      elsif order.paid?
         Rails.logger.info "[Stripe] #{source}: Order #{order.id} already paid – skipping"
       elsif order.cancelled?
         # Paid after the reservation ended and the stock went back: do not flip it
