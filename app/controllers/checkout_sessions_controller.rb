@@ -99,6 +99,14 @@ class CheckoutSessionsController < ApplicationController
       # // ❌ Não pedir endereço de entrega no Stripe (você já coleta no pedido)
       # shipping_address_collection: { allowed_countries: ["BR"] },
 
+      # Pix (when enabled in the Stripe dashboard): the code must expire before the
+      # stock reservation, with a margin for the time spent filling the Checkout
+      # form (the Pix countdown starts when the form is submitted). Stripe accepts
+      # 10 s to 14 days; options for a method that is not enabled are ignored.
+      payment_method_options: {
+        pix: { expires_after_seconds: pix_expires_after_seconds }
+      },
+
       metadata: { order_id: @order.id },
 
       payment_intent_data: {
@@ -115,6 +123,13 @@ class CheckoutSessionsController < ApplicationController
   end
 
   private
+
+  PIX_CHECKOUT_MARGIN = 30.minutes
+
+  def pix_expires_after_seconds
+    seconds = (@order.payment_deadline - PIX_CHECKOUT_MARGIN - Time.current).to_i
+    seconds.clamp(10, 14.days.to_i)
+  end
 
   def set_order
     @order = Order.find(params[:order_id])

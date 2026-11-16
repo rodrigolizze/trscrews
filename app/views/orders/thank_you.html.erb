@@ -1,8 +1,12 @@
 <%# // Página do pedido logo após "Finalizar pedido" e retorno da Stripe — redesign D.
     // Com pay=1 o botão de pagamento se envia sozinho (ver _stripe_pay_button). %>
+<%# // confirming: voltou da Stripe (paid=1) mas o aviso de pagamento ainda não chegou —
+    // normal no Pix (o dinheiro cai depois) e por alguns segundos no cartão. %>
+<% confirming = params[:paid].present? && !@order.paid? && !@order.payment_expired? %>
 <% status_label, status_class =
      if @order.paid?             then ["Pago", "ok"]
      elsif @order.payment_expired? then ["Expirado", "off"]
+     elsif confirming             then ["Em confirmação", "wait"]
      else                             ["Aguardando pagamento", "wait"]
      end %>
 
@@ -11,7 +15,11 @@
     <div>
       <p class="hd-eyebrow ty-eyebrow">Pedido <%= @order.order_number || "##{@order.id}" %></p>
       <h1 class="ty-title">
-        <%= @order.paid? ? "Obrigado pela compra!" : (@order.payment_expired? ? "Pedido expirado" : "Falta só o pagamento") %>
+        <%= if @order.paid? then "Obrigado pela compra!"
+            elsif @order.payment_expired? then "Pedido expirado"
+            elsif confirming then "Pagamento em confirmação"
+            else "Falta só o pagamento"
+            end %>
       </h1>
     </div>
     <span class="ty-status ty-status--<%= status_class %>"><%= status_label %></span>
@@ -22,7 +30,7 @@
       <% if @order.paid? %>
         <p>Obrigado, <strong><%= @order.customer_name %></strong>. Enviamos a confirmação para <strong><%= @order.customer_email %></strong>.</p>
       <% end %>
-      <%= render "stripe_pay_button" %>
+      <%= render "stripe_pay_button", confirming: confirming %>
     </section>
 
     <section class="ty-box">

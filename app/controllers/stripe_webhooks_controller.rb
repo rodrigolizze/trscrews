@@ -49,6 +49,15 @@ class StripeWebhooksController < ApplicationController
       session = event["data"]["object"]
       handle_checkout_session_expired(session)
 
+    # Async methods (Pix, boleto): the money arrives after "completed".
+    when "checkout.session.async_payment_succeeded"
+      session = event["data"]["object"]
+      handle_checkout_session_async_payment_succeeded(session)
+
+    when "checkout.session.async_payment_failed"
+      session = event["data"]["object"]
+      handle_checkout_session_async_payment_failed(session)
+
     else
       Rails.logger.info "[Stripe] Ignored event type: #{event['type']}"
     end
@@ -70,6 +79,15 @@ class StripeWebhooksController < ApplicationController
     order_id = metadata["order_id"]
     Rails.logger.info "[Stripe] checkout.session.completed order_id=#{order_id} session_id=#{session['id']}"
 
+    # With Pix/boleto, "completed" only means the code was generated: the money
+    # has not arrived yet (payment_status "unpaid"). The order is marked paid by
+    # checkout.session.async_payment_succeeded (or payment_intent.succeeded).
+    unless session["payment_status"] == "paid"
+      Rails.logger.info "[Stripe] checkout.session.completed: Order #{order_id} awaiting async payment " \
+                        "(payment_status=#{session['payment_status'].inspect})"
+      return
+    end
+
     mark_order_paid(order_id,
                     payment_reference: session["payment_intent"] || session["id"],
                     amount_cents: session["amount_total"],
@@ -88,6 +106,20 @@ class StripeWebhooksController < ApplicationController
       currency: intent["currency"],
       source: "payment_intent.succeeded"
     )
+  end
+
+  # Pix/boleto paid: same path as a card payment (amount check, lock, e-mail).
+  def handle_checkout_session_async_payment_succeeded(session)
+    mark_order_paid((session["metadata"] || {})["order_id"],
+                    payment_reference: session["payment_intent"] || session["id"],
+                    amount_cents: session["amount_total"],
+                    currency: session["currency"],
+                    source: "checkout.session.async_payment_succeeded")
+  end
+
+  # Pix code expired (or the payment failed): same as an expired session.
+  def handle_checkout_session_async_payment_failed(session)
+    handle_checkout_session_expired(session)
   end
 
   # The payment window closed without payment: cancel and give the stock back.
@@ -139,6 +171,11 @@ class StripeWebhooksController < ApplicationController
     order.with_lock do
       if order.paid?
         Rails.logger.info "[Stripe] #{source}: Order #{order.id} already paid – skipping"
+      elsif order.cancelled?
+        # Paid after the reservation ended and the stock went back: do not flip it
+        # to paid (the items may be sold again). Needs a manual refund or re-order.
+        Rails.logger.error "[Stripe] #{source}: Order #{order.id} is CANCELLED but a payment arrived " \
+                           "(ref=#{payment_reference}) – NOT marking paid, review and refund manually"
       else
         # mark_paid! continua sendo o ÚNICO ponto de escrita de payment_status=paid
         order.mark_paid!(method: "stripe", reference: payment_reference)

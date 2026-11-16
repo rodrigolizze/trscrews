@@ -29,4 +29,16 @@ class OrdersThankYouTest < ActionController::TestCase
     assert_equal "pending", order.reload.payment_status,
                  "a página de sucesso é somente-leitura; não deve escrever no banco"
   end
+
+  # Back from Stripe with Pix: the order is still pending until the money arrives.
+  # Showing "Pagar agora" there invited a second payment for the same order.
+  test "returning from Stripe before the payment is confirmed shows confirming, not a pay button" do
+    order = orders(:one)
+
+    get :thank_you, params: { id: order.id, paid: 1 }, session: { last_order_id: order.id }
+
+    assert_response :success
+    assert_match "Pagamento em confirmação", response.body
+    assert_no_match(/Pagar agora/, response.body)
+  end
 end
