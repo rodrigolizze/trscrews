@@ -89,4 +89,11 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # letter_opener_web shows each e-mail inside an <iframe>; the app CSP sets
+  # frame-ancestors 'none' (anti-clickjacking), which left the preview blank once the
+  # CSP was enforced. Dev-only engine, so it simply skips the CSP.
+  config.to_prepare do
+    LetterOpenerWeb::ApplicationController.content_security_policy false
+  end
 end

@@ -8,13 +8,21 @@ class ShippingAddressTest < ActiveSupport::TestCase
     )
   end
 
-  test "is valid when the state matches the CEP" do
-    assert build_address(cep: "69005-010", state: "AM").valid?
+  test "takes its state from the CEP, not from what was typed" do
+    address = build_address(cep: "69005-010", state: "SP")
+    assert address.valid?, address.errors.full_messages.to_sentence
+    assert_equal "AM", address.state
   end
 
-  test "rejects a state that does not match the CEP" do
-    address = build_address(cep: "69005-010", state: "SP")
+  test "fills the state from the CEP when none is given" do
+    address = build_address(cep: "40026-032", state: nil)
+    assert address.valid?, address.errors.full_messages.to_sentence
+    assert_equal "BA", address.state
+  end
+
+  test "rejects an unassigned CEP" do
+    address = build_address(cep: "00999-999", state: nil)
     assert_not address.valid?
-    assert_match "não corresponde", address.errors.full_messages.join
+    assert_match "CEP não encontrado", address.errors.full_messages.join
   end
 end

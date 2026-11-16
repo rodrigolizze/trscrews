@@ -70,10 +70,12 @@
             </div>
             <div class="col-md-3">
               <%= f.label :state, "UF", class: "form-label" %>
-              <%= f.select :state,
-                    options_for_select(Rails.configuration.x.shipping.uf_codes, @shipping_address.state),
-                    { prompt: "Selecione a UF" },
-                    class: "form-select", required: true, data: { cep_target: "state" } %>
+              <%# // UF só para leitura: o servidor define pelo CEP (CepMatchesState).
+                  // name: nil = não é enviada no formulário; o ViaCEP só a exibe. %>
+              <%= f.text_field :state, name: nil, readonly: true, tabindex: -1,
+                    class: "form-control", placeholder: "Pelo CEP",
+                    aria: { describedby: "address-state-hint" }, data: { cep_target: "state" } %>
+              <div id="address-state-hint" class="form-text">Preenchida pelo CEP.</div>
             </div>
           </div>
 
