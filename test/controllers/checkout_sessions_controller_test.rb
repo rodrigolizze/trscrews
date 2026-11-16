@@ -32,4 +32,16 @@ class CheckoutSessionsControllerTest < ActionDispatch::IntegrationTest
     assert Time.current + pix_seconds <= order.payment_deadline,
            "o Pix não pode valer além da reserva de estoque"
   end
+
+  # Regression: revisiting thank_you?pay=1 while a Pix was pending opened a new
+  # Checkout Session, so the customer could pay the same order twice.
+  test "does not open a second payment while a Pix is pending" do
+    order = place_order
+    order.update!(payment_reference: "pi_pending_pix")
+
+    params = create_session_capturing_params(order)
+
+    assert_nil params, "não deveria criar outra sessão na Stripe"
+    assert_redirected_to thank_you_order_path(order, paid: 1)
+  end
 end

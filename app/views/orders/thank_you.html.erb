@@ -1,8 +1,9 @@
 <%# // Página do pedido logo após "Finalizar pedido" e retorno da Stripe — redesign D.
     // Com pay=1 o botão de pagamento se envia sozinho (ver _stripe_pay_button). %>
 <%# // confirming: voltou da Stripe (paid=1) mas o aviso de pagamento ainda não chegou —
-    // normal no Pix (o dinheiro cai depois) e por alguns segundos no cartão. %>
-<% confirming = params[:paid].present? && !@order.paid? && !@order.payment_expired? %>
+    // normal no Pix (o dinheiro cai depois) e por alguns segundos no cartão — ou um Pix
+    // já gerado para este pedido (awaiting_async_payment?), por qualquer caminho. %>
+<% confirming = (params[:paid].present? || @order.awaiting_async_payment?) && !@order.paid? && !@order.payment_expired? %>
 <% status_label, status_class =
      if @order.paid?             then ["Pago", "ok"]
      elsif @order.payment_expired? then ["Expirado", "off"]

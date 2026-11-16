@@ -41,4 +41,16 @@ class OrdersThankYouTest < ActionController::TestCase
     assert_match "Pagamento em confirmação", response.body
     assert_no_match(/Pagar agora/, response.body)
   end
+
+  test "the pay=1 link does not auto-open Stripe while a Pix is pending" do
+    order = orders(:one)
+    order.update!(payment_reference: "pi_pending_pix")
+
+    get :thank_you, params: { id: order.id, pay: 1 }, session: { last_order_id: order.id }
+
+    assert_response :success
+    assert_match "Pagamento em confirmação", response.body
+    assert_no_match(/Pagar agora/, response.body)
+    assert_no_match(/auto-submit/, response.body)
+  end
 end

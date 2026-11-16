@@ -17,6 +17,12 @@ class CheckoutSessionsController < ApplicationController
       redirect_to thank_you_order_path(@order), alert: "Este pedido não está pendente de pagamento." and return
     end
 
+    # A Pix is already pending for this order: a new session could charge twice.
+    if @order.awaiting_async_payment?
+      redirect_to thank_you_order_path(@order, paid: 1),
+                  notice: "Já existe um pagamento Pix em andamento para este pedido. Assim que ele cair, você recebe a confirmação por e-mail." and return
+    end
+
     # Expired/cancelled orders already gave their stock back: no new payment.
     if @order.cancelled? || @order.payment_expired?
       redirect_to thank_you_order_path(@order), alert: "O prazo de pagamento deste pedido expirou. Faça um novo pedido." and return
