@@ -1,13 +1,27 @@
 require "test_helper"
 
 class SecurityHeadersTest < ActionDispatch::IntegrationTest
-  test "sends the content security policy in report-only mode (audit M1)" do
+  test "enforces the content security policy (audit M1, phase 2)" do
     get root_url
     assert_response :success
-    csp = response.headers["Content-Security-Policy-Report-Only"]
-    assert csp.present?, "esperava o cabeçalho CSP report-only"
+    assert_nil response.headers["Content-Security-Policy-Report-Only"],
+               "a CSP não deveria mais estar só em modo de observação"
+    csp = response.headers["Content-Security-Policy"]
+    assert csp.present?, "esperava o cabeçalho CSP aplicado"
     assert_includes csp, "object-src 'none'"
     assert_includes csp, "form-action 'self' https://checkout.stripe.com"
+  end
+
+  test "every inline script carries the CSP nonce, even on a first visit" do
+    get root_url
+    nonce = response.headers["Content-Security-Policy"][/'nonce-([^']+)'/, 1]
+    assert nonce.present?, "esperava um nonce no script-src"
+
+    inline_scripts = css_select("script:not([src])")
+    assert inline_scripts.any?
+    inline_scripts.each do |script|
+      assert_equal nonce, script["nonce"], "script inline sem nonce seria bloqueado: #{script.to_html[0, 80]}"
+    end
   end
 
   test "password reset does not reveal whether the e-mail has an account (audit B1)" do

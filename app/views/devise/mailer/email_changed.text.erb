@@ -1,0 +1,11 @@
+Olá,
+
+<% if @resource.try(:unconfirmed_email?) -%>
+O e-mail de acesso da sua conta na TR AutoFix está sendo alterado para <%= @resource.unconfirmed_email %>.
+<% else -%>
+O e-mail de acesso da sua conta na TR AutoFix foi alterado para <%= @resource.email %>.
+<% end -%>
+
+Se não foi você, fale com a gente o quanto antes.
+
+Equipe TR AutoFix

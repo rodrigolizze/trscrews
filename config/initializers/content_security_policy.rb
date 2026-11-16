@@ -1,9 +1,13 @@
 # Be sure to restart your server when you modify this file.
 #
-# Content Security Policy — security audit M1 (2026-11-15).
-# Phase 1: REPORT-ONLY. The browser enforces nothing and logs violations to the
-# console, so the policy can be tuned on every page before it is enforced.
-# Phase 2: set content_security_policy_report_only = false.
+# Content Security Policy — security audit M1.
+# Phase 1 (2026-11-15): report-only, to tune the policy on every page.
+# Phase 2 (2026-11-16): ENFORCED. Checked on production before switching: every
+# resource loaded by home (3D screw), catalog, cart and policy pages comes from an
+# allowed origin, inline scripts carry the nonce (also on a first, cookieless
+# visit) and the views have no inline event handlers. A new external origin
+# (analytics, chat widget, Pix QR code host...) must be added here or it will be
+# blocked. To go back to observing only, flip the flag below to true.
 #
 # External origins in use:
 #   cdn.jsdelivr.net      Bootstrap (CSS/JS), Bootstrap Icons, three.js + Draco decoder (importmap)
@@ -36,5 +40,5 @@ Rails.application.configure do
   config.content_security_policy_nonce_generator = ->(request) { request.session.id.to_s }
   config.content_security_policy_nonce_directives = %w(script-src)
 
-  config.content_security_policy_report_only = true
+  config.content_security_policy_report_only = false
 end

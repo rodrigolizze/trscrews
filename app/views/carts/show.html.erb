@@ -75,13 +75,14 @@
 
         <%# // Estimativa de frete pelo CEP. O valor final é recalculado no checkout
             // a partir do endereço de entrega (que precisa bater com o CEP). %>
-        <%= form_with url: shipping_cart_path, method: :post, local: true, class: "cart-cep" do %>
+        <%# // data-controller="cep" só aplica a máscara 00000-000 (sem busca no ViaCEP aqui). %>
+        <%= form_with url: shipping_cart_path, method: :post, local: true, class: "cart-cep", data: { controller: "cep" } do %>
           <label for="cart-cep" class="cart-cep__label">Calcular frete</label>
           <div class="cart-cep__row">
             <%= text_field_tag :cep, @shipping_cep, id: "cart-cep", class: "form-control",
                   placeholder: "00000-000", inputmode: "numeric", autocomplete: "postal-code",
                   maxlength: 9, required: true, pattern: "\\d{5}-?\\d{3}",
-                  title: "CEP com 8 números, ex.: 01310-100" %>
+                  title: "CEP com 8 números, ex.: 01310-100", data: { cep_target: "cep" } %>
             <button type="submit" class="btn btn-outline-secondary">Calcular</button>
           </div>
           <% if @shipping_uf %>
