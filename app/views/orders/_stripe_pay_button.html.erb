@@ -4,13 +4,23 @@
     // como alternativa caso o redirecionamento não aconteça. %>
 <% autopay = params[:pay].present? && !@order.paid? && !@order.payment_expired? %>
 
-<% if params[:paid].present? %>
-  <div class="alert alert-success mb-3">Pagamento em processamento. Você receberá a confirmação por e-mail.</div>
+<% confirming = local_assigns.fetch(:confirming, false) %>
+
+<% if confirming %>
+  <%# // Sem botão "Pagar agora" aqui: um Pix gerado ainda pode ser pago, e uma nova
+      // sessão poderia levar a um pagamento em dobro. %>
+  <div class="alert alert-info mb-0" role="status">
+    Recebemos seu pedido e estamos aguardando a confirmação do pagamento.
+    Se pagou com Pix, ela chega em instantes depois da transferência, e você recebe um e-mail.
+    <%= link_to "Atualizar status", thank_you_order_path(@order, paid: 1), class: "alert-link" %>.
+  </div>
 <% elsif params[:canceled].present? %>
   <div class="alert alert-warning mb-3">Pagamento não concluído. Você pode tentar de novo abaixo.</div>
 <% end %>
 
-<% if @order.paid? %>
+<% if confirming %>
+  <%# // mensagem acima %>
+<% elsif @order.paid? %>
   <div class="alert alert-success mb-0">Pagamento recebido.</div>
 <% elsif @order.payment_expired? %>
   <div class="alert alert-warning mb-0">

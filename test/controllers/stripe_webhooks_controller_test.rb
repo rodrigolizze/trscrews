@@ -87,7 +87,7 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
     evt_a = webhook_payload(
       id:   "evt_A",
       type: "checkout.session.completed",
-      object: { "id" => "cs_A", "amount_total" => 7200, "currency" => "brl", "metadata" => { "order_id" => order.id.to_s } }
+      object: { "id" => "cs_A", "amount_total" => 7200, "currency" => "brl", "payment_status" => "paid", "metadata" => { "order_id" => order.id.to_s } }
     )
     evt_b = webhook_payload(
       id:   "evt_B",
@@ -119,7 +119,7 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
     payload = webhook_payload(
       id:   "evt_C_only",
       type: "checkout.session.completed",
-      object: { "id" => "cs_C_only", "amount_total" => 2000, # orders(:two): no items, shipping only (R$ 20,00)
+      object: { "id" => "cs_C_only", "amount_total" => 2000, "payment_status" => "paid", # orders(:two): no items, shipping only (R$ 20,00)
                 "currency" => "brl", "metadata" => { "order_id" => order.id.to_s } }
     )
 
@@ -193,7 +193,7 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
     order = orders(:one)
     payload = webhook_payload(
       id: "evt_wrong_currency", type: "checkout.session.completed",
-      object: { "id" => "cs_usd", "amount_total" => 7200, "currency" => "usd",
+      object: { "id" => "cs_usd", "amount_total" => 7200, "currency" => "usd", "payment_status" => "paid",
                 "metadata" => { "order_id" => order.id.to_s } }
     )
 
@@ -220,5 +220,66 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
     assert_response :internal_server_error
     assert_equal "pending", order.reload.payment_status
     assert_not StripeWebhookEvent.exists?(stripe_event_id: "evt_unsigned")
+  end
+
+  # ---- Async payment methods (Pix, boleto) ---------------------------------
+  # With Pix, checkout.session.completed only means the QR code was generated:
+  # payment_status is "unpaid" until checkout.session.async_payment_succeeded.
+  # Regression: the handler marked the order paid (and e-mailed) on "completed".
+  def pix_session(order, id:, payment_status:)
+    { "id" => id, "payment_intent" => "pi_#{id}", "payment_status" => payment_status,
+      "amount_total" => (order.total_amount * 100).round, "currency" => "brl",
+      "metadata" => { "order_id" => order.id.to_s } }
+  end
+
+  test "checkout.session.completed with an unpaid Pix does not mark the order paid" do
+    order = orders(:one)
+
+    assert_enqueued_emails 0 do
+      deliver_webhook(webhook_payload(id: "evt_pix_completed", type: "checkout.session.completed",
+                                      object: pix_session(order, id: "cs_pix_1", payment_status: "unpaid")))
+    end
+
+    assert_response :ok
+    assert order.reload.payment_pending?, "Pix gerado não é Pix pago"
+  end
+
+  test "checkout.session.async_payment_succeeded marks the Pix order paid and e-mails once" do
+    order = orders(:one)
+
+    assert_enqueued_emails 1 do
+      deliver_webhook(webhook_payload(id: "evt_pix_paid", type: "checkout.session.async_payment_succeeded",
+                                      object: pix_session(order, id: "cs_pix_2", payment_status: "paid")))
+    end
+
+    assert_response :ok
+    order.reload
+    assert order.paid?
+    assert_equal "pi_cs_pix_2", order.payment_reference
+  end
+
+  test "checkout.session.async_payment_failed cancels the order and restocks it" do
+    order = orders(:one)
+    stock_one = screws(:one).stock
+
+    deliver_webhook(webhook_payload(id: "evt_pix_failed", type: "checkout.session.async_payment_failed",
+                                    object: pix_session(order, id: "cs_pix_3", payment_status: "unpaid")))
+
+    assert_response :ok
+    assert order.reload.cancelled?
+    assert_equal stock_one + 2, screws(:one).reload.stock
+  end
+
+  test "a payment arriving for an order already cancelled is not marked paid" do
+    order = orders(:one)
+    order.expire_and_restock!
+
+    assert_enqueued_emails 0 do
+      deliver_webhook(webhook_payload(id: "evt_late_pix", type: "checkout.session.async_payment_succeeded",
+                                      object: pix_session(order, id: "cs_pix_4", payment_status: "paid")))
+    end
+
+    assert_response :ok
+    assert order.reload.cancelled?, "estoque já foi devolvido: não pode virar pago sem revisão"
   end
 end
