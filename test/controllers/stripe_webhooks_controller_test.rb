@@ -285,4 +285,48 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
     assert_response :ok
     assert order.reload.cancelled?, "estoque já foi devolvido: não pode virar pago sem revisão"
   end
+
+  # Regression (production test mode, order 204): a second Checkout Session for an
+  # order already paid was charged too. The handler skipped it silently, so the
+  # duplicate charge could go unnoticed. It must be flagged for a refund.
+  def capture_log
+    io = StringIO.new
+    original = Rails.logger
+    Rails.logger = ActiveSupport::Logger.new(io)
+    yield
+    io.string
+  ensure
+    Rails.logger = original
+  end
+
+  test "a second payment for an order already paid is flagged for refund, not applied" do
+    order = orders(:one)
+    order.mark_paid!(method: "stripe", reference: "pi_first")
+
+    log = nil
+    assert_enqueued_emails 0 do
+      log = capture_log do
+        deliver_webhook(webhook_payload(id: "evt_second_charge", type: "payment_intent.succeeded",
+                                        object: { "id" => "pi_second", "amount" => (order.total_amount * 100).round,
+                                                  "currency" => "brl", "metadata" => { "order_id" => order.id.to_s } }))
+      end
+    end
+
+    assert_response :ok
+    assert_equal "pi_first", order.reload.payment_reference, "o primeiro pagamento continua sendo o do pedido"
+    assert_match(/DUPLICATE PAYMENT.*pi_second.*refund/i, log)
+  end
+
+  test "the same payment reported by two events is not flagged as duplicate" do
+    order = orders(:one)
+    order.mark_paid!(method: "stripe", reference: "pi_same")
+
+    log = capture_log do
+      deliver_webhook(webhook_payload(id: "evt_same_pi", type: "payment_intent.succeeded",
+                                      object: { "id" => "pi_same", "amount" => (order.total_amount * 100).round,
+                                                "currency" => "brl", "metadata" => { "order_id" => order.id.to_s } }))
+    end
+
+    assert_no_match(/DUPLICATE PAYMENT/i, log)
+  end
 end
