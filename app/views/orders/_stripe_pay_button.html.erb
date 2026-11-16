@@ -2,9 +2,9 @@
     // "Finalizar pedido"), o formulário se envia sozinho (Stimulus auto-submit) e a
     // pessoa vai direto para a página segura da Stripe. O botão continua visível
     // como alternativa caso o redirecionamento não aconteça. %>
-<% autopay = params[:pay].present? && !@order.paid? && !@order.payment_expired? %>
+<% autopay = params[:pay].present? && !@order.paid? && !@order.payment_expired? && !@order.awaiting_async_payment? %>
 
-<% confirming = local_assigns.fetch(:confirming, false) %>
+<% confirming = local_assigns.fetch(:confirming) { @order.awaiting_async_payment? && !@order.payment_expired? } %>
 
 <% if confirming %>
   <%# // Sem botão "Pagar agora" aqui: um Pix gerado ainda pode ser pago, e uma nova

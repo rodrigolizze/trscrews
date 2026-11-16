@@ -241,7 +241,10 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :ok
-    assert order.reload.payment_pending?, "Pix gerado não é Pix pago"
+    order.reload
+    assert order.payment_pending?, "Pix gerado não é Pix pago"
+    assert order.awaiting_async_payment?, "esperava o Pix pendente registrado no pedido"
+    assert_equal "pi_cs_pix_1", order.payment_reference
   end
 
   test "checkout.session.async_payment_succeeded marks the Pix order paid and e-mails once" do

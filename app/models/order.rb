@@ -81,6 +81,13 @@ class Order < ApplicationRecord
             payment_method: method, payment_reference: reference)
   end
 
+  # A Pix (or other async payment) was generated for this order and the money has
+  # not arrived yet. payment_reference is set by the webhook on an unpaid
+  # checkout.session.completed and only overwritten by mark_paid!.
+  def awaiting_async_payment?
+    payment_pending? && !cancelled? && payment_reference.present?
+  end
+
   def payment_pending?
     if respond_to?(:payment_status) && self.payment_status.present?
       self.payment_status.to_s == "pending"

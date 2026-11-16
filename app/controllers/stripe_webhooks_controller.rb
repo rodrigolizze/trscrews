@@ -85,6 +85,7 @@ class StripeWebhooksController < ApplicationController
     unless session["payment_status"] == "paid"
       Rails.logger.info "[Stripe] checkout.session.completed: Order #{order_id} awaiting async payment " \
                         "(payment_status=#{session['payment_status'].inspect})"
+      record_pending_async_payment(order_id, session["payment_intent"] || session["id"])
       return
     end
 
@@ -106,6 +107,18 @@ class StripeWebhooksController < ApplicationController
       currency: intent["currency"],
       source: "payment_intent.succeeded"
     )
+  end
+
+  # Remember the generated Pix on the order, so the site neither redirects to
+  # Stripe again nor opens a second Checkout Session (double payment).
+  def record_pending_async_payment(order_id, reference)
+    order = order_id.present? && Order.find_by(id: order_id)
+    return unless order
+
+    order.with_lock do
+      next unless order.payment_pending? && !order.cancelled?
+      order.update_columns(payment_reference: reference, updated_at: Time.current)
+    end
   end
 
   # Pix/boleto paid: same path as a card payment (amount check, lock, e-mail).
