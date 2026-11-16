@@ -118,10 +118,14 @@ Rails.application.configure do
   config.active_record.dump_schema_after_migration = false
 
   # Enable DNS rebinding protection and other `Host` header attacks.
-  # config.hosts = [
-  #   "example.com",     # Allow requests from example.com
-  #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
-  # ]
-  # Skip DNS rebinding protection for the default health check endpoint.
-  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  # Security audit B3 (2026-11-15): only answer for our own host names
+  # (protects against DNS rebinding / Host header attacks). Add a custom domain
+  # through APP_HOSTS="trautofix.com.br,www.trautofix.com.br" when there is one.
+  config.hosts = [
+    "trscrews-prod-4185ac87e394.herokuapp.com",
+    ENV["APP_HOST"],
+    *ENV.fetch("APP_HOSTS", "").split(",")
+  ].map { |h| h.to_s.strip }.reject(&:empty?).uniq
+  # Health check must answer whatever the Host header is.
+  config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 end

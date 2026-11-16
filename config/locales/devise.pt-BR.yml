@@ -39,7 +39,7 @@ pt-BR:
       updated: "Sua senha foi alterada com sucesso. Você já está conectado."
       updated_not_active: "Sua senha foi alterada com sucesso."
       no_token: "Você não pode acessar esta página sem vir de um e-mail de redefinição de senha. Se você veio de um, confirme que usou o endereço completo do link."
-      # Só é usada se config.paranoid for ligada no initializer (hoje está desligada)
+      # Usada porque config.paranoid está ligada (auditoria B1, 2026-11-15)
       send_paranoid_instructions: "Se o seu e-mail estiver cadastrado, você receberá um link para redefinir sua senha em alguns minutos."
 
     # Mensagens de confirmação de e-mail

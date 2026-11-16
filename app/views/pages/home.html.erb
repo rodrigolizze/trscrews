@@ -1,5 +1,5 @@
 <% content_for :head do %>
-  <script type="module">import "screw_3d";</script>
+  <script type="module" nonce="<%= content_security_policy_nonce %>">import "screw_3d";</script>
 <% end %>
 
 <%# // Home — direção visual D (ver Escritorio-IA/projetos/01-ecommerce/redesign/guia-de-estilo.md).
