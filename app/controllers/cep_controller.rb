@@ -6,6 +6,12 @@ class CepController < ActionController::Base
   require "uri"
   require "json"
 
+  # Security audit B2: each request hits ViaCEP; cap it per IP so the endpoint
+  # cannot be used to hammer the third-party API. Per-process memory store.
+  RATE_LIMIT_STORE = ActiveSupport::Cache::MemoryStore.new
+  rate_limit to: 30, within: 1.minute, store: RATE_LIMIT_STORE,
+             with: -> { render json: { error: "Muitas consultas de CEP. Tente novamente em instantes." }, status: :too_many_requests }
+
   # // GET /cep/:cep
   def lookup
     # // 1) Sanitize input: keep only digits

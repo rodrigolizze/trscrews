@@ -20,5 +20,6 @@ class ActionDispatch::IntegrationTest
   setup do
     Admin::BaseController::AUTH_FAILURE_STORE.clear
     Users::SessionsController::RATE_LIMIT_STORE.clear
+    CepController::RATE_LIMIT_STORE.clear
   end
 end
