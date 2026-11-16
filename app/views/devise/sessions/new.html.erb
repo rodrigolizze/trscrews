@@ -62,6 +62,13 @@
             <%= link_to "Criar conta", new_registration_path(resource_name), class: "fw-semibold" %>
           </p>
 
+          <%# // Sem este link, quem não confirmou o e-mail ficava travado no login
+              // (a página de reenvio existia, mas nada levava até ela). %>
+          <p class="text-center text-muted small mt-2 mb-0">
+            Não recebeu o e-mail de confirmação?
+            <%= link_to "Reenviar", new_confirmation_path(resource_name), class: "fw-semibold" %>
+          </p>
+
         </div>
       </div>
     </div>

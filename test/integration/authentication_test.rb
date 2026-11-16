@@ -68,4 +68,10 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to new_user_session_path
   end
+
+  # An unconfirmed user had no way to reach the resend page from the login screen.
+  test "sign in page links to resending the confirmation e-mail" do
+    get new_user_session_path
+    assert_select "a[href=?]", new_user_confirmation_path
+  end
 end

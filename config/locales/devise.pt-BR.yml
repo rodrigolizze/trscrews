@@ -14,7 +14,7 @@ pt-BR:
       # mensagem padrão quando não está logado
       unauthenticated: "Você precisa entrar ou criar uma conta para continuar."
       # esta é a chave usada quando a conta ainda não foi confirmada
-      unconfirmed: "Você precisa confirmar seu e-mail antes de continuar."
+      unconfirmed: "Você precisa confirmar seu e-mail antes de continuar. Não recebeu o e-mail? Use o link \"Reenviar\" abaixo do formulário."
 
     registrations:
       signed_up: "Bem-vindo! Sua conta foi criada com sucesso."
