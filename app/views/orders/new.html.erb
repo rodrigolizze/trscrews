@@ -205,6 +205,11 @@
               </div>
             </div>
 
+            <p class="small text-muted mb-2">
+              Ao confirmar, você concorda com os <%= link_to "Termos de uso", terms_of_use_path, target: "_blank" %>
+              e a <%= link_to "Política de privacidade", privacy_policy_path, target: "_blank" %>.
+              Desistiu? Você tem 7 dias após o recebimento — veja <%= link_to "trocas e devoluções", returns_policy_path, target: "_blank" %>.
+            </p>
             <div class="d-grid">
               <%= f.submit "Confirmar pedido", class: "btn btn-yellow" %>
             </div>

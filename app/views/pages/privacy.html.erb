@@ -1,0 +1,82 @@
+<%# // Política de privacidade — LGPD (Lei 13.709/2018), arts. 9º e 18; Marco Civil
+    // da Internet, art. 15. Rascunho aguardando revisão jurídica. %>
+<div class="container py-4 py-lg-5 policy-d">
+  <%= render "pages/policy_header", title: "Política de privacidade" %>
+
+  <section>
+    <p class="policy-d__lead">
+      Coletamos só os dados necessários para vender, entregar e dar suporte. Não vendemos dados a ninguém e
+      <strong>nunca recebemos o número do seu cartão</strong>: o pagamento é feito diretamente na Stripe.
+    </p>
+    <p>
+      Controladora dos dados: <%= company_identification %><% if company.address %>, <%= company.address %><% end %>.
+      Assuntos de privacidade: fale com a gente <%= company_contact_sentence %>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Quais dados coletamos e por quê</h2>
+    <div class="table-responsive">
+      <table class="table policy-d__table">
+        <thead><tr><th>Dados</th><th>Para quê</th><th>Base legal (LGPD, art. 7º)</th></tr></thead>
+        <tbody>
+          <tr><td data-label="Dados">Nome e e-mail</td><td data-label="Para quê">Criar a conta, confirmar pedidos e enviar e-mails sobre o pedido</td><td data-label="Base legal (LGPD, art. 7º)">Execução de contrato</td></tr>
+          <tr><td data-label="Dados">Senha</td><td data-label="Para quê">Acesso à conta. Guardada só de forma criptografada; ninguém da loja consegue lê-la</td><td data-label="Base legal (LGPD, art. 7º)">Execução de contrato</td></tr>
+          <tr><td data-label="Dados">Endereço de entrega e CEP</td><td data-label="Para quê">Calcular o frete e entregar</td><td data-label="Base legal (LGPD, art. 7º)">Execução de contrato</td></tr>
+          <tr><td data-label="Dados">Histórico de pedidos e valores</td><td data-label="Para quê">Atendimento, trocas e obrigações fiscais</td><td data-label="Base legal (LGPD, art. 7º)">Execução de contrato e obrigação legal</td></tr>
+          <tr><td data-label="Dados">Endereço IP e registros de acesso</td><td data-label="Para quê">Segurança (bloqueio de tentativas de login) e guarda exigida pelo Marco Civil da Internet</td><td data-label="Base legal (LGPD, art. 7º)">Legítimo interesse e obrigação legal</td></tr>
+          <tr><td data-label="Dados">Dados do cartão e de cobrança</td><td data-label="Para quê">Coletados e tratados pela Stripe, não pela loja</td><td data-label="Base legal (LGPD, art. 7º)">Execução de contrato</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Com quem compartilhamos</h2>
+    <div class="table-responsive">
+      <table class="table policy-d__table">
+        <thead><tr><th>Empresa</th><th>Função</th><th>Dados</th></tr></thead>
+        <tbody>
+          <tr><td data-label="Empresa">Stripe</td><td data-label="Função">Processa o pagamento</td><td data-label="Dados">Nome, e-mail, valor do pedido e dados do cartão</td></tr>
+          <tr><td data-label="Empresa">Heroku (Salesforce)</td><td data-label="Função">Hospeda o site e o banco de dados</td><td data-label="Dados">Dados da conta e dos pedidos</td></tr>
+          <tr><td data-label="Empresa">Correios</td><td data-label="Função">Entregam o pedido</td><td data-label="Dados">Nome e endereço de entrega</td></tr>
+          <tr><td data-label="Empresa">ViaCEP</td><td data-label="Função">Preenche o endereço a partir do CEP</td><td data-label="Dados">Só o CEP digitado</td></tr>
+          <tr><td data-label="Empresa">Provedor de e-mail</td><td data-label="Função">Envia os e-mails da loja</td><td data-label="Dados">Nome e e-mail</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Stripe e Heroku armazenam dados nos Estados Unidos. Essa transferência internacional é necessária para executar a compra (LGPD, art. 33).</p>
+  </section>
+
+  <section>
+    <h2>Cookies</h2>
+    <p>
+      O site usa apenas cookies essenciais: um para manter o carrinho e a sessão de login e outro, opcional, para a opção
+      "Lembrar de mim". Não usamos cookies de anúncios nem de análise. Se isso mudar, esta política será atualizada antes.
+    </p>
+  </section>
+
+  <section>
+    <h2>Por quanto tempo guardamos</h2>
+    <ul>
+      <li>Conta: enquanto estiver ativa ou até você pedir a exclusão.</li>
+      <li>Pedidos e documentos fiscais: pelo prazo exigido pela legislação fiscal (em regra, 5 anos).</li>
+      <li>Registros de acesso: 6 meses (Marco Civil da Internet, art. 15).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Seus direitos</h2>
+    <p>
+      Você pode pedir, a qualquer momento: confirmação de que tratamos seus dados, acesso, correção, anonimização ou exclusão
+      do que for desnecessário, portabilidade, informação sobre com quem compartilhamos e revogação de consentimento
+      (LGPD, art. 18). Fale com a gente <%= company_contact_sentence %>. Respondemos em até 15 dias.
+      Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).
+    </p>
+  </section>
+
+  <section>
+    <h2>Segurança</h2>
+    <p>Conexão sempre criptografada (HTTPS), senhas guardadas com hash, limite de tentativas de login e pagamentos processados por empresa certificada PCI-DSS.</p>
+  </section>
+</div>

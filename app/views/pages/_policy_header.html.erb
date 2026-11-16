@@ -1,0 +1,11 @@
+<%# // Cabeçalho comum das páginas de política: título, data e navegação entre elas. %>
+<% content_for :title, "#{title} — TR AutoFix" %>
+<header class="policy-d__header">
+  <h1 class="policy-d__title"><%= title %></h1>
+  <p class="policy-d__updated">Última atualização: <%= l(company.policies_updated_on, format: "%d/%m/%Y") %></p>
+  <nav class="policy-d__nav" aria-label="Políticas da loja">
+    <%= link_to "Trocas e devoluções", returns_policy_path, class: ("is-active" if current_page?(returns_policy_path)), aria: { current: (current_page?(returns_policy_path) ? "page" : nil) } %>
+    <%= link_to "Privacidade", privacy_policy_path, class: ("is-active" if current_page?(privacy_policy_path)), aria: { current: (current_page?(privacy_policy_path) ? "page" : nil) } %>
+    <%= link_to "Termos de uso", terms_of_use_path, class: ("is-active" if current_page?(terms_of_use_path)), aria: { current: (current_page?(terms_of_use_path) ? "page" : nil) } %>
+  </nav>
+</header>

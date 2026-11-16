@@ -21,7 +21,16 @@ xml.urlset "xmlns" => "http://www.sitemaps.org/schemas/sitemap/0.9" do
     xml.priority  "0.7"
   end
 
-  # -- Each product (Screw) --
+  # -- Store policies --
+  [returns_policy_path, privacy_policy_path, terms_of_use_path].each do |path|
+    xml.url do
+      xml.loc       host + path
+      xml.changefreq "yearly"
+      xml.priority  "0.3"
+    end
+  end
+
+    # -- Each product (Screw) --
   @screws.find_each do |s|
     xml.url do
       xml.loc       host + screw_path(s) # // uses slugs via FriendlyId

@@ -1,0 +1,59 @@
+<%# // Política de trocas, devoluções e reembolso — CDC arts. 18, 26 e 49;
+    // Decreto 7.962/2013 art. 5º. Rascunho aguardando revisão jurídica. %>
+<div class="container py-4 py-lg-5 policy-d">
+  <%= render "pages/policy_header", title: "Trocas, devoluções e reembolso" %>
+
+  <section>
+    <p class="policy-d__lead">
+      Em desistência da compra, defeito ou erro nosso, <strong>a loja paga todo o frete</strong>.
+      Só numa troca por escolha do cliente, depois do prazo de arrependimento, o envio da peça até nós fica por conta do cliente.
+    </p>
+
+    <div class="table-responsive">
+      <table class="table policy-d__table">
+        <thead>
+          <tr><th>Situação</th><th>Prazo para pedir</th><th>Quem paga o frete</th><th>O que você recebe</th></tr>
+        </thead>
+        <tbody>
+          <tr><td data-label="Situação">Arrependimento (desistiu da compra, sem precisar explicar)</td><td data-label="Prazo para pedir">7 dias corridos a partir do recebimento</td><td data-label="Quem paga o frete">Loja (ida e volta)</td><td data-label="O que você recebe">Reembolso integral, incluindo o frete pago</td></tr>
+          <tr><td data-label="Situação">Produto com defeito</td><td data-label="Prazo para pedir">90 dias a partir do recebimento</td><td data-label="Quem paga o frete">Loja</td><td data-label="O que você recebe">Troca por outro igual ou, se não for possível, reembolso</td></tr>
+          <tr><td data-label="Situação">Erro de envio (peça ou medida diferente da comprada)</td><td data-label="Prazo para pedir">90 dias</td><td data-label="Quem paga o frete">Loja</td><td data-label="O que você recebe">Envio da peça correta ou reembolso</td></tr>
+          <tr><td data-label="Situação">Produto avariado no transporte</td><td data-label="Prazo para pedir">Recuse na entrega ou avise em até 7 dias</td><td data-label="Quem paga o frete">Loja</td><td data-label="O que você recebe">Reenvio ou reembolso</td></tr>
+          <tr><td data-label="Situação">Comprou a medida errada (depois dos 7 dias)</td><td data-label="Prazo para pedir">30 dias a partir do recebimento</td><td data-label="Quem paga o frete">Você envia até nós; a loja paga o envio da peça nova</td><td data-label="O que você recebe">Troca por outra medida, com a peça sem uso e na embalagem. A nova peça sai no mesmo dia útil em que a devolvida chegar</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Como pedir</h2>
+    <ol>
+      <li>Fale com a gente <%= company_contact_sentence %>, informando o número do pedido e o motivo.</li>
+      <li>Respondemos em até 1 dia útil com as instruções e, quando a loja paga o frete, com o código de postagem reversa dos Correios.</li>
+      <li>Embale a peça, de preferência na embalagem original, e poste em até 7 dias após receber o código.</li>
+    </ol>
+    <p>Confirmamos o recebimento do seu pedido de desistência assim que ele chegar.</p>
+  </section>
+
+  <section>
+    <h2>Condições</h2>
+    <ul>
+      <li>No arrependimento, a peça pode ter sido retirada da embalagem para conferência, mas não pode ter sido instalada ou usada.</li>
+      <li>Parafusos instalados, com marcas de aperto ou danificados por uso incorreto não são aceitos como arrependimento. Defeito de fabricação continua coberto pela garantia legal.</li>
+      <li>Confira rosca, comprimento e compatibilidade com o veículo antes de instalar.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Reembolso</h2>
+    <ul>
+      <li>O estorno é feito no mesmo meio de pagamento, em até 2 dias úteis depois que a peça chega e é conferida. O prazo para aparecer na fatura do cartão depende do banco emissor.</li>
+      <li>No arrependimento, o reembolso inclui o frete pago na compra, com correção monetária.</li>
+    </ul>
+  </section>
+
+  <section class="policy-d__legal">
+    <h2>Base legal</h2>
+    <p>Código de Defesa do Consumidor (Lei 8.078/1990), arts. 18, 26 e 49, e Decreto 7.962/2013, art. 5º.</p>
+  </section>
+</div>
