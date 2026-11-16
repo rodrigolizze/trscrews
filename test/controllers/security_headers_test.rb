@@ -12,6 +12,14 @@ class SecurityHeadersTest < ActionDispatch::IntegrationTest
     assert_includes csp, "form-action 'self' https://checkout.stripe.com"
   end
 
+  # Regression: enforcing the CSP blocked the address form's CEP autofill, which
+  # fetches ViaCEP from the browser ("Failed to fetch" on /shipping_addresses/new).
+  test "allows the browser to reach ViaCEP for the address autofill" do
+    get root_url
+    connect_src = response.headers["Content-Security-Policy"][/connect-src [^;]+/]
+    assert_includes connect_src, "https://viacep.com.br"
+  end
+
   test "every inline script carries the CSP nonce, even on a first visit" do
     get root_url
     nonce = response.headers["Content-Security-Policy"][/'nonce-([^']+)'/, 1]

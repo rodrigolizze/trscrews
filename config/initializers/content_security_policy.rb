@@ -17,6 +17,9 @@
 #   dl.polyhaven.org      HDR environment map for the 3D screw
 #   res.cloudinary.com    product images (Active Storage on Cloudinary)
 #   checkout.stripe.com   payment redirect after POST /checkout_sessions (form-action)
+#   viacep.com.br         address autofill: cep_controller.js calls it straight from the
+#                         browser (Heroku -> ViaCEP returned 503), so it needs connect-src.
+#                         Missed when the CSP was enforced on 2026-11-16 ("Failed to fetch").
 Rails.application.configure do
   config.content_security_policy do |policy|
     policy.default_src     :self
@@ -32,7 +35,7 @@ Rails.application.configure do
     policy.font_src        :self, :data, "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"
     policy.img_src         :self, :data, :blob, "https://res.cloudinary.com"
     # blob: GLTFLoader reads the textures embedded in screw.glb through blob URLs.
-    policy.connect_src     :self, :blob, "https://cdn.jsdelivr.net", "https://dl.polyhaven.org"
+    policy.connect_src     :self, :blob, "https://cdn.jsdelivr.net", "https://dl.polyhaven.org", "https://viacep.com.br"
     policy.worker_src      :self, :blob
   end
 
