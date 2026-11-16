@@ -3,6 +3,11 @@ Rails.application.routes.draw do
 
   root to: "pages#home"
 
+  # Store policies (CDC / Decreto 7.962 / LGPD) — URLs in pt-BR, they are user-facing
+  get "/trocas-e-devolucoes", to: "pages#returns", as: :returns_policy
+  get "/privacidade",         to: "pages#privacy", as: :privacy_policy
+  get "/termos-de-uso",       to: "pages#terms",   as: :terms_of_use
+
   # Shipping addresses (single source of truth)
   resources :shipping_addresses, only: [:new, :create, :edit, :update, :index, :destroy] do
     member do

@@ -1,0 +1,82 @@
+<%# // Termos de uso — CDC e Decreto 7.962/2013. Rascunho aguardando revisão jurídica. %>
+<% shipping = Rails.configuration.x.shipping %>
+<div class="container py-4 py-lg-5 policy-d">
+  <%= render "pages/policy_header", title: "Termos de uso" %>
+
+  <section>
+    <p class="policy-d__lead">Ao comprar na TR AutoFix, você aceita estas regras sobre conta, pedidos, pagamento, entrega e uso das peças.</p>
+  </section>
+
+  <section>
+    <h2>1. Quem somos</h2>
+    <p>
+      <%= company_identification %><% if company.legal_name %>, nome fantasia <%= company.trade_name %><% end %><% if company.address %>, com sede em <%= company.address %><% end %>.
+      Atendimento <%= company_contact_sentence %>, <%= company.hours %>. Respondemos reclamações em até 5 dias.
+    </p>
+  </section>
+
+  <section>
+    <h2>2. Conta</h2>
+    <ul>
+      <li>Para comprar é preciso ter conta, com e-mail confirmado e senha de no mínimo 8 caracteres.</li>
+      <li>Você é responsável por manter a senha em sigilo. Se suspeitar de uso indevido, avise o atendimento.</li>
+      <li>A loja pode suspender contas usadas para fraude ou que violem estes termos.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. Produtos e compatibilidade</h2>
+    <ul>
+      <li>Cada produto informa rosca, comprimento, acabamento e os veículos compatíveis. <strong>Confira esses dados antes de comprar e de instalar.</strong></li>
+      <li>As fotos são ilustrativas; vale a especificação técnica descrita na página.</li>
+      <li>Parafusos de roda são itens de segurança: recomendamos instalação por profissional, com o torque indicado pelo fabricante do veículo.</li>
+      <li>Em caso de dúvida sobre compatibilidade, fale com o atendimento antes da compra.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. Preços e pagamento</h2>
+    <ul>
+      <li>Preços em reais. O frete é mostrado antes da confirmação do pedido. Frete grátis em compras a partir de <%= format_price(shipping.free_limit) %>.</li>
+      <li>Pagamento com cartão de crédito, processado pela Stripe em ambiente seguro.</li>
+      <li>O pedido reserva as peças por <%= Order::PAYMENT_WINDOW.in_hours.to_i %> horas. Sem pagamento nesse prazo, ele é cancelado e as peças voltam ao estoque.</li>
+      <li>Erros evidentes de preço (por exemplo, um valor muito abaixo do normal por falha do sistema) podem levar ao cancelamento do pedido, com reembolso integral e aviso a você.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5. Entrega</h2>
+    <ul>
+      <li>Enviamos pelos Correios (PAC) em até 1 dia útil após a confirmação do pagamento.</li>
+      <li>O prazo dos Correios conta a partir da postagem: cerca de 5 a 6 dias úteis para capitais do Sudeste, Sul, Centro-Oeste e Nordeste, e até 20 dias úteis para a região Norte.</li>
+      <li>O valor do frete depende da região do CEP de entrega e o endereço precisa ser do estado desse CEP.</li>
+      <li>Ao receber, confira a embalagem. Se estiver violada ou danificada, recuse a entrega ou avise em até 7 dias.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6. Trocas e devoluções</h2>
+    <p>Seguem a <%= link_to "política de trocas, devoluções e reembolso", returns_policy_path %>.</p>
+  </section>
+
+  <section>
+    <h2>7. Responsabilidade</h2>
+    <p>
+      A loja responde por defeitos de fabricação e por informações erradas na página do produto, nos termos do Código de Defesa do Consumidor.
+      Danos causados por instalação incorreta, torque inadequado, uso em veículo não indicado como compatível ou modificação da peça não decorrem de defeito do produto.
+    </p>
+  </section>
+
+  <section>
+    <h2>8. Privacidade</h2>
+    <p>O tratamento dos seus dados segue a <%= link_to "política de privacidade", privacy_policy_path %>.</p>
+  </section>
+
+  <section>
+    <h2>9. Alterações e foro</h2>
+    <ul>
+      <li>Estes termos podem mudar; a versão vigente fica sempre neste endereço, com a data da última atualização. Pedidos já feitos seguem os termos da data da compra.</li>
+      <li>Fica eleito o foro do domicílio do consumidor.</li>
+    </ul>
+  </section>
+</div>

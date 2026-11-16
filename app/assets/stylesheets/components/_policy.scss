@@ -1,0 +1,80 @@
+// Páginas de política (trocas, privacidade, termos) — redesign direção D.
+// Texto longo: largura de leitura limitada e tabelas que rolam no celular.
+.policy-d {
+  max-width: 860px;
+
+  section { margin-bottom: 32px; }
+
+  h2 {
+    font-family: "Anton", "Arial Narrow", sans-serif;
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin: 0 0 12px;
+  }
+
+  p, li { line-height: 1.65; color: var(--c-text); }
+  ol, ul { padding-left: 20px; }
+  li + li { margin-top: 6px; }
+}
+
+.policy-d__header {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.policy-d__title {
+  font-family: "Anton", "Arial Narrow", sans-serif;
+  font-size: clamp(32px, 6vw, 48px);
+  font-weight: 400;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+}
+
+.policy-d__updated { font-size: 13px; color: var(--c-muted) !important; margin-bottom: 16px; }
+
+.policy-d__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--c-border);
+    color: var(--c-muted);
+    text-decoration: none;
+    font-size: 14px;
+    &:hover { color: var(--c-text); border-color: var(--c-muted); }
+    &.is-active { color: var(--c-on-accent); background: var(--c-accent); border-color: var(--c-accent); font-weight: 600; }
+  }
+}
+
+.policy-d__lead { font-size: 17px; }
+
+.policy-d__table {
+  font-size: 14px;
+  th { white-space: nowrap; }
+  td { vertical-align: top; }
+
+  // Celular: cada linha vira um cartão com o rótulo da coluna antes do valor,
+  // em vez de uma tabela larga que obriga a rolar para o lado.
+  @media (max-width: 767.98px) {
+    thead { display: none; }
+    tr { display: block; border: 1px solid var(--c-border); margin-bottom: 12px; padding: 10px 12px; }
+    td { display: block; border: 0 !important; padding: 4px 0 !important; }
+    td::before {
+      content: attr(data-label);
+      display: block;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+      color: var(--c-muted);
+    }
+    td:first-child { font-weight: 600; }
+  }
+}
+
+.policy-d__legal p { color: var(--c-muted); font-size: 14px; }

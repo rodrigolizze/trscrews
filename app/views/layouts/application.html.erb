@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>TR AutoFix</title>
+    <title><%= content_for?(:title) ? yield(:title) : "TR AutoFix" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
 
     <!-- // SEO meta (title, description, OG/Twitter) -->

@@ -1,7 +1,7 @@
-<%# // Rodapé — redesign direção D. Versão "limpa": sem dados de contato até o
-    // Rodrigo definir os reais (o original tinha endereço/telefone fictícios e
-    // categorias de autopeças). Original em Escritorio-IA/.../redesign/backup-original/.
-    // TODO: links de Trocas e reembolso, Privacidade e Termos quando as páginas existirem. %>
+<%# // Rodapé — redesign direção D. Os dados da empresa (Decreto 7.962/2013, art. 2º)
+    // vêm de config/initializers/company.rb (ENV no Heroku); linha sem dado configurado
+    // não aparece, para nunca mostrar dado fictício. Original em
+    // Escritorio-IA/.../redesign/backup-original/. %>
 <footer class="site-footer">
   <div class="site-footer__inner">
     <div class="site-footer__brand">
@@ -26,9 +26,28 @@
         <%= link_to "Criar conta", new_user_registration_path %>
       <% end %>
     </nav>
+
+    <nav class="site-footer__col" aria-label="Políticas">
+      <h2 class="site-footer__title">Políticas</h2>
+      <%= link_to "Trocas e devoluções", returns_policy_path %>
+      <%= link_to "Privacidade", privacy_policy_path %>
+      <%= link_to "Termos de uso", terms_of_use_path %>
+    </nav>
   </div>
 
   <div class="site-footer__bottom">
-    &copy; <%= Time.current.year %> TR AutoFix. Todos os direitos reservados.
+    <% company_lines = [
+         (company_identification if company.legal_name || company.cnpj),
+         company.address
+       ].compact %>
+    <% if company_lines.any? || company_contact_links.any? %>
+      <p class="site-footer__company">
+        <%= company_lines.join(" · ") %>
+        <% if company_contact_links.any? %>
+          <%= " · " if company_lines.any? %><%= safe_join(company_contact_links, " · ") %>
+        <% end %>
+      </p>
+    <% end %>
+    <p class="site-footer__copy">&copy; <%= Time.current.year %> <%= company.trade_name %>. Todos os direitos reservados.</p>
   </div>
 </footer>
