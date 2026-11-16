@@ -74,4 +74,12 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     get new_user_session_path
     assert_select "a[href=?]", new_user_confirmation_path
   end
+
+  # Tab from the e-mail field must land on the password, not on "Esqueci minha senha".
+  test "sign in form puts the password field before the forgot-password link" do
+    get new_user_session_path
+    html = response.body
+    assert_operator html.index('name="user[password]"'), :<, html.index(new_user_password_path),
+                    "o campo de senha deveria vir antes do link de esqueci minha senha"
+  end
 end

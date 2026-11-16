@@ -50,25 +50,25 @@ class OrderTest < ActiveSupport::TestCase
     assert_equal order.placed_at + Order::PAYMENT_WINDOW, order.payment_deadline
   end
 
-  # Regression: shipping is priced by the UF field, which the server used to trust.
-  # A Manaus CEP with UF "SP" paid the Sudeste fee and still shipped to Manaus.
-  test "rejects a new order whose state does not match its CEP" do
+  # Regression: shipping is priced by the UF, which the server used to take from the
+  # form. A Manaus CEP with UF "SP" paid the Sudeste fee and still shipped to Manaus.
+  test "a new order takes its state from the CEP, not from what was typed" do
     order = orders(:one).dup
     order.order_number = nil
     order.cep = "69005-010"   # Manaus/AM
     order.state = "SP"
 
-    assert_not order.valid?
-    assert_match "não corresponde", order.errors.full_messages.join
+    assert order.valid?, order.errors.full_messages.to_sentence
+    assert_equal "AM", order.state
   end
 
-  test "accepts a new order whose state matches its CEP" do
+  test "rejects a new order with an unassigned CEP" do
     order = orders(:one).dup
     order.order_number = nil
-    order.cep = "69005-010"
-    order.state = "AM"
+    order.cep = "00999-999"
 
-    assert order.valid?, order.errors.full_messages.to_sentence
+    assert_not order.valid?
+    assert_match "CEP não encontrado", order.errors.full_messages.join
   end
 
   test "still lets an existing order with a mismatched address be marked paid" do

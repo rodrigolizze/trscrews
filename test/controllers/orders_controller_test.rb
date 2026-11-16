@@ -60,12 +60,12 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
   end
 
   # Regression: the shipping fee came from the UF the customer picked, not from the
-  # CEP, so a Manaus CEP with UF "SP" was charged the cheaper Sudeste fee.
-  test "create rejects a CEP from another state and keeps the stock" do
-    screw = screws(:one)
-    post add_cart_url(screw_id: screw.id), params: { quantity: 1 }
+  # CEP, so a Manaus CEP with UF "SP" was charged the cheaper Sudeste fee. The UF
+  # is now derived from the CEP; whatever the form sends is ignored.
+  test "create uses the CEP's state even when the form sends another UF" do
+    post add_cart_url(screw_id: screws(:one).id), params: { quantity: 1 }
 
-    assert_no_difference ["Order.count", -> { screw.reload.stock }] do
+    assert_difference "Order.count", 1 do
       post orders_url, params: {
         order: {
           customer_name: "Cliente Teste", customer_email: "cliente@test.com",
@@ -75,8 +75,27 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
+    order = Order.order(:id).last
+    assert_equal "AM", order.state
+    assert_equal Rails.configuration.x.shipping.region_fee_table[:norte], order.shipping_fee
+  end
+
+  test "create rejects an unassigned CEP and keeps the stock" do
+    screw = screws(:one)
+    post add_cart_url(screw_id: screw.id), params: { quantity: 1 }
+
+    assert_no_difference ["Order.count", -> { screw.reload.stock }] do
+      post orders_url, params: {
+        order: {
+          customer_name: "Cliente Teste", customer_email: "cliente@test.com",
+          cep: "00999-999", street: "Rua", number: "1", complement: "",
+          district: "Centro", city: "Cidade"
+        }
+      }
+    end
+
     assert_response :unprocessable_entity
-    assert_match "não corresponde", response.body
+    assert_match "CEP não encontrado", response.body
   end
 
   test "create charges the fee of the region the CEP belongs to" do

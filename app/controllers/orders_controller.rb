@@ -103,8 +103,8 @@ class OrdersController < ApplicationController
         raise ActiveRecord::Rollback
       end
 
-      # // Calcula frete com base no subtotal e UF escolhida
-      @order.shipping_fee = shipping_for(@order.order_items.sum(&:line_total), uf: @order.state)
+      # The UF comes from the CEP (the form no longer sends it); see CepMatchesState.
+      @order.shipping_fee = shipping_for(@order.order_items.sum(&:line_total), uf: BrazilianCep.uf_for(@order.cep))
 
       # // Recalcula subtotal, total etc.
       @order.recalc_totals!
@@ -171,7 +171,8 @@ class OrdersController < ApplicationController
     # // Permite também os campos de endereço (já existiam quando criamos o checkout com CEP)
     params.require(:order).permit(
       :customer_name, :customer_email,
-      :cep, :street, :number, :complement, :district, :city, :state
+      :cep, :street, :number, :complement, :district, :city
+      # :state is not permitted: it is derived from the CEP (CepMatchesState)
     )
   end
 
@@ -184,7 +185,7 @@ class OrdersController < ApplicationController
       { screw: s, qty: qty, unit_price: s.price, line_total: s.price * qty }
     end
     @subtotal = @lines.sum { |l| l[:line_total] }
-    @shipping = shipping_for(@subtotal, uf: @order&.state)
+    @shipping = shipping_for(@subtotal, uf: BrazilianCep.uf_for(@order&.cep))
     @total    = @subtotal + @shipping
 
     # // Recarrega lista de endereços para mostrar o picker ao re-renderizar

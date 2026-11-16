@@ -79,7 +79,7 @@ class ShippingAddressesController < ApplicationController
     # // Mantém o namespace correto do form: shipping_address[..]
     params.require(:shipping_address).permit(
       :recipient_name, :cep, :street, :number, :complement,
-      :district, :city, :state, :is_default
+      :district, :city, :is_default  # :state comes from the CEP (CepMatchesState)
     )
   end
 end

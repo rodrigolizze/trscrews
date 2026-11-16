@@ -27,18 +27,18 @@
             </div>
 
             <div class="mb-3">
-              <div class="d-flex justify-content-between align-items-center">
-                <%= f.label :password, "Senha", class: "form-label mb-0" %>
-                <%# // Link para “esqueci minha senha” (Devise padrão) %>
-                <%= link_to "Esqueci minha senha",
-                            new_password_path(resource_name),
-                            class: "small text-decoration-none" %>
-              </div>
-
+              <%= f.label :password, "Senha", class: "form-label" %>
               <%= f.password_field :password,
                     class: "form-control",
                     autocomplete: "current-password",
                     placeholder: "Digite sua senha" %>
+              <%# // O link fica DEPOIS do campo de senha: assim o Tab vai do e-mail direto
+                  // para a senha (antes parava primeiro no "Esqueci minha senha"). %>
+              <div class="text-end mt-1">
+                <%= link_to "Esqueci minha senha",
+                            new_password_path(resource_name),
+                            class: "small text-decoration-none" %>
+              </div>
             </div>
 
             <%# // Lembrar-me (remember_me) se estiver habilitado %>
