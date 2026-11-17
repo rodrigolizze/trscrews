@@ -23,8 +23,9 @@
 
       <%# // Palco do parafuso 3D: o tamanho vem do CSS (.hd-hero__visual), o canvas só ocupa 100%. %>
       <div class="hd-hero__visual">
-        <div id="screw-3d-root" data-screw-model="<%= asset_path('screw.glb') %>" role="img" aria-label="Parafuso de roda em 3D que gira conforme a rolagem da página"></div>
-        <span class="hd-spec">M12-1,5 · 30 mm · Geomet</span>
+        <%# // Peça de vitrine gerada em código (screw_3d.js), não um produto do catálogo:
+            // por isso não mostra medidas. data-screw-logo = logo gravada na cabeça. %>
+        <div id="screw-3d-root" data-screw-logo="<%= asset_path("tr-autofix-mark.png") %>" role="img" aria-label="Parafuso de roda cromado em 3D, com a logo TR gravada na cabeça, que gira conforme a rolagem da página"></div>
         <span class="hd-hint" aria-hidden="true">
           Role para girar
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
