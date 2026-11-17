@@ -12,6 +12,61 @@ import * as THREE from "three";
 
 const SEGMENTS = 72;
 
+// Studio environment reflected by the metal (shared by the product viewer and
+// the home hero): dark room with two softbox stripes and a mid-grey floor. The
+// contrast is what makes chrome read as a mirror; matte finishes blur it into a
+// soft gradient. Drawn on a canvas: no HDR download.
+export function studioEnvironment(renderer) {
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  const base = ctx.createLinearGradient(0, 0, 0, 256);
+  base.addColorStop(0, "#0f1012");
+  base.addColorStop(0.5, "#24262a");
+  base.addColorStop(0.6, "#4a4d52");
+  base.addColorStop(1, "#1c1e21");
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, 512, 256);
+  // Softbox with soft edges: a white rectangle faded on all four sides.
+  const softbox = (x, y, w, h, alpha) => {
+    const panel = document.createElement("canvas");
+    panel.width = w;
+    panel.height = h;
+    const p = panel.getContext("2d");
+    const gx = p.createLinearGradient(0, 0, w, 0);
+    gx.addColorStop(0, "rgba(255,255,255,0)");
+    gx.addColorStop(0.25, `rgba(255,255,255,${alpha})`);
+    gx.addColorStop(0.75, `rgba(255,255,255,${alpha})`);
+    gx.addColorStop(1, "rgba(255,255,255,0)");
+    p.fillStyle = gx;
+    p.fillRect(0, 0, w, h);
+    p.globalCompositeOperation = "destination-in";
+    const gy = p.createLinearGradient(0, 0, 0, h);
+    gy.addColorStop(0, "rgba(0,0,0,0)");
+    gy.addColorStop(0.2, "rgba(0,0,0,1)");
+    gy.addColorStop(0.8, "rgba(0,0,0,1)");
+    gy.addColorStop(1, "rgba(0,0,0,0)");
+    p.fillStyle = gy;
+    p.fillRect(0, 0, w, h);
+    ctx.drawImage(panel, x, y);
+  };
+  // Two tall panels at different sides (bright stripes along a standing screw),
+  // a wide strip above the horizon (stripes along a lying one) and a small top
+  // light.
+  softbox(40, 40, 60, 150, 1);
+  softbox(300, 50, 34, 130, 0.75);
+  softbox(140, 84, 220, 26, 0.7);
+  softbox(200, 10, 120, 22, 0.6);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  const envMap = pmrem.fromEquirectangular(texture).texture;
+  texture.dispose();
+  pmrem.dispose();
+  return envMap;
+}
+
 // grain: strength of the procedural surface texture (0 = mirror smooth).
 const FINISHES = {
   zinc:      { color: 0x9aa6b2, roughness: 0.3,  metalness: 1,    clearcoat: 0.3, grain: 0.35 },
@@ -86,26 +141,17 @@ function drawMark(ctx, logo, x, y, width, font, color) {
 // Laser marks read dark on bright metal and light on black/phosphate.
 const DARK_FINISHES = ["black", "phosphate"];
 
-function markingTexture({ outerR, innerR, marking, logo, finish }) {
-  const dark = DARK_FINISHES.includes(finish);
-  const ink = dark ? "#b4b7bb" : "#2b2d30";
-  // The map multiplies the material colour, so a light mark on a dark finish
-  // needs the finish colour painted as the background and a white material.
-  const background = dark ? `#${(FINISHES[finish] || FINISHES.steel).color.toString(16).padStart(6, "0")}` : "#ffffff";
-  const size = 512, c = size / 2, scale = c / outerR;
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext("2d");
-  ctx.fillStyle = background;
-  ctx.fillRect(0, 0, size, size);
-  ctx.fillStyle = dark ? "#b4b7bb" : "#6b6e72";
+// Draws the logo and the class on a size x size canvas (centre = axis).
+function drawMarking(ctx, { size, outerR, innerR, marking, logo, planeR = outerR }, ink) {
+  const c = size / 2, scale = c / planeR;
+  ctx.fillStyle = ink;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const font = (px) => `${Math.round(px)}px Anton, "Arial Black", Impact, sans-serif`;
-
   if (!innerR) {
     // Flat head: the logo in the middle, class underneath.
-    drawMark(ctx, logo, c, c - (marking ? outerR * scale * 0.14 : 0), outerR * scale * 1.15, font, ink);
+    // Without the class line the logo can take most of the face.
+    drawMark(ctx, logo, c, c - (marking ? outerR * scale * 0.14 : 0), outerR * scale * (marking ? 1.15 : 1.5), font, ink);
     if (marking) {
       ctx.font = font(outerR * scale * 0.26);
       ctx.fillText(marking, c, c + outerR * scale * 0.5);
@@ -120,27 +166,116 @@ function markingTexture({ outerR, innerR, marking, logo, finish }) {
       ctx.fillText(marking, c, c + mid);
     }
   }
+}
+
+const MARK_TEXTURE_SIZE = 1024;
+
+// The canvas outline of the face the mark sits on: a circle, or (engraved hex
+// heads) the whole hexagon, so face and engraving are a single surface with no
+// seam. Vertices on the horizontal axis: that is how the hex lands in the
+// texture after the mesh rotation in addMarking.
+function faceOutline(ctx, c, radius, hex) {
+  ctx.beginPath();
+  if (hex) {
+    for (let k = 0; k < 6; k++) {
+      const t = (k / 6) * Math.PI * 2;
+      ctx.lineTo(c + radius * Math.cos(t), c + radius * Math.sin(t));
+    }
+    ctx.closePath();
+  } else {
+    ctx.arc(c, c, radius, 0, Math.PI * 2);
+  }
+}
+
+function markingTexture({ outerR, innerR, marking, logo, finish, planeR = outerR, hex = false, inked = true }) {
+  const dark = DARK_FINISHES.includes(finish);
+  // The map multiplies the material colour, so a light mark on a dark finish
+  // needs the finish colour painted as the background and a white material.
+  const background = dark ? `#${(FINISHES[finish] || FINISHES.steel).color.toString(16).padStart(6, "0")}` : "#ffffff";
+  const size = MARK_TEXTURE_SIZE, c = size / 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  // Only the face itself is opaque: outside it the grid is cut by alphaTest.
+  ctx.fillStyle = background;
+  faceOutline(ctx, c, c, hex);
+  ctx.fill();
+  // inked: true = dark laser fill; "subtle" = the same metal a little darker,
+  // just enough to lift the mark; false = bare metal, only the sunk geometry.
+  const ink = !inked ? background
+    : inked === "subtle" ? (dark ? "#5a5d61" : "#c4c7cb")
+    : dark ? "#b4b7bb" : "#2b2d30";
+  drawMarking(ctx, { size, outerR, innerR, marking, logo, planeR }, ink);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
   return texture;
 }
 
-function addMarking(group, { top, outerR, innerR = 0, marking, finish, envMap, logo }) {
-  const texture = markingTexture({ outerR, innerR, marking, logo, finish });
+// Depth map of the engraving: 1 where the mark is, 0 on the face. Slightly
+// blurred so the walls slope like a real stamp instead of a cliff.
+function markingDepth({ outerR, innerR, marking, logo, planeR = outerR }) {
+  const size = 1024;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, size, size);
+  drawMarking(ctx, { size, outerR, innerR, marking, logo, planeR }, "#fff");
+  const blurred = document.createElement("canvas");
+  blurred.width = blurred.height = size;
+  const bctx = blurred.getContext("2d");
+  bctx.filter = "blur(2.5px)";
+  bctx.drawImage(canvas, 0, 0);
+  const data = bctx.getImageData(0, 0, size, size).data;
+  return (u, v) => {
+    const x = Math.min(size - 1, Math.max(0, Math.round(u * (size - 1))));
+    const y = Math.min(size - 1, Math.max(0, Math.round((1 - v) * (size - 1))));
+    return data[(y * size + x) * 4] / 255;
+  };
+}
+
+// Stamp depth in millimetres at markDepth = 1 (real wheel bolts: ~0.2-0.3 mm).
+const MARK_DEPTH_MM = 0.25;
+
+// engrave: { hexR, inked } on hex heads: a dense grid covering the whole
+// hexagon (circumradius hexR) sunk where the mark is.
+function addMarking(group, { top, outerR, innerR = 0, marking, finish, envMap, logo, depth = 1, engrave = null }) {
+  const planeR = engrave ? engrave.hexR : outerR;
+  const texture = markingTexture({ outerR, innerR, marking, logo, finish, planeR,
+                                   hex: !!engrave, inked: engrave ? engrave.inked : true });
   const { grain, ...preset } = FINISHES[finish] || FINISHES.steel;
   const material = new THREE.MeshPhysicalMaterial({
-    ...preset, envMap, envMapIntensity: 1.5, map: texture, bumpMap: texture, bumpScale: 0.6,
+    ...preset, envMap, envMapIntensity: 1.5, map: texture, alphaTest: 0.5,
     color: DARK_FINISHES.includes(finish) ? 0xffffff : preset.color,
-    side: THREE.DoubleSide
+    side: THREE.DoubleSide,
   });
-  const geom = innerR
-    ? new THREE.RingGeometry(innerR, outerR, SEGMENTS, 1)
-    : new THREE.CircleGeometry(outerR, SEGMENTS);
-  // RingGeometry UVs span the outer square, like CircleGeometry: the canvas maps 1:1.
+
+  let geom;
+  if (engrave) {
+    // A dense grid pushed down where the mark is: real walls and floor that
+    // catch the light, so the logo reads stamped from every angle.
+    const n = depth > 1 ? 360 : 220;
+    geom = new THREE.PlaneGeometry(planeR * 2, planeR * 2, n, n);
+    const height = markingDepth({ outerR, innerR, marking, logo, planeR });
+    const pos = geom.attributes.position, uv = geom.attributes.uv;
+    const sink = MARK_DEPTH_MM * depth;
+    for (let k = 0; k < pos.count; k++) {
+      pos.setZ(k, -sink * height(uv.getX(k), uv.getY(k)));
+    }
+    geom.computeVertexNormals();
+  } else {
+    material.bumpMap = texture;
+    material.bumpScale = 0.6 * depth;
+    geom = innerR
+      ? new THREE.RingGeometry(innerR, outerR, SEGMENTS, 1)
+      : new THREE.CircleGeometry(outerR, SEGMENTS);
+  }
+  // Plane, ring and circle UVs all span the outer square: the canvas maps 1:1.
   // rotateY(90°): the viewer lays the screw down (head to the right), so this turn
   // keeps the logo and the class upright on screen instead of sideways.
   const mesh = new THREE.Mesh(geom.rotateX(-Math.PI / 2).rotateY(Math.PI / 2), material);
-  mesh.position.y = top + 0.03;
+  mesh.position.y = engrave ? top : top + 0.03;
   group.add(mesh);
 }
 
@@ -267,14 +402,18 @@ function addSeat(group, seat, rMajor, outerR, base, material) {
 function addHex(group, wrench, height, base, material) {
   const circumR = wrench / 2 / Math.cos(Math.PI / 6);
   const body = new THREE.CylinderGeometry(circumR, circumR, height * 0.88, 6).translate(0, base + height * 0.44, 0);
-  const chamfer = new THREE.CylinderGeometry(circumR * 0.86, circumR, height * 0.12, 6).translate(0, base + height * 0.94, 0);
+  // Chamfer without caps: its top would hide the engraving sunk below it.
+  const chamfer = new THREE.CylinderGeometry(circumR * 0.86, circumR, height * 0.12, 6, 1, true).translate(0, base + height * 0.94, 0);
+  const faceR = circumR * 0.86 * Math.cos(Math.PI / 6);
+  // The top face itself is the marking grid (addMarking, engraved): one surface.
   group.add(new THREE.Mesh(body, material), new THREE.Mesh(chamfer, material));
-  // Top: the chamfered hexagon; its inscribed circle is the flat face for the mark.
-  return { top: base + height, faceR: circumR * 0.86 * Math.cos(Math.PI / 6) };
+  return { top: base + height, faceR, hexR: circumR * 0.86 };
 }
 
 // ---------- Public builder ----------------------------------------------------
-export function buildScrew(spec, envMap, { logo = null } = {}) {
+// markDepth > 1 engraves the logo deeper (the home hero is seen up close).
+// markInk: true (dark fill), "subtle" (slightly darker metal) or false (bare metal).
+export function buildScrew(spec, envMap, { logo = null, markDepth = 1, markInk = true } = {}) {
   const d = Number(spec.diameter) || 12;
   const pitch = Number(spec.pitch) || 1.5;
   const length = Number(spec.length) || d * 2.5;
@@ -283,8 +422,8 @@ export function buildScrew(spec, envMap, { logo = null } = {}) {
   const dark = recessMaterial();
   const group = new THREE.Group();
   const rMajor = d / 2;
-  const mark = (top, outerR, innerR) =>
-    addMarking(group, { top, outerR, innerR, marking: spec.marking, finish: spec.finish, envMap, logo });
+  const mark = (top, outerR, innerR, engrave = null) =>
+    addMarking(group, { top, outerR, innerR, marking: spec.marking, finish: spec.finish, envMap, logo, depth: markDepth, engrave });
 
   const { geom, rMinor } = threadGeometry(d, pitch, length);
   group.add(new THREE.Mesh(geom, material));
@@ -330,8 +469,8 @@ export function buildScrew(spec, envMap, { logo = null } = {}) {
       // Flanged hex: wide flange (built-in washer) under a hex.
       const flangeR = wrench * 0.68, flangeH = d * 0.16;
       group.add(new THREE.Mesh(lathe([[rMajor * 0.98, y], [flangeR, y], [flangeR, y + flangeH * 0.6], [flangeR * 0.8, y + flangeH], [0, y + flangeH]]), material));
-      const { top, faceR } = addHex(group, wrench, d * 0.65, y + flangeH, material);
-      mark(top, faceR, 0);
+      const { top, faceR, hexR } = addHex(group, wrench, d * 0.65, y + flangeH, material);
+      mark(top, faceR, 0, { hexR, inked: markInk });
       break;
     }
     case "drain_plug": {
@@ -341,8 +480,8 @@ export function buildScrew(spec, envMap, { logo = null } = {}) {
       group.add(new THREE.Mesh(new THREE.CylinderGeometry(washerR, washerR, 1.5, SEGMENTS).translate(0, y + 0.75, 0), copper));
       y += 1.5;
       group.add(new THREE.Mesh(new THREE.CylinderGeometry(washerR * 1.05, washerR * 1.05, 2, SEGMENTS).translate(0, y + 1, 0), material));
-      const { top, faceR } = addHex(group, wrench, d * 0.6, y + 2, material);
-      mark(top, faceR, 0);
+      const { top, faceR, hexR } = addHex(group, wrench, d * 0.6, y + 2, material);
+      mark(top, faceR, 0, { hexR, inked: markInk });
       break;
     }
     case "lock": {
@@ -359,8 +498,8 @@ export function buildScrew(spec, envMap, { logo = null } = {}) {
       // Hex head (wheel bolt or generic), with the requested seat under it.
       const seatR = wrench * 0.5;
       y += addSeat(group, spec.seat || "flat", rMajor, seatR, y, material);
-      const { top, faceR } = addHex(group, wrench, d * 0.75, y, material);
-      mark(top, faceR, 0);
+      const { top, faceR, hexR } = addHex(group, wrench, d * 0.75, y, material);
+      mark(top, faceR, 0, { hexR, inked: markInk });
     }
   }
   return group;

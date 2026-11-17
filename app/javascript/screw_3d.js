@@ -1,17 +1,37 @@
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { buildScrew, studioEnvironment } from "controllers/screw_geometry";
 
-// screw.glb is Draco-compressed, so GLTFLoader needs a decoder injected or it cannot
-// read the mesh at all. The decoder is pinned to the same three.js release we load
-// from jsDelivr, so both move together on upgrade.
-const DRACO_DECODER_PATH =
-  "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/";
+// Hero da página inicial: o parafuso é desenhado pelo mesmo gerador das páginas
+// de produto (controllers/screw_geometry), em vez do modelo pronto screw.glb.
+// Assim a logo TR sai gravada de verdade na cabeça (afundada na geometria) e a
+// página deixa de baixar o .glb (1,5 MB) e o decodificador Draco. O reflexo
+// continua vindo da mesma foto de estúdio (HDR) do hero antigo.
+//
+// É uma peça de vitrine, não um produto do catálogo: por isso a página não
+// mostra medidas sob o 3D.
+const SHOWCASE_SPEC = {
+  diameter: 14, pitch: 1.5, length: 30, head: "hex", seat: "conical",
+  wrench: 19, finish: "chrome", marking: null
+};
+// Na vitrine a cabeça leva a logo completa (TR AUTOFIX), sem classe de
+// resistência: não é uma peça real do catálogo.
+// Comprimento total na cena (em unidades da câmera) e profundidade extra da
+// gravação, já que aqui a cabeça é vista bem de perto.
+const SHOWCASE_LENGTH = 0.85;
+const SHOWCASE_MARK_DEPTH = 2.2;
+// Foto real de estúdio (HDRI, CC0 da Poly Haven) refletida pelo cromado: é ela
+// que dá o reflexo "de verdade" do hero. Enquanto baixa, vale o estúdio desenhado.
+const SHOWCASE_HDRI = "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_03_1k.hdr";
+const CHROME_LOOK = { envMapIntensity: 2.0, clearcoat: 0.6, clearcoatRoughness: 0.03, roughness: 0.04 };
+// Pose final calculada, sem ajuste no olho. A gravação "para cima" fica no
+// eixo -X do parafuso (ver addMarking). Com rotX = 90° a cabeça aponta para a
+// câmera; aí um giro de rotY = 270° leva o -X para o alto da tela: logo em pé
+// e sextavado com lados retos em cima e embaixo.
+const FINAL_SPIN = (3 * Math.PI) / 2;
 
-// Redesign (direção D): o parafuso saiu da seção de cards e virou a peça central do
-// hero, em todas as larguras (antes era só >= 992px). O giro agora acompanha a
-// rolagem da página até o hero sair da tela, em vez de seguir os 4 cards.
+// Redesign (direção D): o parafuso é a peça central do hero, em todas as
+// larguras. O giro acompanha a rolagem da página até o hero sair da tela.
 // O tamanho do palco vem do CSS (.hd-hero__visual); aqui só acompanhamos com
 // ResizeObserver.
 
@@ -28,119 +48,31 @@ const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
 // Ângulo de repouso para quem pede menos movimento: mostra cabeça e rosca.
 const REDUCED_MOTION_PROGRESS = 0.35;
 
-function createProceduralEnvMap(renderer) {
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 256;
-  const ctx = canvas.getContext("2d");
-  const g = ctx.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0, "#707070");
-  g.addColorStop(0.5, "#e0e0e0");
-  g.addColorStop(1, "#808080");
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 512, 256);
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.mapping = THREE.EquirectangularReflectionMapping;
-  const envMap = pmrem.fromEquirectangular(texture).texture;
-  texture.dispose();
-  pmrem.dispose();
-  return envMap;
-}
-
-function applyMetallicMaterials(model, envMap) {
-  const metalPreset = {
-    metalness: 1,
-    roughness: 0.03,
-    envMapIntensity: 2.2,
-    clearcoat: 0.7,
-    clearcoatRoughness: 0.02,
-    color: 0xe8e9eb
-  };
-  model.traverse((child) => {
-    if (!child.isMesh || !child.material) return;
-    const mats = Array.isArray(child.material) ? child.material : [child.material];
-    for (const mat of mats) {
-      if (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial) {
-        mat.metalness = metalPreset.metalness;
-        mat.roughness = metalPreset.roughness;
-        mat.envMapIntensity = metalPreset.envMapIntensity;
-        mat.envMap = envMap;
-        mat.clearcoat = metalPreset.clearcoat;
-        mat.clearcoatRoughness = metalPreset.clearcoatRoughness;
-        mat.roughnessMap = null;
-        mat.normalMap = null;
-        if (mat.map) {
-          mat.color.setHex(0xffffff);
-        } else {
-          mat.color.setHex(metalPreset.color);
-        }
-      } else {
-        const metal = new THREE.MeshPhysicalMaterial({
-          color: metalPreset.color,
-          metalness: metalPreset.metalness,
-          roughness: metalPreset.roughness,
-          envMap: envMap,
-          envMapIntensity: metalPreset.envMapIntensity,
-          clearcoat: metalPreset.clearcoat,
-          clearcoatRoughness: metalPreset.clearcoatRoughness,
-          map: mat.map || null
-        });
-        if (mat.map) metal.color.setHex(0xffffff);
-        child.material = Array.isArray(child.material)
-          ? mats.map(() => metal.clone())
-          : metal;
-        break;
-      }
-    }
+function loadImage(url) {
+  if (!url) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = url;
   });
 }
 
-function addProceduralScrew(group) {
-  const metal = new THREE.MeshPhysicalMaterial({
-    color: 0xe8e9eb,
-    metalness: 1,
-    roughness: 0.08,
-    envMapIntensity: 1.8,
-    clearcoat: 0.6,
-    clearcoatRoughness: 0.05
-  });
+// Vitrine centrada na origem, em pé (cabeça para cima), no tamanho da cena.
+async function addShowcaseScrew(group, envMap, logoUrl) {
+  await document.fonts?.load("100px Anton").catch(() => {});
+  const logo = await loadImage(logoUrl);
+  // Gravação no próprio metal, com o fundo só um pouco mais escuro para destacar.
+  const screw = buildScrew(SHOWCASE_SPEC, envMap, { logo, markDepth: SHOWCASE_MARK_DEPTH, markInk: "subtle" });
+  screw.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(screw);
+  const size = box.getSize(new THREE.Vector3());
+  screw.position.sub(box.getCenter(new THREE.Vector3()));
 
-  const shaftGeom = new THREE.CylinderGeometry(0.28, 0.30, 6.2, 48);
-  const shaft = new THREE.Mesh(shaftGeom, metal);
-  shaft.rotation.z = Math.PI / 2;
-  group.add(shaft);
-
-  const headGeom = new THREE.CylinderGeometry(0.75, 0.72, 0.95, 48);
-  const head = new THREE.Mesh(headGeom, metal);
-  head.position.x = 3.5;
-  head.rotation.z = Math.PI / 2;
-  group.add(head);
-
-  const darkerMetal = new THREE.MeshPhysicalMaterial({
-    color: 0x5a5d62,
-    metalness: 1,
-    roughness: 0.12,
-    envMapIntensity: 1.5,
-    clearcoat: 0.5,
-    clearcoatRoughness: 0.08
-  });
-
-  const socket1 = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, 0.12, 0.52),
-    darkerMetal
-  );
-  socket1.position.set(3.95, 0, 0);
-  socket1.rotation.z = Math.PI / 4;
-  group.add(socket1);
-
-  const socket2 = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, 0.12, 0.52),
-    darkerMetal
-  );
-  socket2.position.set(3.95, 0, 0);
-  socket2.rotation.set(Math.PI / 2, 0, Math.PI / 4);
-  group.add(socket2);
+  const holder = new THREE.Group();
+  holder.add(screw);
+  holder.scale.setScalar(SHOWCASE_LENGTH / size.y);
+  group.add(holder);
 }
 
 function webglAvailable() {
@@ -158,7 +90,7 @@ function initScrew() {
   if (!root) return;
 
   // Idempotência por elemento. run() é chamado pela avaliação do módulo e pelo
-  // turbo:load. Sem isto o init roda 2× por carregamento e os dois RGBELoader em
+  // turbo:load. Sem isto o init roda 2× por carregamento e as duas montagens em
   // voo se atropelam sobre as mesmas variáveis de módulo — o envMap do primeiro
   // chega numa cena que já é a do segundo, e o material metálico renderiza quase
   // preto.
@@ -196,23 +128,20 @@ function initScrew() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxRatio));
   renderer.setSize(width, height);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.2;
+  renderer.toneMappingExposure = 1.1;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
   root.appendChild(renderer.domElement);
 
-  const pmremGenerator = new THREE.PMREMGenerator(renderer);
-  pmremGenerator.compileEquirectangularShader();
-
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-
-  const dirLight = new THREE.DirectionalLight(0xffffff, 3.5);
-  dirLight.position.set(5, 8, 6);
-  scene.add(dirLight);
-
-  const dirLight2 = new THREE.DirectionalLight(0xe8ecf0, 2);
-  dirLight2.position.set(-4, 3, -4);
-  scene.add(dirLight2);
-
-  const fillLight = new THREE.DirectionalLight(0xffffff, 1);
+  // Luzes do hero original (um pouco mais contidas): realce forte de um lado,
+  // contraluz frio do outro, preenchimento por cima.
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  const keyLight = new THREE.DirectionalLight(0xffffff, 2.8);
+  keyLight.position.set(5, 8, 6);
+  scene.add(keyLight);
+  const rimLight = new THREE.DirectionalLight(0xe8ecf0, 1.6);
+  rimLight.position.set(-4, 3, -4);
+  scene.add(rimLight);
+  const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
   fillLight.position.set(0, 5, 2);
   scene.add(fillLight);
 
@@ -221,51 +150,27 @@ function initScrew() {
   screwGroup.rotation.set(-0.04, -0.3, 0.14);
   scene.add(screwGroup);
 
-  const envUrl = root.dataset.screwEnv || "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_03_1k.hdr";
-  const modelUrl = root.dataset.screwModel;
-
-  function onEnvLoaded(envMap) {
-    scene.environment = envMap;
-    needsRender = true;
-    if (modelUrl) {
-      const dracoLoader = new DRACOLoader();
-      dracoLoader.setDecoderPath(DRACO_DECODER_PATH);
-      dracoLoader.setDecoderConfig({ type: "wasm" });
-
-      const loader = new GLTFLoader();
-      loader.setDRACOLoader(dracoLoader);
-      loader.load(
-        modelUrl,
-        (gltf) => {
-          const model = gltf.scene;
-          model.position.set(0, 0, 0);
-          model.rotation.set(0, 0, 0);
-          model.scale.setScalar(1);
-          applyMetallicMaterials(model, envMap);
-          screwGroup.add(model);
-          dracoLoader.dispose();
-          needsRender = true;
-        },
-        undefined,
-        () => {
-          addProceduralScrew(screwGroup);
-          needsRender = true;
-        }
-      );
-    } else {
-      addProceduralScrew(screwGroup);
+  const envMap = studioEnvironment(renderer);
+  scene.environment = envMap;
+  const thisScene = scene;
+  const built = addShowcaseScrew(screwGroup, envMap, root.dataset.screwLogo).then(() => { needsRender = true; });
+  new RGBELoader().load(SHOWCASE_HDRI, (hdr) => {
+    // Turbo pode ter remontado a cena enquanto a HDR baixava.
+    if (scene !== thisScene) { hdr.dispose(); return; }
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const hdrEnv = pmrem.fromEquirectangular(hdr).texture;
+    hdr.dispose();
+    pmrem.dispose();
+    built.then(() => {
+      if (scene !== thisScene) return;
+      scene.environment = hdrEnv;
+      screwGroup.traverse((obj) => {
+        if (!obj.isMesh || !obj.material.isMeshPhysicalMaterial) return;
+        Object.assign(obj.material, CHROME_LOOK, { envMap: hdrEnv });
+        obj.material.needsUpdate = true;
+      });
       needsRender = true;
-    }
-  }
-
-  new RGBELoader().load(envUrl, (texture) => {
-    texture.mapping = THREE.EquirectangularReflectionMapping;
-    const envMap = pmremGenerator.fromEquirectangular(texture).texture;
-    texture.dispose();
-    onEnvLoaded(envMap);
-  }, undefined, () => {
-    const envMap = createProceduralEnvMap(renderer);
-    onEnvLoaded(envMap);
+    });
   });
 
   // Acompanha o tamanho do palco (mudança de breakpoint, rotação do celular).
@@ -287,10 +192,10 @@ function initScrew() {
 }
 
 // Progresso 0 → 1. O giro TERMINA com o parafuso ainda na tela: quando o centro
-// do palco chega a 30% da altura da janela (de cima para baixo). Antes ele só
+// do palco chega a 45% da altura da janela (de cima para baixo). Antes ele só
 // terminava com o palco já fora da tela, e o usuário nunca via a pose final
 // (cabeça de frente, com o logo).
-const END_AT_VIEWPORT_RATIO = 0.3;
+const END_AT_VIEWPORT_RATIO = 0.45;
 // Rolagem mínima para completar o giro — evita que ele "pule" em telas onde o
 // palco já começa perto do topo.
 const MIN_SCROLL_DISTANCE = 240;
@@ -308,7 +213,10 @@ function updateProgress() {
     MIN_SCROLL_DISTANCE,
     absCenter - window.innerHeight * END_AT_VIEWPORT_RATIO
   );
-  targetProgress = Math.min(1, Math.max(0, window.scrollY / endScroll));
+  const raw = Math.min(1, Math.max(0, window.scrollY / endScroll));
+  // Ease-out: o giro desacelera e assenta na pose final, então parar a
+  // rolagem um pouco antes do fim já mostra a cabeça de frente, em pé.
+  targetProgress = 1 - Math.pow(1 - raw, 3);
 }
 
 function animate() {
@@ -329,8 +237,7 @@ function animate() {
   if (!needsRender) return;
 
   const ease = Math.min(1, Math.max(0, currentProgress));
-  const logoRotationDeg = 207;
-  const targetRotY = ease * (Math.PI / 2 + logoRotationDeg * (Math.PI / 180));
+  const targetRotY = ease * FINAL_SPIN;
   const targetRotZ = 0.14 * (1 - ease);
   const targetRotX = -0.04 * (1 - ease) + ease * (Math.PI / 2);
   const targetY = 0.4 - ease * 0.1;

@@ -63,7 +63,7 @@ export default class extends Controller {
 
   async start() {
     const THREE = await import("three");
-    const { buildScrew } = await import("controllers/screw_geometry");
+    const { buildScrew, studioEnvironment } = await import("controllers/screw_geometry");
     this.buildScrew = buildScrew;
     // The head mark is drawn on a canvas: load the TR logo (and the font used for
     // the property class) first. Without the logo it falls back to "TR" letters.
@@ -84,7 +84,7 @@ export default class extends Controller {
     this.renderer = renderer;
 
     const scene = new THREE.Scene();
-    const envMap = this.environment(THREE, renderer);
+    const envMap = studioEnvironment(renderer);
     scene.add(new THREE.AmbientLight(0xffffff, 0.35));
     const key = new THREE.DirectionalLight(0xffffff, 1.4);
     key.position.set(30, 50, 40);
@@ -144,41 +144,6 @@ export default class extends Controller {
       img.onerror = () => resolve(null);
       img.src = url;
     });
-  }
-
-  // Studio environment reflected by the metal: dark room with two softbox
-  // stripes and a mid-grey floor. The contrast is what makes chrome read as a
-  // mirror; matte finishes (high roughness) just blur it into a soft gradient.
-  environment(THREE, renderer) {
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 256;
-    const ctx = canvas.getContext("2d");
-    const base = ctx.createLinearGradient(0, 0, 0, 256);
-    base.addColorStop(0, "#16171a");
-    base.addColorStop(0.5, "#2e3034");
-    base.addColorStop(0.6, "#6d7075");
-    base.addColorStop(1, "#26282b");
-    ctx.fillStyle = base;
-    ctx.fillRect(0, 0, 512, 256);
-    // Softboxes: a wide band above the horizon and a narrow one higher up.
-    const band = (y, h, alpha) => {
-      const g = ctx.createLinearGradient(0, y, 0, y + h);
-      g.addColorStop(0, "rgba(255,255,255,0)");
-      g.addColorStop(0.5, `rgba(255,255,255,${alpha})`);
-      g.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, y, 512, h);
-    };
-    band(84, 30, 1);
-    band(36, 10, 0.9);
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.mapping = THREE.EquirectangularReflectionMapping;
-    const envMap = pmrem.fromEquirectangular(texture).texture;
-    texture.dispose();
-    pmrem.dispose();
-    return envMap;
   }
 
   bindDrag() {
