@@ -10,7 +10,7 @@
 # blocked. To go back to observing only, flip the flag below to true.
 #
 # External origins in use:
-#   cdn.jsdelivr.net      Bootstrap (CSS/JS), Bootstrap Icons, three.js + Draco decoder (importmap)
+#   cdn.jsdelivr.net      Bootstrap (CSS/JS), Bootstrap Icons, three.js (importmap)
 #   cdnjs.cloudflare.com  AOS (CSS/JS)
 #   fonts.googleapis.com  Google Fonts CSS (Aldrich, Anton, Inter)
 #   fonts.gstatic.com     Google Fonts files
@@ -20,6 +20,11 @@
 #   viacep.com.br         address autofill: cep_controller.js calls it straight from the
 #                         browser (Heroku -> ViaCEP returned 503), so it needs connect-src.
 #                         Missed when the CSP was enforced on 2026-11-16 ("Failed to fetch").
+#
+# 2026-11-17: the old hero model (screw.glb, Draco/WebAssembly decoder, blob:
+# textures and workers) is gone (PR #33), so 'wasm-unsafe-eval', every blob:
+# source, worker-src and cdn.jsdelivr.net in connect-src were removed. The 3D
+# screws are now drawn on canvas and only fetch the studio HDR (dl.polyhaven.org).
 Rails.application.configure do
   config.content_security_policy do |policy|
     policy.default_src     :self
@@ -27,16 +32,13 @@ Rails.application.configure do
     policy.object_src      :none
     policy.frame_ancestors :none
     policy.form_action     :self, "https://checkout.stripe.com"
-    # 'wasm-unsafe-eval': the Draco decoder (3D model) is WebAssembly.
-    policy.script_src      :self, "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "'wasm-unsafe-eval'"
+    policy.script_src      :self, "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"
     # Inline style="" attributes are used across the views (and by Turbo's
     # progress bar); nonces cannot cover attributes, so styles stay permissive.
     policy.style_src       :self, :unsafe_inline, "https://fonts.googleapis.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"
     policy.font_src        :self, :data, "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"
-    policy.img_src         :self, :data, :blob, "https://res.cloudinary.com"
-    # blob: GLTFLoader reads the textures embedded in screw.glb through blob URLs.
-    policy.connect_src     :self, :blob, "https://cdn.jsdelivr.net", "https://dl.polyhaven.org", "https://viacep.com.br"
-    policy.worker_src      :self, :blob
+    policy.img_src         :self, :data, "https://res.cloudinary.com"
+    policy.connect_src     :self, "https://dl.polyhaven.org", "https://viacep.com.br"
   end
 
   # Nonce for inline <script> tags (importmap tags get it automatically).
