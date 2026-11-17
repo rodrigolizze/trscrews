@@ -1,13 +1,1 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <style>
-      /* Email styles need to be inline */
-    </style>
-  </head>
-
-  <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;">
-    <%= yield %>
-  </body>
-</html>
+<%= render "shared/email_frame", body: yield, preheader: content_for(:preheader) %>

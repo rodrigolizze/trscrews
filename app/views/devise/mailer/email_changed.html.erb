@@ -1,5 +1,6 @@
-<%= render layout: "devise/mailer/frame" do %>
-  <p style="margin:0 0 12px 0;">Olá,</p>
+<%= render layout: "devise/mailer/frame", locals: { preheader: "O e-mail de acesso da sua conta TR AutoFix mudou." } do %>
+  <h1 style="margin:0 0 14px 0; font-size:22px; line-height:1.25;">E-mail de acesso alterado</h1>
+  <p style="margin:0 0 12px 0;">Olá!</p>
   <% if @resource.try(:unconfirmed_email?) %>
     <p style="margin:0 0 12px 0;">O e-mail de acesso da sua conta na TR AutoFix está sendo alterado para <strong><%= @resource.unconfirmed_email %></strong>.</p>
   <% else %>
