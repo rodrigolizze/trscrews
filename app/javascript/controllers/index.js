@@ -27,3 +27,6 @@ application.register("cart-qty", CartQtyController)
 
 import AutoSubmitController from "controllers/auto_submit_controller"
 application.register("auto-submit", AutoSubmitController)
+
+import ScrewViewerController from "controllers/screw_viewer_controller"
+application.register("screw-viewer", ScrewViewerController)

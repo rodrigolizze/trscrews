@@ -64,4 +64,18 @@ class ScrewsControllerTest < ActionDispatch::IntegrationTest
       )
     end
   end
+
+  test "product page offers the 3D viewer with the screw's specs" do
+    screw = screws(:one)
+    get screw_url(screw)
+
+    assert_response :success
+    assert_select "[data-controller~='screw-viewer'][data-screw-viewer-spec-value]" do |nodes|
+      spec = JSON.parse(nodes.first["data-screw-viewer-spec-value"])
+      assert_equal 10.0, spec["diameter"]
+      assert_equal "zinc", spec["finish"]
+    end
+    assert_select "button[data-action='screw-viewer#toggle']", text: /Ver em 3D/
+    assert_select "[data-screw-viewer-logo-value*='tr-mark']"
+  end
 end

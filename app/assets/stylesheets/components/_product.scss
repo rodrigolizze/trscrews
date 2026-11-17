@@ -39,6 +39,53 @@
   img { width: 100%; height: 100%; object-fit: contain; padding: 16px; }
   @media (min-width: 992px) { aspect-ratio: 4 / 3.4; }
 }
+.pd-media { position: relative; }
+.pd-media__photo {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &[hidden] { display: none; }
+}
+
+// Visualizador 3D — palco ocupa a moldura da foto; o canvas entra aqui via JS.
+.pd-media__3d {
+  position: absolute;
+  inset: 0;
+  &[hidden] { display: none; }
+  canvas { display: block; width: 100% !important; height: 100% !important; }
+}
+.pd-media__3d-note {
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  margin: 0;
+  font-size: 11.5px;
+  color: #8A9099;
+  pointer-events: none;
+}
+.pd-3d-toggle {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #FFC400;
+  background: rgba(18, 20, 23, 0.85);
+  color: #FFC400;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  cursor: pointer;
+  &:hover { background: #FFC400; color: #121417; }
+  &:focus-visible { outline: 2px solid #FFC400; outline-offset: 2px; }
+}
+
 .pd-media__empty {
   display: flex;
   flex-direction: column;
