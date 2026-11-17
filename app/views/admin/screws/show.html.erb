@@ -6,6 +6,9 @@
     <div class="d-flex gap-2">
       <%= link_to "Voltar", admin_screws_path, class: "btn btn-outline-secondary" %>
       <%= link_to "Editar", edit_admin_screw_path(@screw), class: "btn btn-primary" %>
+      <%# Opens the public product page (with the final 3D) in a new tab. %>
+      <%= link_to "Ver na loja", screw_path(@screw), target: "_blank", rel: "noopener",
+                  class: "btn btn-outline-primary" %>
       <%= button_to "Excluir", admin_screw_path(@screw),
             method: :delete,
             form: { data: { turbo_confirm: "Tem certeza? Esta ação não pode ser desfeita." } },
