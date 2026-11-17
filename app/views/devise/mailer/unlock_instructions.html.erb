@@ -1,5 +1,6 @@
-<%= render layout: "devise/mailer/frame" do %>
-  <p style="margin:0 0 12px 0;">Olá <strong><%= @resource.name.presence || @resource.email %></strong>,</p>
-  <p style="margin:0 0 16px 0;">Sua conta foi bloqueada depois de várias tentativas de login sem sucesso. Para desbloquear, clique no link abaixo:</p>
-  <p style="margin:0;"><%= link_to "Desbloquear minha conta", unlock_url(@resource, unlock_token: @token) %></p>
+<%= render layout: "devise/mailer/frame", locals: { preheader: "Desbloqueie sua conta na TR AutoFix." } do %>
+  <h1 style="margin:0 0 14px 0; font-size:22px; line-height:1.25;">Conta bloqueada</h1>
+  <p style="margin:0 0 12px 0;">Olá, <strong><%= @resource.name.presence || @resource.email %></strong>!</p>
+  <p style="margin:0 0 4px 0;">Sua conta foi bloqueada depois de várias tentativas de login sem sucesso. Para desbloquear, clique no botão abaixo:</p>
+  <%= render "shared/email_button", label: "Desbloquear minha conta", url: unlock_url(@resource, unlock_token: @token) %>
 <% end %>

@@ -1,0 +1,25 @@
+<% number = @order.order_number || "##{@order.id}" -%>
+PAGAMENTO CONFIRMADO - PEDIDO <%= number %>
+
+Olá, <%= @order.customer_name %>! Recebemos o seu pagamento. Agora é com a gente:
+o pedido é postado em até 1 dia útil no endereço abaixo.
+
+Ver meus pedidos: <%= my_orders_url %>
+
+RESUMO
+<% @order.order_items.includes(:screw).each do |item| -%>
+- <%= item.screw.description %>: <%= item.quantity %> x <%= format_price(item.unit_price) %> = <%= format_price(item.line_total) %>
+<% end -%>
+
+Subtotal: <%= format_price(@order.items_subtotal) %>
+Frete:    <%= @order.shipping_amount.to_d.zero? ? "Grátis" : format_price(@order.shipping_amount) %>
+Total:    <%= format_price(@order.total_amount) %>
+
+ENTREGA
+<%= @order.customer_name %>
+<%= @order.street %>, <%= @order.number %><%= " - #{@order.complement}" if @order.complement.present? %>
+<%= @order.district %> - <%= @order.city %>/<%= @order.state %>
+CEP <%= @order.cep %>
+
+Dúvidas? É só responder este e-mail.
+Equipe TR AutoFix
