@@ -44,6 +44,83 @@ class Screw < ApplicationRecord
   validates :stock, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :slug, uniqueness: true, allow_nil: true
 
+  # == 3D viewer -------------------------------------------------------------
+  # Shape of the parametric 3D model on the product page, derived from the fields
+  # we already have. Head, seat and wrench size are guessed from the description
+  # for now (stage 1); explicit admin fields will override the guess (stage 2).
+
+  # Coarse ISO pitch, used when the thread has no pitch ("M10").
+  COARSE_PITCH = { 5 => 0.8, 6 => 1.0, 8 => 1.25, 10 => 1.5, 12 => 1.75, 14 => 2.0, 16 => 2.0 }.freeze
+  # Typical wrench size (across flats, mm) by nominal diameter.
+  WRENCH_SIZE  = { 5 => 8, 6 => 10, 8 => 13, 10 => 16, 12 => 17, 14 => 19, 16 => 22 }.freeze
+
+  def viewer_spec
+    diameter = thread_diameter
+    head     = guessed_head_type
+    {
+      diameter: diameter,
+      pitch:    thread_pitch(diameter),
+      length:   (thread_length.presence || (diameter * 2.5)).to_f.round(2),
+      head:     head,
+      seat:     guessed_seat_type(head),
+      wrench:   WRENCH_SIZE.fetch(diameter.round, (diameter * 1.5).round),
+      finish:   finish_key,
+      marking:  resistance_class.to_s.strip.presence  # stamped under "TR" on the head
+    }
+  end
+
+  # "M12x1,5" / "M8-1,25" / "M14 x 1.5" / "M10" -> 12.0 / 8.0 / 14.0 / 10.0 (default 12)
+  def thread_diameter
+    match = thread.to_s.match(/M\s*(\d+(?:[.,]\d+)?)/i)
+    match ? match[1].tr(",", ".").to_f : 12.0
+  end
+
+  def thread_pitch(diameter = thread_diameter)
+    match = thread.to_s.match(/M\s*\d+(?:[.,]\d+)?\s*[x×*\-]\s*(\d+(?:[.,]\d+)?)/i)
+    return match[1].tr(",", ".").to_f if match
+    COARSE_PITCH.fetch(diameter.round, 1.5)
+  end
+
+  private
+
+  def viewer_text
+    [description, model].compact.join(" ").downcase
+  end
+
+  def guessed_head_type
+    text = viewer_text
+    if text.match?(/anti.?furto|trava de roda/)        then "lock"
+    elsif text.match?(/c[aá]rter|buj[aã]o|dreno/)      then "drain_plug"
+    elsif text.match?(/torx/)
+      text.match?(/disco|freio|escareado/) ? "torx_countersunk" : "torx"
+    elsif text.match?(/allen/)                          then "allen"
+    elsif text.match?(/phill?ips/)                      then "phillips_pan"
+    elsif text.match?(/flangead/)                       then "hex_flange"
+    else "hex"
+    end
+  end
+
+  def guessed_seat_type(head)
+    text = viewer_text
+    return "flat" if %w[drain_plug torx_countersunk torx allen phillips_pan hex_flange].include?(head)
+    return "spherical" if text.match?(/esf[eé]ric|abaulad/)
+    return "conical"   if head == "lock" || text.match?(/roda|c[oô]nic/)
+    "flat"
+  end
+
+  def finish_key
+    case surface_treatment.to_s.downcase
+    when /cromad|chrom/        then "chrome"
+    when /geomet|dacromet/     then "geomet"
+    when /fosfat/              then "phosphate"
+    when /pret|black|oxid/     then "black"
+    when /zinc/                then "zinc"
+    else "steel"
+    end
+  end
+
+  public
+
   # == Entry point used by the controller -----------------------------------
   # // Apply simple filters based on params
   def self.apply_filters(filter_params = {})

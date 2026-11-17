@@ -58,18 +58,35 @@
     <div class="pd-grid">
       <%# ---------- Galeria ---------- %>
       <div class="pd-gallery" data-controller="gallery">
-        <div class="pd-media">
-          <% primary = primary_attachment(@screw) %>
-          <% if primary %>
-            <%= image_tag primary.variant(resize_to_limit: [1000, 1000]),
-                  data: { gallery_target: "main" },
-                  alt: @screw.description %>
-          <% else %>
-            <div class="pd-media__empty">
-              <svg width="96" height="96" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20 8h24l6 8-6 8H20l-6-8z"/><path d="M26 24v32h12V24"/><path d="M26 30l12 3M26 36l12 3M26 42l12 3M26 48l12 3"/></svg>
-              <span>Foto em breve</span>
-            </div>
-          <% end %>
+        <%# // Visualizador 3D (screw_viewer_controller): desenha o parafuso a partir das
+            // medidas do produto (Screw#viewer_spec). Só carrega ao clicar em "Ver em 3D". %>
+        <div class="pd-media" data-controller="screw-viewer"
+             data-screw-viewer-spec-value="<%= @screw.viewer_spec.to_json %>"
+             data-screw-viewer-logo-value="<%= asset_path("tr-mark.png") %>">
+          <div class="pd-media__photo" data-screw-viewer-target="photo">
+            <% primary = primary_attachment(@screw) %>
+            <% if primary %>
+              <%= image_tag primary.variant(resize_to_limit: [1000, 1000]),
+                    data: { gallery_target: "main" },
+                    alt: @screw.description %>
+            <% else %>
+              <div class="pd-media__empty">
+                <svg width="96" height="96" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20 8h24l6 8-6 8H20l-6-8z"/><path d="M26 24v32h12V24"/><path d="M26 30l12 3M26 36l12 3M26 42l12 3M26 48l12 3"/></svg>
+                <span>Foto em breve</span>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="pd-media__3d" data-screw-viewer-target="stage" hidden
+               role="img" aria-label="Modelo 3D ilustrativo de <%= @screw.description %>, que gira ao arrastar">
+            <p class="pd-media__3d-note">Modelo ilustrativo gerado pelas medidas · arraste para girar</p>
+          </div>
+
+          <button type="button" class="pd-3d-toggle" aria-pressed="false"
+                  data-screw-viewer-target="toggle" data-action="screw-viewer#toggle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M21 7l-9 5-9-5"/></svg>
+            <span data-screw-viewer-target="label">Ver em 3D</span>
+          </button>
         </div>
 
         <% if @screw.images.attached? && @screw.images.size > 1 %>
