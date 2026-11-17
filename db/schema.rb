@@ -10,9 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_25_215423) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_17_130000) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "plpgsql"
+  enable_extension "pg_catalog.plpgsql"
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -82,7 +82,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_25_215423) do
     t.index ["payment_reference"], name: "index_orders_on_payment_reference"
     t.index ["payment_status"], name: "index_orders_on_payment_status"
     t.index ["user_id"], name: "index_orders_on_user_id"
-    t.check_constraint "state::text = ANY (ARRAY['AC'::character varying::text, 'AL'::character varying::text, 'AP'::character varying::text, 'AM'::character varying::text, 'BA'::character varying::text, 'CE'::character varying::text, 'DF'::character varying::text, 'ES'::character varying::text, 'GO'::character varying::text, 'MA'::character varying::text, 'MT'::character varying::text, 'MS'::character varying::text, 'MG'::character varying::text, 'PA'::character varying::text, 'PB'::character varying::text, 'PR'::character varying::text, 'PE'::character varying::text, 'PI'::character varying::text, 'RJ'::character varying::text, 'RN'::character varying::text, 'RS'::character varying::text, 'RO'::character varying::text, 'RR'::character varying::text, 'SC'::character varying::text, 'SP'::character varying::text, 'SE'::character varying::text, 'TO'::character varying::text])", name: "orders_state_valid_uf"
+    t.check_constraint "state::text = ANY (ARRAY['AC'::character varying, 'AL'::character varying, 'AP'::character varying, 'AM'::character varying, 'BA'::character varying, 'CE'::character varying, 'DF'::character varying, 'ES'::character varying, 'GO'::character varying, 'MA'::character varying, 'MT'::character varying, 'MS'::character varying, 'MG'::character varying, 'PA'::character varying, 'PB'::character varying, 'PR'::character varying, 'PE'::character varying, 'PI'::character varying, 'RJ'::character varying, 'RN'::character varying, 'RS'::character varying, 'RO'::character varying, 'RR'::character varying, 'SC'::character varying, 'SP'::character varying, 'SE'::character varying, 'TO'::character varying]::text[])", name: "orders_state_valid_uf"
   end
 
   create_table "screws", force: :cascade do |t|
@@ -98,6 +98,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_25_215423) do
     t.decimal "price", precision: 10, scale: 2
     t.integer "stock", default: 0, null: false
     t.string "slug"
+    t.string "head_type"
+    t.string "seat_type"
+    t.integer "wrench_size"
     t.index ["slug"], name: "index_screws_on_slug", unique: true
     t.index ["stock"], name: "index_screws_on_stock"
   end
@@ -118,7 +121,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_25_215423) do
     t.index ["user_id", "is_default"], name: "index_shipping_addresses_on_user_id_and_is_default"
     t.index ["user_id"], name: "index_shipping_addresses_on_user_id"
     t.index ["user_id"], name: "index_shipping_addresses_one_default_per_user", unique: true, where: "(is_default = true)"
-    t.check_constraint "state::text = ANY (ARRAY['AC'::character varying::text, 'AL'::character varying::text, 'AP'::character varying::text, 'AM'::character varying::text, 'BA'::character varying::text, 'CE'::character varying::text, 'DF'::character varying::text, 'ES'::character varying::text, 'GO'::character varying::text, 'MA'::character varying::text, 'MT'::character varying::text, 'MS'::character varying::text, 'MG'::character varying::text, 'PA'::character varying::text, 'PB'::character varying::text, 'PR'::character varying::text, 'PE'::character varying::text, 'PI'::character varying::text, 'RJ'::character varying::text, 'RN'::character varying::text, 'RS'::character varying::text, 'RO'::character varying::text, 'RR'::character varying::text, 'SC'::character varying::text, 'SP'::character varying::text, 'SE'::character varying::text, 'TO'::character varying::text])", name: "shipping_addresses_state_valid_uf"
+    t.check_constraint "state::text = ANY (ARRAY['AC'::character varying, 'AL'::character varying, 'AP'::character varying, 'AM'::character varying, 'BA'::character varying, 'CE'::character varying, 'DF'::character varying, 'ES'::character varying, 'GO'::character varying, 'MA'::character varying, 'MT'::character varying, 'MS'::character varying, 'MG'::character varying, 'PA'::character varying, 'PB'::character varying, 'PR'::character varying, 'PE'::character varying, 'PI'::character varying, 'RJ'::character varying, 'RN'::character varying, 'RS'::character varying, 'RO'::character varying, 'RR'::character varying, 'SC'::character varying, 'SP'::character varying, 'SE'::character varying, 'TO'::character varying]::text[])", name: "shipping_addresses_state_valid_uf"
   end
 
   create_table "stripe_webhook_events", force: :cascade do |t|

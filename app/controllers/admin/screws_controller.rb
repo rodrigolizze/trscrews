@@ -111,6 +111,9 @@ class Admin::ScrewsController < Admin::BaseController
       :surface_treatment,
       :automaker,
       :model,
+      :head_type,     # 3D viewer shape; blank = guess from the description
+      :seat_type,
+      :wrench_size,
       :price,
       :stock,
       images: [] # // multiple attachments

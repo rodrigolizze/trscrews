@@ -30,3 +30,6 @@ application.register("auto-submit", AutoSubmitController)
 
 import ScrewViewerController from "controllers/screw_viewer_controller"
 application.register("screw-viewer", ScrewViewerController)
+
+import ScrewPreviewController from "controllers/screw_preview_controller"
+application.register("screw-preview", ScrewPreviewController)

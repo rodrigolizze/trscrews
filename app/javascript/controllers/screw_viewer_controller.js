@@ -8,11 +8,19 @@ import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static targets = ["stage", "photo", "toggle", "label"];
-  static values = { spec: Object, logo: String };
+  // autoOpen: show the 3D right away (admin preview) instead of waiting for the button.
+  static values = { spec: Object, logo: String, autoOpen: Boolean };
 
   connect() {
     this.open = false;
     this.reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (this.autoOpenValue) this.show();
+  }
+
+  // The admin preview rewrites data-screw-viewer-spec-value when a shape field
+  // changes: rebuild the model in the running scene.
+  specValueChanged() {
+    if (this.renderer) this.mountScrew();
   }
 
   disconnect() {
@@ -28,7 +36,7 @@ export default class extends Controller {
     this.open = true;
     this.stageTarget.hidden = false;
     if (this.hasPhotoTarget) this.photoTarget.hidden = true;
-    this.toggleTarget.setAttribute("aria-pressed", "true");
+    if (this.hasToggleTarget) this.toggleTarget.setAttribute("aria-pressed", "true");
     if (this.hasLabelTarget) this.labelTarget.textContent = "Ver fotos";
 
     if (!this.renderer) {
@@ -49,17 +57,18 @@ export default class extends Controller {
     this.running = false;
     this.stageTarget.hidden = true;
     if (this.hasPhotoTarget) this.photoTarget.hidden = false;
-    this.toggleTarget.setAttribute("aria-pressed", "false");
+    if (this.hasToggleTarget) this.toggleTarget.setAttribute("aria-pressed", "false");
     if (this.hasLabelTarget) this.labelTarget.textContent = "Ver em 3D";
   }
 
   async start() {
     const THREE = await import("three");
     const { buildScrew } = await import("controllers/screw_geometry");
+    this.buildScrew = buildScrew;
     // The head mark is drawn on a canvas: load the TR logo (and the font used for
     // the property class) first. Without the logo it falls back to "TR" letters.
     await document.fonts?.load("100px Anton").catch(() => {});
-    const logo = await this.loadImage(this.logoValue);
+    this.logo = await this.loadImage(this.logoValue);
     this.THREE = THREE;
 
     const stage = this.stageTarget;
@@ -81,25 +90,50 @@ export default class extends Controller {
     key.position.set(30, 50, 40);
     scene.add(key);
 
-    // Lay the screw down (head on the right), centred on the origin.
-    const screw = buildScrew(this.specValue, envMap, { logo });
-    screw.rotation.z = -Math.PI / 2;
     const pivot = new THREE.Group();
-    pivot.add(screw);
-    const box = new THREE.Box3().setFromObject(screw);
-    screw.position.sub(box.getCenter(new THREE.Vector3()));
     pivot.rotation.x = -0.35;
     scene.add(pivot);
-
-    const size = box.getSize(new THREE.Vector3());
     const camera = new THREE.PerspectiveCamera(30, width / height, 1, 2000);
-    const fit = Math.max(size.x, size.y / (width / height));
-    camera.position.set(0, 0, (fit / 2 / Math.tan((camera.fov * Math.PI) / 360)) * 1.35);
-    camera.lookAt(0, 0, 0);
 
     Object.assign(this, { scene, camera, pivot, envMap });
+    this.mountScrew();
     this.bindDrag();
     this.observe();
+  }
+
+  // (Re)builds the screw from specValue: lays it down (head on the right),
+  // centres it and fits the camera to its size.
+  mountScrew() {
+    const THREE = this.THREE;
+    if (this.screw) {
+      this.pivot.remove(this.screw);
+      this.disposeObject(this.screw);
+    }
+    const screw = this.buildScrew(this.specValue, this.envMap, { logo: this.logo });
+    screw.rotation.z = -Math.PI / 2;
+    // Measure BEFORE attaching to the pivot: once the pivot has turned (a rebuild
+    // in the admin preview), a world-space box is off-centre and the screw would
+    // orbit around the axis instead of spinning on it.
+    screw.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(screw);
+    screw.position.sub(box.getCenter(new THREE.Vector3()));
+    this.pivot.add(screw);
+    this.screw = screw;
+
+    const size = box.getSize(new THREE.Vector3());
+    const aspect = this.camera.aspect;
+    const fit = Math.max(size.x, size.y / aspect);
+    this.camera.position.set(0, 0, (fit / 2 / Math.tan((this.camera.fov * Math.PI) / 360)) * 1.35);
+    this.camera.lookAt(0, 0, 0);
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  disposeObject(root) {
+    root.traverse((obj) => {
+      obj.geometry?.dispose();
+      const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+      materials.forEach((m) => { m?.map?.dispose(); m?.dispose(); });
+    });
   }
 
   loadImage(url) {
@@ -112,22 +146,33 @@ export default class extends Controller {
     });
   }
 
-  // Soft studio gradient reflected by the metal (same idea as the home 3D).
+  // Studio environment reflected by the metal: dark room with two softbox
+  // stripes and a mid-grey floor. The contrast is what makes chrome read as a
+  // mirror; matte finishes (high roughness) just blur it into a soft gradient.
   environment(THREE, renderer) {
     const pmrem = new THREE.PMREMGenerator(renderer);
     const canvas = document.createElement("canvas");
     canvas.width = 512;
     canvas.height = 256;
     const ctx = canvas.getContext("2d");
-    const g = ctx.createLinearGradient(0, 0, 0, 256);
-    // Dark floor and ceiling with a bright band: gives the metal contrast against
-    // the light photo background.
-    g.addColorStop(0, "#3c3f43");
-    g.addColorStop(0.42, "#e9e9e9");
-    g.addColorStop(0.58, "#bdbdbd");
-    g.addColorStop(1, "#2e3134");
-    ctx.fillStyle = g;
+    const base = ctx.createLinearGradient(0, 0, 0, 256);
+    base.addColorStop(0, "#16171a");
+    base.addColorStop(0.5, "#2e3034");
+    base.addColorStop(0.6, "#6d7075");
+    base.addColorStop(1, "#26282b");
+    ctx.fillStyle = base;
     ctx.fillRect(0, 0, 512, 256);
+    // Softboxes: a wide band above the horizon and a narrow one higher up.
+    const band = (y, h, alpha) => {
+      const g = ctx.createLinearGradient(0, y, 0, y + h);
+      g.addColorStop(0, "rgba(255,255,255,0)");
+      g.addColorStop(0.5, `rgba(255,255,255,${alpha})`);
+      g.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, y, 512, h);
+    };
+    band(84, 30, 1);
+    band(36, 10, 0.9);
     const texture = new THREE.CanvasTexture(canvas);
     texture.mapping = THREE.EquirectangularReflectionMapping;
     const envMap = pmrem.fromEquirectangular(texture).texture;
@@ -188,10 +233,7 @@ export default class extends Controller {
     this.resizeObserver?.disconnect();
     this.visibility?.disconnect();
     if (!this.renderer) return;
-    this.scene.traverse((obj) => {
-      obj.geometry?.dispose();
-      obj.material?.dispose();
-    });
+    this.disposeObject(this.scene);
     this.envMap?.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();

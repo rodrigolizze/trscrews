@@ -15,7 +15,7 @@ const SEGMENTS = 72;
 // grain: strength of the procedural surface texture (0 = mirror smooth).
 const FINISHES = {
   zinc:      { color: 0x9aa6b2, roughness: 0.3,  metalness: 1,    clearcoat: 0.3, grain: 0.35 },
-  chrome:    { color: 0xf3f4f6, roughness: 0.05, metalness: 1,    clearcoat: 0.8, grain: 0 },
+  chrome:    { color: 0xe6e8eb, roughness: 0.03, metalness: 1,    clearcoat: 0,   grain: 0 },
   phosphate: { color: 0x3b3d40, roughness: 0.62, metalness: 0.7,  clearcoat: 0,   grain: 1 },
   geomet:    { color: 0x8f9398, roughness: 0.55, metalness: 0.9,  clearcoat: 0,   grain: 0.8 },
   black:     { color: 0x202124, roughness: 0.35, metalness: 0.8,  clearcoat: 0.4, grain: 0.4 },
@@ -46,7 +46,7 @@ function grainTexture() {
 
 export function finishMaterial(finish, envMap) {
   const { grain, ...preset } = FINISHES[finish] || FINISHES.steel;
-  const options = { ...preset, envMap, envMapIntensity: 1.25, clearcoatRoughness: 0.08,
+  const options = { ...preset, envMap, envMapIntensity: 1.5, clearcoatRoughness: 0.08,
                     side: THREE.DoubleSide };  // lathe profiles are not all wound the same way
   if (grain > 0) {
     Object.assign(options, { roughnessMap: grainTexture(), bumpMap: grainTexture(), bumpScale: 0.04 * grain });
@@ -73,31 +73,39 @@ function tintedLogo(logo, width, height, color) {
 }
 
 // Draws the TR logo (or the "TR" letters if the image did not load) centred on (x, y).
-function drawMark(ctx, logo, x, y, width, font) {
+function drawMark(ctx, logo, x, y, width, font, color) {
   if (logo) {
     const height = width * (logo.naturalHeight / logo.naturalWidth);
-    ctx.drawImage(tintedLogo(logo, width, height, "#2b2d30"), x - width / 2, y - height / 2, width, height);
+    ctx.drawImage(tintedLogo(logo, width, height, color), x - width / 2, y - height / 2, width, height);
   } else {
     ctx.font = font(width * 0.55);
     ctx.fillText("TR", x, y);
   }
 }
 
-function markingTexture({ outerR, innerR, marking, logo }) {
+// Laser marks read dark on bright metal and light on black/phosphate.
+const DARK_FINISHES = ["black", "phosphate"];
+
+function markingTexture({ outerR, innerR, marking, logo, finish }) {
+  const dark = DARK_FINISHES.includes(finish);
+  const ink = dark ? "#b4b7bb" : "#2b2d30";
+  // The map multiplies the material colour, so a light mark on a dark finish
+  // needs the finish colour painted as the background and a white material.
+  const background = dark ? `#${(FINISHES[finish] || FINISHES.steel).color.toString(16).padStart(6, "0")}` : "#ffffff";
   const size = 512, c = size / 2, scale = c / outerR;
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = background;
   ctx.fillRect(0, 0, size, size);
-  ctx.fillStyle = "#6b6e72";
+  ctx.fillStyle = dark ? "#b4b7bb" : "#6b6e72";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const font = (px) => `${Math.round(px)}px Anton, "Arial Black", Impact, sans-serif`;
 
   if (!innerR) {
     // Flat head: the logo in the middle, class underneath.
-    drawMark(ctx, logo, c, c - (marking ? outerR * scale * 0.14 : 0), outerR * scale * 1.15, font);
+    drawMark(ctx, logo, c, c - (marking ? outerR * scale * 0.14 : 0), outerR * scale * 1.15, font, ink);
     if (marking) {
       ctx.font = font(outerR * scale * 0.26);
       ctx.fillText(marking, c, c + outerR * scale * 0.5);
@@ -106,7 +114,7 @@ function markingTexture({ outerR, innerR, marking, logo }) {
     // Recess in the middle: the logo above it, class below, inside the ring.
     const mid = ((outerR + innerR) / 2) * scale;
     const band = (outerR - innerR) * scale;
-    drawMark(ctx, logo, c, c - mid, band * 1.5, font);
+    drawMark(ctx, logo, c, c - mid, band * 1.5, font, ink);
     if (marking) {
       ctx.font = font(band * 0.5);
       ctx.fillText(marking, c, c + mid);
@@ -118,10 +126,11 @@ function markingTexture({ outerR, innerR, marking, logo }) {
 }
 
 function addMarking(group, { top, outerR, innerR = 0, marking, finish, envMap, logo }) {
-  const texture = markingTexture({ outerR, innerR, marking, logo });
+  const texture = markingTexture({ outerR, innerR, marking, logo, finish });
   const { grain, ...preset } = FINISHES[finish] || FINISHES.steel;
   const material = new THREE.MeshPhysicalMaterial({
-    ...preset, envMap, envMapIntensity: 1.25, map: texture, bumpMap: texture, bumpScale: 0.6,
+    ...preset, envMap, envMapIntensity: 1.5, map: texture, bumpMap: texture, bumpScale: 0.6,
+    color: DARK_FINISHES.includes(finish) ? 0xffffff : preset.color,
     side: THREE.DoubleSide
   });
   const geom = innerR

@@ -56,4 +56,27 @@ class ScrewTest < ActiveSupport::TestCase
     flange = screw(description: "Parafuso sextavado flangeado").viewer_spec
     assert_equal %w[hex_flange flat], flange.values_at(:head, :seat)
   end
+
+  test "shape fields from the admin override the guess" do
+    spec = screw(description: "Parafuso de roda", thread: "M12x1,5",
+                 head_type: "lock", seat_type: "spherical", wrench_size: 19).viewer_spec
+    assert_equal ["lock", "spherical", 19], spec.values_at(:head, :seat, :wrench)
+  end
+
+  test "blank shape fields fall back to the guess" do
+    spec = screw(description: "Parafuso de roda", head_type: "", seat_type: "", wrench_size: nil).viewer_spec
+    assert_equal %w[hex conical], spec.values_at(:head, :seat)
+  end
+
+  test "rejects unknown shape values" do
+    s = screw(head_type: "triangular", seat_type: "torto", wrench_size: 0)
+    assert_not s.valid?
+    assert s.errors.key?(:head_type) && s.errors.key?(:seat_type) && s.errors.key?(:wrench_size)
+  end
+
+  test "the admin preview can ask for the pure guess" do
+    s = screw(description: "Parafuso de roda", head_type: "lock")
+    assert_equal "hex",  s.viewer_spec(use_overrides: false)[:head]
+    assert_equal "lock", s.viewer_spec[:head]
+  end
 end

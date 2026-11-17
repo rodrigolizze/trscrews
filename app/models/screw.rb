@@ -39,31 +39,56 @@ class Screw < ApplicationRecord
     ]
   end
 
+  # == Shape (3D viewer) ==
+  # Labels shown in the admin. Blank = guess from the description.
+  HEAD_TYPES = {
+    "hex"              => "Sextavada",
+    "hex_flange"       => "Sextavada flangeada",
+    "lock"             => "Antifurto (chave codificada)",
+    "drain_plug"       => "Bujão de cárter (com arruela)",
+    "torx"             => "Torx cilíndrica",
+    "torx_countersunk" => "Torx escareada (disco de freio)",
+    "allen"            => "Allen cilíndrica",
+    "phillips_pan"     => "Philips cabeça panela"
+  }.freeze
+  SEAT_TYPES = {
+    "conical"   => "Cônico 60°",
+    "spherical" => "Esférico",
+    "flat"      => "Plano"
+  }.freeze
+
+  validates :head_type, inclusion: { in: HEAD_TYPES.keys }, allow_blank: true
+  validates :seat_type, inclusion: { in: SEAT_TYPES.keys }, allow_blank: true
+  validates :wrench_size, numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 60 },
+                          allow_nil: true
+
   # == Validations ==
   validates :price, numericality: { greater_than_or_equal_to: 0 }, presence: true
   validates :stock, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :slug, uniqueness: true, allow_nil: true
 
   # == 3D viewer -------------------------------------------------------------
-  # Shape of the parametric 3D model on the product page, derived from the fields
-  # we already have. Head, seat and wrench size are guessed from the description
-  # for now (stage 1); explicit admin fields will override the guess (stage 2).
+  # Shape of the parametric 3D model on the product page. head_type, seat_type and
+  # wrench_size come from the admin when filled; otherwise they are guessed from
+  # the description (and the wrench from the diameter).
 
   # Coarse ISO pitch, used when the thread has no pitch ("M10").
   COARSE_PITCH = { 5 => 0.8, 6 => 1.0, 8 => 1.25, 10 => 1.5, 12 => 1.75, 14 => 2.0, 16 => 2.0 }.freeze
   # Typical wrench size (across flats, mm) by nominal diameter.
   WRENCH_SIZE  = { 5 => 8, 6 => 10, 8 => 13, 10 => 16, 12 => 17, 14 => 19, 16 => 22 }.freeze
 
-  def viewer_spec
+  # use_overrides: false gives the pure guess (the admin preview starts from it
+  # and applies the select boxes on top while editing).
+  def viewer_spec(use_overrides: true)
     diameter = thread_diameter
-    head     = guessed_head_type
+    head     = (head_type.presence if use_overrides) || guessed_head_type
     {
       diameter: diameter,
       pitch:    thread_pitch(diameter),
       length:   (thread_length.presence || (diameter * 2.5)).to_f.round(2),
       head:     head,
-      seat:     guessed_seat_type(head),
-      wrench:   WRENCH_SIZE.fetch(diameter.round, (diameter * 1.5).round),
+      seat:     (seat_type.presence if use_overrides) || guessed_seat_type(head),
+      wrench:   (wrench_size if use_overrides) || WRENCH_SIZE.fetch(diameter.round, (diameter * 1.5).round),
       finish:   finish_key,
       marking:  resistance_class.to_s.strip.presence  # stamped under "TR" on the head
     }
