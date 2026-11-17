@@ -20,6 +20,15 @@ class SecurityHeadersTest < ActionDispatch::IntegrationTest
     assert_includes connect_src, "https://viacep.com.br"
   end
 
+  # The old 3D model (screw.glb + Draco decoder) needed WebAssembly and blob:
+  # sources; it is gone, so the policy must not keep those doors open.
+  test "does not allow WebAssembly or blob: sources" do
+    get root_url
+    csp = response.headers["Content-Security-Policy"]
+    assert_not_includes csp, "wasm-unsafe-eval"
+    assert_not_includes csp, "blob:"
+  end
+
   test "every inline script carries the CSP nonce, even on a first visit" do
     get root_url
     nonce = response.headers["Content-Security-Policy"][/'nonce-([^']+)'/, 1]
