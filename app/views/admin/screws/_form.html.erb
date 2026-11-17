@@ -2,7 +2,10 @@
 <%# // Reusable form for New/Edit (we'll render this from new.html.erb and edit.html.erb) %>
 
 <%# // Use the namespaced model path so Rails posts to /admin/screws or /admin/screws/:id %>
-<%= form_with model: [:admin, @screw], local: true, html: { multipart: true, class: "card shadow-sm" } do |f| %>
+<%= form_with model: [:admin, @screw], local: true,
+              html: { multipart: true, class: "card shadow-sm" },
+              data: { controller: "screw-preview",
+                      screw_preview_base_value: @screw.viewer_spec(use_overrides: false).to_json } do |f| %>
   <div class="card-body">
     <%# // Show validation errors, if any %>
     <% if @screw.errors.any? %>
@@ -52,6 +55,26 @@
           </div>
         </div>
 
+        <%# == Formato para o 3D (opcional) =================================== %>
+        <fieldset class="row g-3 mt-1">
+          <legend class="form-label fw-semibold mb-0">Formato no 3D <span class="text-muted fw-normal small">(em branco = automático pela descrição)</span></legend>
+          <div class="col-md-5">
+            <%= f.label :head_type, "Cabeça", class: "form-label" %>
+            <%= f.select :head_type, Screw::HEAD_TYPES.invert, { include_blank: "Automático" },
+                  class: "form-select", data: { screw_preview_target: "head", action: "screw-preview#update" } %>
+          </div>
+          <div class="col-md-4">
+            <%= f.label :seat_type, "Assento", class: "form-label" %>
+            <%= f.select :seat_type, Screw::SEAT_TYPES.invert, { include_blank: "Automático" },
+                  class: "form-select", data: { screw_preview_target: "seat", action: "screw-preview#update" } %>
+          </div>
+          <div class="col-md-3">
+            <%= f.label :wrench_size, "Chave (mm)", class: "form-label" %>
+            <%= f.number_field :wrench_size, min: 1, max: 60, step: 1, class: "form-control", placeholder: "Auto",
+                  data: { screw_preview_target: "wrench", action: "input->screw-preview#update" } %>
+          </div>
+        </fieldset>
+
         <div class="row g-3 mt-1">
           <div class="col-md-4">
             <%= f.label :price, "Preço (R$)", class: "form-label" %>
@@ -66,6 +89,18 @@
 
       <%# == Images upload / preview ===================================== %>
       <div class="col-md-4">
+        <%# // Prévia 3D: abre sozinha e muda junto com os campos de formato. %>
+        <label class="form-label">Prévia 3D</label>
+        <div class="admin-3d mb-3" data-screw-preview-target="viewer"
+             data-controller="screw-viewer"
+             data-screw-viewer-auto-open-value="true"
+             data-screw-viewer-spec-value="<%= @screw.viewer_spec.to_json %>"
+             data-screw-viewer-logo-value="<%= asset_path("tr-mark.png") %>">
+          <div data-screw-viewer-target="stage" hidden class="admin-3d__stage"
+               role="img" aria-label="Prévia 3D do parafuso"></div>
+          <div class="form-text">Rosca, comprimento e acabamento atualizam ao salvar.</div>
+        </div>
+
         <label class="form-label">Imagens</label>
         <%# // Multiple files input; Active Storage takes it from here %>
         <div class="mb-2">

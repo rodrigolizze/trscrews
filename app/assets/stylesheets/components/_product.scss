@@ -227,3 +227,13 @@
 @media (prefers-reduced-motion: reduce) {
   .home-d .pd-thumb { transition: none; }
 }
+
+// Admin: prévia 3D no formulário do produto.
+.admin-3d__stage {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: #eceef0;
+  border: 1px solid #dee2e6;
+  &[hidden] { display: none; }
+  canvas { display: block; width: 100% !important; height: 100% !important; }
+}
