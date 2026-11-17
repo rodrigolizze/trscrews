@@ -135,16 +135,6 @@
   inset: 0;
   canvas { display: block; width: 100% !important; height: 100% !important; }
 }
-.hd-spec {
-  position: absolute;
-  left: 14px;
-  bottom: 12px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: var(--c-accent);
-}
 .hd-hint {
   position: absolute;
   right: 14px;
