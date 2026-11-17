@@ -31,6 +31,34 @@
     @media (min-width: 992px) { font-size: 28px; }
   }
 
+  // Logo metálico: altura fixa, largura proporcional (arte 184×112 = 2× de 56 px).
+  // O metal já vem clareado na imagem para destacar sobre o fundo escuro.
+  .site-nav__brand:has(.site-nav__logo) {
+    padding: 2px 0;
+    position: relative;
+    isolation: isolate;
+    // Brilho atrás da logo (sugestão do Rodrigo): claro no meio e sumindo na
+    // cor da barra nas bordas, para o cromado destacar sobre o fundo escuro.
+    // Num pseudo-elemento para não mexer no tamanho nem no alinhamento do link.
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -6px -40px;
+      z-index: -1;
+      pointer-events: none;
+      background: radial-gradient(closest-side,
+        rgba(255, 255, 255, 0.3),
+        rgba(255, 255, 255, 0.1) 55%,
+        rgba(18, 20, 23, 0));
+    }
+  }
+  .site-nav__logo {
+    display: block;
+    height: 44px;
+    width: auto;
+    @media (min-width: 992px) { height: 52px; }
+  }
+
   .nav-link {
     color: var(--nav-text);
     font-weight: 500;

@@ -2,11 +2,15 @@
     // hambúrguer e o dropdown do usuário claros sobre o fundo escuro. %>
 <nav class="navbar navbar-expand-lg site-nav" data-bs-theme="dark" data-controller="navbar">
   <div class="container-fluid px-0 py-0">
-    <%# // Wordmark em texto: o PNG do logo tem fundo branco e margens largas, e
-        // vazava/destoava sobre a navbar escura. Trocar por um SVG transparente
-        // quando a arte final existir. %>
+    <%# // Logo metálico (arte final, fundo transparente), recortado e reduzido para
+        // 2× a altura exibida. WebP com PNG de reserva; width/height evitam que a
+        // barra "pule" enquanto a imagem carrega. %>
     <%= link_to root_path, class: "navbar-brand site-nav__brand", aria: { label: "TR AutoFix — início" } do %>
-      TR <span>AUTOFIX</span>
+      <picture>
+        <source srcset="<%= asset_path("logo-tr-autofix-nav.webp") %>" type="image/webp">
+        <%= image_tag "logo-tr-autofix-nav.png", alt: "", width: 184, height: 112,
+              class: "site-nav__logo", fetchpriority: "high" %>
+      </picture>
     <% end %>
 
     <%# // Abre o menu abaixo de lg. O Bootstrap esconde este botão em >=992px
