@@ -68,7 +68,13 @@
   max-width: 460px;
   @media (min-width: 992px) { font-size: 18px; }
 }
-.hd-link { font-weight: 600; text-decoration: none; }
+.hd-link {
+  font-weight: 600;
+  text-decoration: none;
+  min-height: 44px; // touch target (was 23 px)
+  display: inline-flex;
+  align-items: center;
+}
 
 // ---------- Botões ----------
 .hd-btn {
