@@ -80,6 +80,14 @@
     align-items: center;
     gap: 6px;
     min-height: 44px;
+    min-width: 44px; // the icon alone was 22 px wide on mobile
+    justify-content: center;
+  }
+  // Touch target: "Entrar" was 23 px tall on mobile.
+  .site-nav__login {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
   .site-nav__cart-label { display: none; @media (min-width: 576px) { display: inline; } }
   .site-nav__badge {

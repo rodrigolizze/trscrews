@@ -9,7 +9,7 @@
   a {
     color: #A9AEB6;
     text-decoration: none;
-    min-height: 32px;
+    min-height: 44px; // touch target (WCAG 2.5.5 / checklist 390 px)
     display: inline-flex;
     align-items: center;
     &:hover { color: #FFC400; }
@@ -44,6 +44,7 @@
   align-self: flex-start;
   font-family: "Anton", "Arial Narrow", sans-serif;
   font-size: 24px;
+  line-height: 44px; // 44 px touch target without inline-flex (see above)
   letter-spacing: 1px;
   color: #EDEEF0;
   span { color: #FFC400; }
@@ -53,7 +54,7 @@
 .site-footer__col {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0; // the 44 px links already space themselves
 }
 
 .site-footer__title {
@@ -72,7 +73,7 @@
   padding: 16px 20px 28px;
   border-top: 1px solid #23262B;
   font-size: 12.5px;
-  color: #6B7079;
+  color: #8A9099; // #6B7079 was 3.7:1 on #121417, below AA (4.5:1)
   @media (min-width: 768px) { padding: 16px 32px 32px; }
 }
 

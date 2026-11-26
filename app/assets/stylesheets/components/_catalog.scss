@@ -29,7 +29,7 @@
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
+  min-height: 44px; // touch target (was 40 px)
   padding: 0 14px;
   border: 1px solid var(--c-border);
   color: var(--c-text);
